@@ -20,7 +20,11 @@ deb ${DEB}:
 
 install: ${BTDATA}
 	install -d -m 755 ${PERL5DIR}/PMG
-	#install -m 0644 PVE/APIServer/AnyEvent.pm ${PERL5DIR}/PVE/APIServer
+	install -d -m 755 ${PERL5DIR}/PMG/API2
+	install -m 0644 PMG/API2.pm ${PERL5DIR}/PMG
+	install -m 0644 PMG/HTTPServer.pm ${PERL5DIR}/PMG
+	install -m 0644 PMG/Ticket.pm ${PERL5DIR}/PMG
+	install -m 0644 PMG/API2/Nodes.pm ${PERL5DIR}/PMG/API2
 
 
 .PHONY: upload
