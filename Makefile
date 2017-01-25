@@ -29,6 +29,7 @@ install: ${BTDATA}
 
 .PHONY: upload
 upload: ${DEB}
+	 ./repoid.pl .git/ check
 	# fixme tar cf - ${DEB} | ssh repoman@repo.proxmox.com upload
 
 distclean: clean
