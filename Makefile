@@ -9,7 +9,9 @@ DESTDIR=
 PERL5DIR=${DESTDIR}/usr/share/perl5
 DOCDIR=${DESTDIR}/usr/share/doc/${PACKAGE}
 
-all:
+REPOID=`./repoid.pl .git`
+
+all: PMG/pmgcfg.pm
 
 .PHONY: deb
 deb ${DEB}:
@@ -18,9 +20,15 @@ deb ${DEB}:
 	cd build; dpkg-buildpackage -b -us -uc
 	lintian ${DEB}
 
-install: ${BTDATA}
+
+PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
+	sed -e s/@VERSION@/${PKGVER}/ -e s/@PACKAGERELEASE@/${PKGREL}/ -e s/@PACKAGE@/${PACKAGE}/ -e s/@REPOID@/${REPOID}/ $< >$@.tmp
+	mv $@.tmp $@
+
+install: ${BTDATA} PMG/pmgcfg.pm
 	install -d -m 755 ${PERL5DIR}/PMG
 	install -d -m 755 ${PERL5DIR}/PMG/API2
+	install -m 0644 PMG/pmgcfg.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/API2.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/HTTPServer.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/Ticket.pm ${PERL5DIR}/PMG
@@ -35,7 +43,7 @@ upload: ${DEB}
 distclean: clean
 
 clean:
-	rm -rf ./build *.deb *.changes *.buildinfo
+	rm -rf ./build *.deb *.changes *.buildinfo PMG/pmgcfg.pm
 	find . -name '*~' -exec rm {} ';'
 
 .PHONY: dinstall

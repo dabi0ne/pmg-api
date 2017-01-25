@@ -1,0 +1,36 @@
+package PMG::pmgcfg;
+
+use strict;
+use vars qw(@ISA);
+
+sub package {
+	return '@PACKAGE@';
+}
+
+sub version {
+	return '@VERSION@';
+}
+
+sub release {
+	return '@PACKAGERELEASE@';
+}
+
+sub repoid {
+	return '@REPOID@';
+}
+
+# this is diplayed on the GUI
+sub version_text {
+    return '@VERSION@-@PACKAGERELEASE@/@REPOID@';
+}
+
+# this is returned by the API
+sub version_info {
+    return {
+	'version' => '@VERSION@',
+	'release' => '@PACKAGERELEASE@',
+	'repoid' => '@REPOID@',
+    }
+}
+
+1;
