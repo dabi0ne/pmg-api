@@ -10,26 +10,16 @@ use HTTP::Headers;
 use HTTP::Response;
 use Data::Dumper;
 
-use PVE::Tools qw(run_command);
 use PVE::INotify;
 use PVE::APIServer::Formatter::Standard;
 use PVE::APIServer::Formatter::HTML;
 
 use PMG::HTTPServer;
+use PMG::Ticket;
 
 my $nodename = PVE::INotify::nodename();
 my $port = 9999;
-
-my $cert_file = "pmg-api.pem";
-
-if (! -f $cert_file) {
-    print "generating demo server certificate\n";
-    my $cmd = ['openssl', 'req', '-batch', '-x509', '-newkey', 'rsa:4096',
-	       '-nodes', '-keyout', $cert_file, '-out', $cert_file,
-	       '-subj', "/CN=$nodename/",
-	       '-days', '3650'];
-    run_command($cmd);
-}
+my $cert_file = PMG::Ticket::generate_api_cert($nodename);
 
 my $socket = IO::Socket::IP->new(
     LocalAddr => $nodename,

@@ -5,6 +5,7 @@ use warnings;
 use Net::SSLeay;
 use Digest::SHA;
 
+use PVE::Tools;
 use PVE::Ticket;
 
 use Crypt::OpenSSL::RSA;
@@ -12,8 +13,29 @@ use Crypt::OpenSSL::RSA;
 my $min_ticket_lifetime = -60*5; # allow 5 minutes time drift
 my $max_ticket_lifetime = 60*60*2; # 2 hours
 
+my $pmg_api_cert_fn = "/etc/proxmox/pmg-api.pem";
+
+
 # fixme
 my $rsa = Crypt::OpenSSL::RSA->generate_key(2048);
+
+sub generate_api_cert {
+    my ($nodename, $force) = @_;
+
+    if (-f $pmg_api_cert_fn) {
+	return $pmg_api_cert_fn if !$force;
+	unlink $pmg_api_cert_fn;
+    }
+
+    my $cmd = ['openssl', 'req', '-batch', '-x509', '-newkey', 'rsa:4096',
+	       '-nodes', '-keyout', $pmg_api_cert_fn, '-out', $pmg_api_cert_fn,
+	       '-subj', "/CN=$nodename/",
+	       '-days', '3650'];
+
+    PVE::Tools::run_command($cmd);
+
+    return $pmg_api_cert_fn;
+}
 
 ## fixme:
 my $csrf_prevention_secret;

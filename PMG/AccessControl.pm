@@ -3,6 +3,7 @@ package PMG::AccessControl;
 use strict;
 use warnings;
 use Authen::PAM;
+use PVE::Tools;
 
 use PVE::JSONSchema qw(get_standard_option);
 
@@ -75,7 +76,6 @@ sub normalize_path {
 
     return $path;
 }
-
 
 # password should be utf8 encoded
 # Note: some plugins delay/sleep if auth fails
@@ -158,7 +158,7 @@ sub is_valid_user_utf8 {
 	die "auth failed: $err";
     }
 
-    if (($res = $pamh->pam_acct_mgmt (0)) != PAM_SUCCESS) {
+    if (($res = $pamh->pam_acct_mgmt(0)) != PAM_SUCCESS) {
 	my $err = $pamh->pam_strerror($res);
 	die "auth failed: $err";
     }
@@ -171,7 +171,7 @@ sub is_valid_user_utf8 {
 sub is_valid_user {
     my ($username, $password) = @_;
 
-    return is_valid_user_utf8 ($username, encode("utf8", $password));
+    return is_valid_user_utf8($username, encode("utf8", $password));
 }
 
 1;
