@@ -13,11 +13,41 @@ use Crypt::OpenSSL::RSA;
 my $min_ticket_lifetime = -60*5; # allow 5 minutes time drift
 my $max_ticket_lifetime = 60*60*2; # 2 hours
 
-my $pmg_api_cert_fn = "/etc/proxmox/pmg-api.pem";
+my $basedir = "/etc/proxmox";
+
+my $pmg_api_cert_fn = "$basedir/pmg-api.pem";
+
+# this is just a secret accessable by all API servers
+# and is used for CSRF prevention
+my $pmg_csrf_key_fn = "$basedir/pmg-csrf.key";
 
 
 # fixme
 my $rsa = Crypt::OpenSSL::RSA->generate_key(2048);
+
+# only write output if something fails
+sub run_silent_cmd {
+    my ($cmd) = @_;
+
+    my $outbuf = '';
+
+    my $record_output = sub {
+	$outbuf .= shift;
+	$outbuf .= "\n";
+    };
+
+    eval {
+	PVE::Tools::run_command($cmd, outfunc => $record_output,
+				errfunc => $record_output);
+    };
+
+    my $err = $@;
+
+    if ($err) {
+	print STDERR $outbuf;
+	die $err;
+    }
+}
 
 sub generate_api_cert {
     my ($nodename, $force) = @_;
@@ -32,18 +62,30 @@ sub generate_api_cert {
 	       '-subj', "/CN=$nodename/",
 	       '-days', '3650'];
 
-    PVE::Tools::run_command($cmd);
+    eval { run_silent_cmd($cmd); };
+
+    die "unable to generate pmg api cert '$pmg_api_cert_fn':\n$@" if $@;
 
     return $pmg_api_cert_fn;
 }
 
-## fixme:
+sub generate_csrf_key {
+
+    return if -f $pmg_csrf_key_fn;
+
+    my $cmd = ['openssl', 'genrsa', '-out', $pmg_csrf_key_fn, '2048'];
+
+    eval { run_silent_cmd($cmd); };
+
+    die "unable to generate pmg csrf key '$pmg_csrf_key_fn':\n$@" if $@;
+}
+
 my $csrf_prevention_secret;
 my $get_csrfr_secret = sub {
     if (!$csrf_prevention_secret) {
-	#my $input = PVE::Tools::file_get_contents($pve_www_key_fn);
-	my $input = "ABCD"; # fixme
+	my $input = PVE::Tools::file_get_contents($pmg_csrf_key_fn);
 	$csrf_prevention_secret = Digest::SHA::sha1_base64($input);
+	print "SECRET:$csrf_prevention_secret\n";
     }
     return $csrf_prevention_secret;
 };
@@ -55,7 +97,7 @@ sub verify_csrf_prevention_token {
     my $secret =  &$get_csrfr_secret();
 
     return PVE::Ticket::verify_csrf_prevention_token(
-	$secret, $username, $token, $min_ticket_lifetime, 
+	$secret, $username, $token, $min_ticket_lifetime,
 	$max_ticket_lifetime, $noerr);
 }
 

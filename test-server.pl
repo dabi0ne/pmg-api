@@ -20,6 +20,7 @@ use PMG::Ticket;
 my $nodename = PVE::INotify::nodename();
 my $port = 9999;
 my $cert_file = PMG::Ticket::generate_api_cert($nodename);
+PMG::Ticket::generate_csrf_key();
 
 my $socket = IO::Socket::IP->new(
     LocalAddr => $nodename,
