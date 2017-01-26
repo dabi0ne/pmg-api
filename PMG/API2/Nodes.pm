@@ -185,7 +185,7 @@ use PVE::JSONSchema qw(get_standard_option);
 use base qw(PVE::RESTHandler);
 
 __PACKAGE__->register_method ({
-    subclass => "PMP::API2::Nodeinfo",  
+    subclass => "PMG::API2::NodeInfo",
     path => '{node}',
 });
 

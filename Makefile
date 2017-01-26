@@ -26,6 +26,7 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	mv $@.tmp $@
 
 install: ${BTDATA} PMG/pmgcfg.pm
+	perl -I. -T -e "use PMG::Service::pmgproxy; PMG::Service::pmgproxy->verify_api();";
 	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
 	install -d -m 0755 ${DOCDIR}
 	# TODO: is there a better location ?
