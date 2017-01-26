@@ -1,0 +1,17 @@
+[Unit]
+Description=PMG API Daemon
+ConditionPathExists=/usr/bin/pmgdaemon
+Wants=ssh.service
+Wants=remote-fs.target
+After=ssh.service
+After=remote-fs.target
+
+[Service]
+ExecStart=/usr/bin/pmgdaemon start
+ExecStop=/usr/bin/pmgdaemon stop
+ExecReload=/usr/bin/pmgdaemon restart
+PIDFile=/var/run/pmgdaemon.pid
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

@@ -26,14 +26,19 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	mv $@.tmp $@
 
 install: ${BTDATA} PMG/pmgcfg.pm
-	install -d -m 755 ${PERL5DIR}/PMG
-	install -d -m 755 ${PERL5DIR}/PMG/API2
+	install -d -m 0755 ${PERL5DIR}/PMG
+	install -d -m 0755 ${PERL5DIR}/PMG/API2
+	install -d -m 0755 ${PERL5DIR}/PMG/Service
 	install -m 0644 PMG/pmgcfg.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/API2.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/HTTPServer.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/Ticket.pm ${PERL5DIR}/PMG
+	install -m 0644 PMG/AccessControl.pm ${PERL5DIR}/PMG
 	install -m 0644 PMG/API2/Nodes.pm ${PERL5DIR}/PMG/API2
-
+	install -m 0644 PMG/API2/AccessControl.pm ${PERL5DIR}/PMG/API2
+	install -m 0644 PMG/Service/pmgdaemon.pm ${PERL5DIR}/PMG/Service
+	install -d -m 0755 ${DESTDIR}/usr/bin
+	install -m 0755 bin/pmgdaemon ${DESTDIR}/usr/bin
 
 .PHONY: upload
 upload: ${DEB}

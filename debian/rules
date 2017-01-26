@@ -5,5 +5,7 @@
 
 
 %:
-	dh $@
+	dh $@ --with=systemd
 
+override_dh_installinit:
+	dh_systemd_enable --name=pmgdaemon pmgdaemon.service
