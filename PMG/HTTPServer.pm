@@ -11,6 +11,7 @@ use PVE::Exception qw(raise_param_exc);
 use PVE::RESTEnvironment;
 
 use PMG::Ticket;
+use PMG::Cluster;
 use PMG::API2;
 
 use Data::Dumper;
@@ -167,19 +168,19 @@ sub rest_handler {
 sub check_cert_fingerprint {
     my ($self, $cert) = @_;
 
-    return PVE::Cluster::check_cert_fingerprint($cert);
+    return PMG::Cluster::check_cert_fingerprint($cert);
 }
 
 sub initialize_cert_cache {
     my ($self, $node) = @_;
 
-    PVE::Cluster::initialize_cert_cache($node);
+    PMG::Cluster::initialize_cert_cache($node);
 }
 
 sub remote_node_ip {
     my ($self, $node) = @_;
 
-    my $remip = PVE::Cluster::remote_node_ip($node);
+   my $remip = PMG::Cluster::remote_node_ip($node);
 
     die "unable to get remote IP address for node '$node'\n" if !$remip;
 

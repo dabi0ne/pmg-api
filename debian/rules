@@ -9,3 +9,8 @@
 
 override_dh_installinit:
 	dh_systemd_enable --name=pmgdaemon pmgdaemon.service
+	dh_systemd_enable --name=pmgproxy pmgproxy.service
+
+
+override_dh_fixperms:
+	dh_fixperms --exclude /var/log/pmgproxy

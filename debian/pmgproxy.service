@@ -1,0 +1,19 @@
+[Unit]
+Description=Proxmox Mail Gateway API
+ConditionPathExists=/usr/bin/pmgproxy
+Wants=pmgdaemon.service
+Wants=ssh.service
+Wants=remote-fs.target
+After=pmgdaemon.service
+After=ssh.service
+After=remote-fs.target
+
+[Service]
+ExecStart=/usr/bin/pmgproxy start
+ExecStop=/usr/bin/pmgproxy stop
+ExecReload=/usr/bin/pmgproxy restart
+PIDFile=/var/run/pmgproxy/pmgproxy.pid
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
