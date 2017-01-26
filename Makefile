@@ -27,6 +27,9 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 
 install: ${BTDATA} PMG/pmgcfg.pm
 	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
+	install -d -m 0755 ${DOCDIR}
+	# TODO: is there a better location ?
+	install -m 0644 favicon.ico ${DOCDIR}
 	install -d -m 0755 ${PERL5DIR}/PMG
 	install -d -m 0755 ${PERL5DIR}/PMG/API2
 	install -d -m 0755 ${PERL5DIR}/PMG/Service

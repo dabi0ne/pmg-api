@@ -90,9 +90,9 @@ sub init {
 	pages => {
 	    '/' => sub { get_index($self->{nodename}, @_) },
 	    # avoid authentication when accessing favicon
-#	    '/favicon.ico' => {
-#		file => '/usr/share/pve-manager/images/favicon.ico',
-#	    },
+	    '/favicon.ico' => {
+		file => '/usr/share/doc/proxmox-mailgateway-api/favicon.ico',
+	    },
 	},
 	dirs => $dirs,
     };
