@@ -14,7 +14,17 @@ REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy
 
-all: PMG/pmgcfg.pm
+LIBSOURCES =				\
+	PMG/pmgcfg.pm			\
+	PMG/Cluster.pm			\
+	PMG/HTTPServer.pm		\
+	PMG/Ticket.pm			\
+	PMG/AccessControl.pm		\
+	PMG/API2/Nodes.pm		\
+	PMG/API2/AccessControl.pm	\
+	PMG/API2.pm
+
+all: ${LIBSOURCES}
 
 .PHONY: deb
 deb ${DEB}:
@@ -32,26 +42,15 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	perl -I.. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
 	mv $@.tmp $@
 
-install: ${BTDATA} PMG/pmgcfg.pm $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES})
+install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES}
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
+	install -d -m 0755 ${DESTDIR}/usr/bin
 	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
 	install -d -m 0755 ${DOCDIR}
 	# TODO: is there a better location ?
 	install -m 0644 favicon.ico ${DOCDIR}
-	install -d -m 0755 ${PERL5DIR}/PMG
-	install -d -m 0755 ${PERL5DIR}/PMG/API2
-	install -d -m 0755 ${PERL5DIR}/PMG/Service
-	install -m 0644 PMG/pmgcfg.pm ${PERL5DIR}/PMG
-	install -m 0644 PMG/Cluster.pm ${PERL5DIR}/PMG
-	install -m 0644 PMG/API2.pm ${PERL5DIR}/PMG
-	install -m 0644 PMG/HTTPServer.pm ${PERL5DIR}/PMG
-	install -m 0644 PMG/Ticket.pm ${PERL5DIR}/PMG
-	install -m 0644 PMG/AccessControl.pm ${PERL5DIR}/PMG
-	install -m 0644 PMG/API2/Nodes.pm ${PERL5DIR}/PMG/API2
-	install -m 0644 PMG/API2/AccessControl.pm ${PERL5DIR}/PMG/API2
-	for i in ${SERVICES}; do install -m 0644 PMG/Service/$$i.pm ${PERL5DIR}/PMG/Service; done
-	install -m 0644 PMG/Service/pmgproxy.pm ${PERL5DIR}/PMG/Service
-	install -d -m 0755 ${DESTDIR}/usr/bin
+	for i in ${LIBSOURCES}; do install -D -m 0644 $$i ${PERL5DIR}/$$i; done
+	for i in ${SERVICES}; do install -D -m 0644 PMG/Service/$$i.pm ${PERL5DIR}/PMG/Service/$$i.pm; done
 	for i in ${SERVICES}; do install -m 0755 bin/$$i ${DESTDIR}/usr/bin; done
 	for i in ${SERVICES}; do install -m 0644 -D $$i.service-bash-completion ${BASHCOMPLDIR}/$$i; done
 
