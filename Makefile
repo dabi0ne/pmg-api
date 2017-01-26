@@ -8,6 +8,7 @@ DESTDIR=
 
 PERL5DIR=${DESTDIR}/usr/share/perl5
 DOCDIR=${DESTDIR}/usr/share/doc/${PACKAGE}
+BASHCOMPLDIR=${DESTDIR}/usr/share/bash-completion/completions/
 
 REPOID=`./repoid.pl .git`
 
@@ -27,7 +28,11 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	sed -e s/@VERSION@/${PKGVER}/ -e s/@PACKAGERELEASE@/${PKGREL}/ -e s/@PACKAGE@/${PACKAGE}/ -e s/@REPOID@/${REPOID}/ $< >$@.tmp
 	mv $@.tmp $@
 
-install: ${BTDATA} PMG/pmgcfg.pm $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES}))
+%.service-bash-completion:
+	perl -I.. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
+	mv $@.tmp $@
+
+install: ${BTDATA} PMG/pmgcfg.pm $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES})
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
 	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
 	install -d -m 0755 ${DOCDIR}
@@ -48,6 +53,8 @@ install: ${BTDATA} PMG/pmgcfg.pm $(addsuffix .pm, $(addprefix PMG/Service/, ${SE
 	install -m 0644 PMG/Service/pmgproxy.pm ${PERL5DIR}/PMG/Service
 	install -d -m 0755 ${DESTDIR}/usr/bin
 	for i in ${SERVICES}; do install -m 0755 bin/$$i ${DESTDIR}/usr/bin; done
+	for i in ${SERVICES}; do install -m 0644 -D $$i.service-bash-completion ${BASHCOMPLDIR}/$$i; done
+
 
 .PHONY: upload
 upload: ${DEB}
