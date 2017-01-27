@@ -136,7 +136,7 @@ sub get_index {
 	    }
 	}
 	my $ticket = PVE::APIServer::Formatter::extract_auth_cookie($cookie, $server->{cookie_name});
-	if (($username = PMG::Ticket::verify_ticket($ticket, 1))) {
+	if ($username = PMG::Ticket::verify_ticket($ticket)) {
 	    $token = PMG::Ticket::assemble_csrf_prevention_token($username);
 	}
     }
