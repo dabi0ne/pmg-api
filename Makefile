@@ -27,7 +27,7 @@ LIBSOURCES =				\
 all: ${LIBSOURCES}
 
 .PHONY: deb
-deb ${DEB}:
+deb ${DEB}: ${LIBSOURCES}
 	rm -rf build
 	rsync -a * build
 	cd build; dpkg-buildpackage -b -us -uc
@@ -63,7 +63,8 @@ upload: ${DEB}
 distclean: clean
 
 clean:
-	rm -rf ./build *.deb *.changes *.buildinfo PMG/pmgcfg.pm
+	rm -rf ./build *.deb *.changes *.buildinfo
+	if test -d .git; then  rm -f PMG/pmgcfg.pm; fi
 	find . -name '*~' -exec rm {} ';'
 
 .PHONY: dinstall
