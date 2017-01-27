@@ -44,6 +44,7 @@ sub add_dirs {
 }
 
 my $gui_base_dir = "/usr/share/javascript/proxmox-mailgateway-gui";
+my $fontawesome_dir = "/usr/share/fonts-font-awesome";
 
 sub init {
     my ($self) = @_;
@@ -62,6 +63,9 @@ sub init {
     add_dirs($dirs, '/pve2/images/' => "$gui_base_dir/images/");
     add_dirs($dirs, '/pve2/css/' => "$gui_base_dir/css/");
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
+    add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css");
+    add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts");
+
     #add_dirs($dirs, '/pve-docs/' => '/usr/share/pve-docs/');
     #add_dirs($dirs, '/novnc/' => '/usr/share/novnc-pve/');
 
