@@ -35,7 +35,7 @@ sub init {
 
     $self->{server_config} = {
 	title => 'PMG API Daemon',
-	cookie_name => 'PMG',
+	cookie_name => 'PMGAuthCookie',
 	keep_alive => 100,
 	max_conn => 500,
 	max_requests => 1000,

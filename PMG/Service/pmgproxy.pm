@@ -63,15 +63,15 @@ sub init {
     add_dirs($dirs, '/pve2/images/' => "$gui_base_dir/images/");
     add_dirs($dirs, '/pve2/css/' => "$gui_base_dir/css/");
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
-    add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css");
-    add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts");
+    add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css/");
+    add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts/");
 
     #add_dirs($dirs, '/pve-docs/' => '/usr/share/pve-docs/');
     #add_dirs($dirs, '/novnc/' => '/usr/share/novnc-pve/');
 
     $self->{server_config} = {
 	title => 'Proxmox Mail Gateway API',
-	cookie_name => 'PMG',
+	cookie_name => 'PMGAuthCookie',
 	keep_alive => 100,
 	max_conn => 500,
 	max_requests => 1000,
