@@ -19,7 +19,7 @@ use PVE::APIServer::AnyEvent;
 use PMG::HTTPServer;
 use PMG::API2;
 
-#use PMG::ExtJSIndex;
+use Template;
 
 use base qw(PVE::Daemon);
 
@@ -43,6 +43,8 @@ sub add_dirs {
     PVE::APIServer::AnyEvent::add_dirs($result_hash, $alias, $subdir);
 }
 
+my $gui_base_dir = "/usr/share/javascript/proxmox-mailgateway-gui";
+
 sub init {
     my ($self) = @_;
 
@@ -57,11 +59,10 @@ sub init {
     my $dirs = {};
 
     add_dirs($dirs, '/pve2/ext6/', '/usr/share/javascript/extjs/');
-    #add_dirs($dirs, '/pve2/images/' => '/usr/share/pve-manager/images/');
-    #add_dirs($dirs, '/pve2/css/' => '/usr/share/pve-manager/css/');
-    #add_dirs($dirs, '/pve2/js/' => '/usr/share/pve-manager/js/');
+    add_dirs($dirs, '/pve2/images/' => "$gui_base_dir/images/");
+    add_dirs($dirs, '/pve2/css/' => "$gui_base_dir/css/");
+    add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
     #add_dirs($dirs, '/pve-docs/' => '/usr/share/pve-docs/');
-    #add_dirs($dirs, '/vncterm/' => '/usr/share/vncterm/');
     #add_dirs($dirs, '/novnc/' => '/usr/share/novnc-pve/');
 
     $self->{server_config} = {
@@ -117,28 +118,6 @@ our $cmddef = {
     status => [ __PACKAGE__, 'status', [], undef, sub { print shift . "\n";} ],
 };
 
-# NOTE: Requests to those pages are not authenticated
-# so we must be very careful here
-my $root_page = <<__EOD__;
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Simple Demo Server</title>
-  </head>
-  <body>
-    <h1>Proxmox Mail Gateway API</h1>
-
-    You can browse the API <a href='/api2/html' >here</a>. Please sign
-    in with usrename <b>demo</b> and passwort <b>demo</b>.
-
-  </body>
-</html>
-__EOD__
- 
-
 sub get_index {
     my ($nodename, $server, $r, $args) = @_;
 
@@ -160,9 +139,24 @@ sub get_index {
 
     $username = '' if !$username;
 
-    #my $page = PMG::ExtJSIndex::get_index($lang, $username, $token, $args->{console}, $nodename, $server->{debug});
-    my $page = $root_page;
-    
+    my $config = {
+	INCLUDE_PATH => $gui_base_dir,
+    };
+
+    my $template = Template->new($config);
+    my $vars = {
+	lang => $lang,
+	debug => $server->{debug},
+	username => $username,
+	csrftoken => $token,
+	nodename => $nodename,
+    };
+
+    my $page = '';
+
+    $template->process("index.html", $vars, \$page) ||
+	die $template->error();
+
     my $headers = HTTP::Headers->new(Content_Type => "text/html; charset=utf-8");
     my $resp = HTTP::Response->new(200, "OK", $headers, $page);
 
