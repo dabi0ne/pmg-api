@@ -18,6 +18,7 @@ use PVE::APIServer::AnyEvent;
 
 use PMG::HTTPServer;
 use PMG::API2;
+use PMG::NoVncIndex; # fixme: use a template instead
 
 use Template;
 
@@ -65,9 +66,9 @@ sub init {
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
     add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css/");
     add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts/");
+    add_dirs($dirs, '/novnc/' => '/usr/share/novnc-pve/');
 
     #add_dirs($dirs, '/pve-docs/' => '/usr/share/pve-docs/');
-    #add_dirs($dirs, '/novnc/' => '/usr/share/novnc-pve/');
 
     $self->{server_config} = {
 	title => 'Proxmox Mail Gateway API',
@@ -150,19 +151,23 @@ sub get_index {
 	INCLUDE_PATH => $gui_base_dir,
     };
 
-    my $template = Template->new($config);
-    my $vars = {
-	lang => $lang,
-	debug => $server->{debug},
-	username => $username,
-	csrftoken => $token,
-	nodename => $nodename,
-    };
-
     my $page = '';
 
-    $template->process("index.html", $vars, \$page) ||
-	die $template->error();
+    if (defined($args->{console}) && $args->{novnc}) {
+	$page = PMG::NoVncIndex::get_index($lang, $username, $token, $args->{console}, $nodename);
+    } else {
+	my $template = Template->new($config);
+	my $vars = {
+	    lang => $lang,
+	    debug => $server->{debug},
+	    username => $username,
+	    csrftoken => $token,
+	    nodename => $nodename,
+	};
+
+	$template->process("index.html", $vars, \$page) ||
+	    die $template->error();
+    }
 
     my $headers = HTTP::Headers->new(Content_Type => "text/html; charset=utf-8");
     my $resp = HTTP::Response->new(200, "OK", $headers, $page);

@@ -16,6 +16,7 @@ SERVICES = pmgdaemon pmgproxy
 
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
+	PMG/NoVncIndex.pm		\
 	PMG/Cluster.pm			\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
