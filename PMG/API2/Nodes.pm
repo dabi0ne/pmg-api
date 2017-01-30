@@ -3,6 +3,8 @@ package PMG::API2::NodeInfo;
 use strict;
 use warnings;
 
+use Time::Local qw(timegm_nocheck);
+
 use PVE::INotify;
 use PVE::RESTHandler;
 use PVE::JSONSchema qw(get_standard_option);
@@ -37,6 +39,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'time' },
 	    { name => 'vncshell' },
 	];
 
@@ -171,6 +174,78 @@ __PACKAGE__->register_method({
 	my $port = $param->{port};
 
 	return { port => $port };
+    }});
+
+__PACKAGE__->register_method({
+    name => 'time',
+    path => 'time',
+    method => 'GET',
+    description => "Read server time and time zone settings.",
+    proxyto => 'node',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => "object",
+	additionalProperties => 0,
+	properties => {
+	    timezone => {
+		description => "Time zone",
+		type => 'string',
+	    },
+	    time => {
+		description => "Seconds since 1970-01-01 00:00:00 UTC.",
+		type => 'integer',
+		minimum => 1297163644,
+	    },
+	    localtime => {
+		description => "Seconds since 1970-01-01 00:00:00 (local time)",
+		type => 'integer',
+		minimum => 1297163644,
+	    },
+        },
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $ctime = time();
+	my $ltime = timegm_nocheck(localtime($ctime));
+	my $res = {
+	    timezone => PVE::INotify::read_file('timezone'),
+	    time => time(),
+	    localtime => $ltime,
+	};
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'set_timezone',
+    path => 'time',
+    method => 'PUT',
+    description => "Set time zone.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    timezone => {
+		description => "Time zone. The file '/usr/share/zoneinfo/zone.tab' contains the list of valid names.",
+		type => 'string',
+	    },
+	},
+    },
+    returns => { type => "null" },
+    code => sub {
+	my ($param) = @_;
+
+	PVE::INotify::write_file('timezone', $param->{timezone});
+
+	return undef;
     }});
 
 
