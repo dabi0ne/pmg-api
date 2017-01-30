@@ -98,6 +98,9 @@ sub init {
 	    '/favicon.ico' => {
 		file => '/usr/share/doc/proxmox-mailgateway-api/favicon.ico',
 	    },
+	    '/proxmoxlib.js' => {
+		file => '/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js',
+	    },
 	},
 	dirs => $dirs,
     };
