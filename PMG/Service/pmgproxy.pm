@@ -159,7 +159,7 @@ sub get_index {
 	my $template = Template->new($config);
 	my $vars = {
 	    lang => $lang,
-	    debug => $server->{debug},
+	    debug => $args->{debug} || $server->{debug},
 	    username => $username,
 	    csrftoken => $token,
 	    nodename => $nodename,
