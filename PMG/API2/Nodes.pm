@@ -12,8 +12,14 @@ use PVE::RESTEnvironment;
 use PVE::SafeSyslog;
 
 use PMG::Ticket;
+use PMG::API2::Tasks;
 
 use base qw(PVE::RESTHandler);
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Tasks",
+    path => 'tasks',
+});
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -39,6 +45,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'tasks' },
 	    { name => 'time' },
 	    { name => 'vncshell' },
 	];
@@ -50,6 +57,7 @@ __PACKAGE__->register_method ({
     name => 'vncshell',
     path => 'vncshell',
     method => 'POST',
+    protected => 1,
     description => "Creates a VNC Shell proxy.",
     parameters => {
     	additionalProperties => 0,

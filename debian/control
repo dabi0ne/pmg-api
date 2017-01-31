@@ -8,6 +8,6 @@ Homepage: http://www.proxmox.com
 
 Package: proxmox-mailgateway-api
 Architecture: all
-Depends: ${perl:Depends}, libpve-common-perl, libpve-http-server-perl, libauthen-pam-perl, proxmox-mailgateway-gui, libtemplate-perl, fonts-font-awesome, novnc-pve
+Depends: ${perl:Depends}, libpve-common-perl, libpve-http-server-perl, libauthen-pam-perl, proxmox-mailgateway-gui, libtemplate-perl, fonts-font-awesome, novnc-pve, libfile-readbackwards-perl
 Description: Proxmox Mailgateway API Server Implementation
  This implements a REST API to configure Proxmox Mailgateway.
