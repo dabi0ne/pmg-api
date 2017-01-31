@@ -14,8 +14,14 @@ use PVE::SafeSyslog;
 use PMG::Ticket;
 use PMG::API2::Tasks;
 use PMG::API2::Services;
+use PMG::API2::Network;
 
 use base qw(PVE::RESTHandler);
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Network",
+    path => 'network',
+});
 
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Tasks",
