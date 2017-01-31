@@ -34,6 +34,10 @@ __PACKAGE__->register_method({
 		minimum => 0,
 		optional => 1,
 	    },
+	    userfilter => {
+		type => 'string',
+		optional => 1,
+	    },
 	    errors => {
 		type => 'boolean',
 		optional => 1,
@@ -62,6 +66,7 @@ __PACKAGE__->register_method({
 	my $node = $param->{node};
 	my $start = $param->{start} || 0;
 	my $limit = $param->{limit} || 50;
+	my $userfilter = $param->{userfilter};
 	my $errors = $param->{errors};
 
 	my $count = 0;
@@ -73,6 +78,7 @@ __PACKAGE__->register_method({
 		my $endtime = $3;
 		my $status = $5;
 		if ((my $task = PVE::Tools::upid_decode($upid, 1))) {
+		    return if $userfilter && $task->{user} !~ m/\Q$userfilter\E/i;
 		    return if $errors && $status && $status eq 'OK';
 		    return if $count++ < $start;
 		    return if $limit <= 0;
