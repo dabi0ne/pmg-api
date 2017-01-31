@@ -52,12 +52,77 @@ __PACKAGE__->register_method ({
 
 	my $result = [
 	    { name => 'services' },
+	    { name => 'syslog' },
 	    { name => 'tasks' },
 	    { name => 'time' },
 	    { name => 'vncshell' },
 	];
 
 	return $result;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'syslog',
+    path => 'syslog',
+    method => 'GET',
+    description => "Read system log",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    start => {
+		type => 'integer',
+		minimum => 0,
+		optional => 1,
+	    },
+	    limit => {
+		type => 'integer',
+		minimum => 0,
+		optional => 1,
+	    },
+	    since => {
+		type=> 'string',
+		pattern => '^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$',
+		description => "Display all log since this date-time string.",
+		optional => 1,
+	    },
+	    'until' => {
+		type=> 'string',
+		pattern => '^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$',
+		description => "Display all log until this date-time string.",
+		optional => 1,
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		n => {
+		  description=>  "Line number",
+		  type=> 'integer',
+		},
+		t => {
+		  description=>  "Line text",
+		  type => 'string',
+		}
+	    }
+	}
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PVE::RESTEnvironment::get();
+
+	my ($count, $lines) = PVE::Tools::dump_journal($param->{start}, $param->{limit},
+						       $param->{since}, $param->{'until'});
+
+	$restenv->set_result_attrib('total', $count);
+
+	return $lines;
     }});
 
 __PACKAGE__->register_method ({
