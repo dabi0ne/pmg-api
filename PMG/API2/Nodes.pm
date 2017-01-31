@@ -13,12 +13,18 @@ use PVE::SafeSyslog;
 
 use PMG::Ticket;
 use PMG::API2::Tasks;
+use PMG::API2::Services;
 
 use base qw(PVE::RESTHandler);
 
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Tasks",
     path => 'tasks',
+});
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Services",
+    path => 'services',
 });
 
 __PACKAGE__->register_method ({
@@ -45,6 +51,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'services' },
 	    { name => 'tasks' },
 	    { name => 'time' },
 	    { name => 'vncshell' },

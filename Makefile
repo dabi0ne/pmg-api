@@ -21,6 +21,7 @@ LIBSOURCES =				\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
+	PMG/API2/Services.pm		\
 	PMG/API2/Tasks.pm		\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/AccessControl.pm	\
