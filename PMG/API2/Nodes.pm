@@ -263,6 +263,94 @@ __PACKAGE__->register_method({
     }});
 
 __PACKAGE__->register_method({
+    name => 'dns',
+    path => 'dns',
+    method => 'GET',
+    description => "Read DNS settings.",
+    proxyto => 'node',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => "object",
+	additionalProperties => 0,
+	properties => {
+	    search => {
+		description => "Search domain for host-name lookup.",
+		type => 'string',
+		optional => 1,
+	    },
+	    dns1 => {
+		description => 'First name server IP address.',
+		type => 'string',
+		optional => 1,
+	    },
+	    dns2 => {
+		description => 'Second name server IP address.',
+		type => 'string',
+		optional => 1,
+	    },
+	    dns3 => {
+		description => 'Third name server IP address.',
+		type => 'string',
+		optional => 1,
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $res = PVE::INotify::read_file('resolvconf');
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'update_dns',
+    path => 'dns',
+    method => 'PUT',
+    description => "Write DNS settings.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    search => {
+		description => "Search domain for host-name lookup.",
+		type => 'string',
+	    },
+	    dns1 => {
+		description => 'First name server IP address.',
+		type => 'string', format => 'ip',
+		optional => 1,
+	    },
+	    dns2 => {
+		description => 'Second name server IP address.',
+		type => 'string', format => 'ip',
+		optional => 1,
+	    },
+	    dns3 => {
+		description => 'Third name server IP address.',
+		type => 'string', format => 'ip',
+		optional => 1,
+	    },
+	},
+    },
+    returns => { type => "null" },
+    code => sub {
+	my ($param) = @_;
+
+	PVE::INotify::update_file('resolvconf', $param);
+
+	return undef;
+    }});
+
+
+__PACKAGE__->register_method({
     name => 'time',
     path => 'time',
     method => 'GET',
