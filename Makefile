@@ -25,6 +25,7 @@ LIBSOURCES =				\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
+	PMG/DBTools.pm			\
 	PMG/CLI/proxdb.pm		\
 	${CLI_CLASSES} 			\
 	PMG/API2/Network.pm             \

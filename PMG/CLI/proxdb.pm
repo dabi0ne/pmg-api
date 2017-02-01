@@ -8,6 +8,8 @@ use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
 use PVE::INotify;
 
+use PMG::DBTools;
+
 use base qw(PVE::CLIHandler);
 
 my $nodename = PVE::INotify::nodename();
@@ -48,9 +50,12 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
+	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb"); # raises error if db not exists
+	$dbh->disconnect();
+
 	syslog('info', "delete rule database");
 
-	print "DELETE\n";
+	PMG::DBTools::delete_ruledb("Proxmox_ruledb");
 
 	return undef;
     }});
@@ -93,6 +98,8 @@ __PACKAGE__->register_method ({
 	
 	print "INIT\n";
 	print Dumper($param);
+
+	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
 
 	return undef;
     }});
