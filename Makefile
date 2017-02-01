@@ -13,6 +13,10 @@ BASHCOMPLDIR=${DESTDIR}/usr/share/bash-completion/completions/
 REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy
+CLITOOLS = proxdb
+
+CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
+CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS})
 
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
@@ -21,17 +25,19 @@ LIBSOURCES =				\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
-	PMG/API2/Network.pm		\
+	PMG/CLI/proxdb.pm		\
+	${CLI_CLASSES} 			\
+	PMG/API2/Network.pm             \
 	PMG/API2/Services.pm		\
 	PMG/API2/Tasks.pm		\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/AccessControl.pm	\
 	PMG/API2.pm
 
-all: ${LIBSOURCES}
+all: ${LIBSOURCES} ${CLI_BINARIES}
 
 .PHONY: deb
-deb ${DEB}: ${LIBSOURCES}
+deb ${DEB}: ${LIBSOURCES} ${CLI_BINARIES}
 	rm -rf build
 	rsync -a * build
 	cd build; dpkg-buildpackage -b -us -uc
@@ -42,12 +48,17 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	sed -e s/@VERSION@/${PKGVER}/ -e s/@PACKAGERELEASE@/${PKGREL}/ -e s/@PACKAGE@/${PACKAGE}/ -e s/@REPOID@/${REPOID}/ $< >$@.tmp
 	mv $@.tmp $@
 
-%.service-bash-completion:
-	perl -I.. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
+%.bash-completion:
+	perl -I. -T -e "use PMG::CLI::$*; PMG::CLI::$*->generate_bash_completions();" >$@.tmp
 	mv $@.tmp $@
 
-install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES}
+%.service-bash-completion:
+	perl -I. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
+	mv $@.tmp $@
+
+install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS})
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
+	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
 	install -d -m 0755 ${DESTDIR}/usr/bin
 	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
 	install -d -m 0755 ${DOCDIR}
@@ -57,7 +68,9 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 	for i in ${SERVICES}; do install -D -m 0644 PMG/Service/$$i.pm ${PERL5DIR}/PMG/Service/$$i.pm; done
 	for i in ${SERVICES}; do install -m 0755 bin/$$i ${DESTDIR}/usr/bin; done
 	for i in ${SERVICES}; do install -m 0644 -D $$i.service-bash-completion ${BASHCOMPLDIR}/$$i; done
-
+	for i in ${CLITOOLS}; do install -D -m 0644 PMG/CLI/$$i.pm ${PERL5DIR}/PMG/CLI/$$i.pm; done
+	for i in ${CLITOOLS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/bin/$$i; done
+	for i in ${CLITOOLS}; do install -D -m 0644 $$i.bash-completion ${BASHCOMPLDIR}/$$i; done
 
 .PHONY: upload
 upload: ${DEB}
@@ -67,7 +80,7 @@ upload: ${DEB}
 distclean: clean
 
 clean:
-	rm -rf ./build *.deb *.changes *.buildinfo
+	rm -rf ./build *.deb *.changes *.buildinfo *.bash-completion *.service-bash-completion
 	if test -d .git; then  rm -f PMG/pmgcfg.pm; fi
 	find . -name '*~' -exec rm {} ';'
 
