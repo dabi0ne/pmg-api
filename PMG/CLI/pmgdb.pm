@@ -1,4 +1,4 @@
-package PMG::CLI::proxdb;
+package PMG::CLI::pmgdb;
 
 use strict;
 use warnings;

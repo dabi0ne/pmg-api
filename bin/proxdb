@@ -1,8 +1,0 @@
-#!/usr/bin/perl -T
-
-use strict;
-use warnings;
-
-use PMG::CLI::proxdb;
-
-PMG::CLI::proxdb->run_cli_handler();

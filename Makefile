@@ -13,7 +13,7 @@ BASHCOMPLDIR=${DESTDIR}/usr/share/bash-completion/completions/
 REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy
-CLITOOLS = proxdb
+CLITOOLS = pmgdb
 
 CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS})
@@ -26,7 +26,7 @@ LIBSOURCES =				\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
 	PMG/DBTools.pm			\
-	PMG/CLI/proxdb.pm		\
+	PMG/CLI/pmgdb.pm		\
 	${CLI_CLASSES} 			\
 	PMG/API2/Network.pm             \
 	PMG/API2/Services.pm		\
