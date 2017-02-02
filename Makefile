@@ -26,6 +26,18 @@ LIBSOURCES =				\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
 	PMG/DBTools.pm			\
+	PMG/RuleDB/Group.pm		\
+	PMG/RuleDB/Rule.pm		\
+	PMG/RuleDB/Object.pm		\
+	PMG/RuleDB/Quarantine.pm	\
+	PMG/RuleDB/WhoRegex.pm		\
+	PMG/RuleDB/ReceiverRegex.pm	\
+	PMG/RuleDB/EMail.pm		\
+	PMG/RuleDB/Receiver.pm		\
+	PMG/RuleDB/Domain.pm		\
+	PMG/RuleDB/ReceiverDomain.pm	\
+	PMG/RuleDB/TimeFrame.pm		\
+	PMG/RuleDB.pm			\
 	PMG/CLI/pmgdb.pm		\
 	${CLI_CLASSES} 			\
 	PMG/API2/Network.pm             \

@@ -98,19 +98,19 @@ __PACKAGE__->register_method ({
 	    print "Initialize rule database\n";
 
 	    my $dbh = PMG::DBTools::create_ruledb ($dbname);
-	    #$ruledb = Proxmox::RuleDB->new ($dbh);
-	    #Proxmox::Utils::init_ruledb ($ruledb);
+	    $ruledb = PMG::RuleDB->new($dbh);
+	    PMG::DBTools::init_ruledb($ruledb);
 
 	    $dbh->disconnect();
 
 	} else {
 
 	    my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
-	    #$ruledb = Proxmox::RuleDB->new ($dbh);
+	    $ruledb = Proxmox::RuleDB->new($dbh);
 
-	    #print "Analyzing/Upgrading existing Databases...";
+	    print "Analyzing/Upgrading existing Databases...";
 	    #Proxmox::Utils::upgradedb ($ruledb);
-	    #print "done\n";
+	    print "done\n";
 
 	    # reset and update statistic databases
 	    if ($param->{statistics}) {
