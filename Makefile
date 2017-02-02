@@ -37,6 +37,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/Domain.pm		\
 	PMG/RuleDB/ReceiverDomain.pm	\
 	PMG/RuleDB/TimeFrame.pm		\
+	PMG/RuleDB/MatchField.pm	\
 	PMG/RuleDB.pm			\
 	PMG/CLI/pmgdb.pm		\
 	${CLI_CLASSES} 			\
