@@ -14,12 +14,6 @@ use base qw(PVE::CLIHandler);
 
 my $nodename = PVE::INotify::nodename();
 
-my $upid_exit = sub {
-    my $upid = shift;
-    my $status = PVE::Tools::upid_read_status($upid);
-    exit($status eq 'OK' ? 0 : -1);
-};
-
 __PACKAGE__->register_method ({
     name => 'dump',
     path => 'dump',
@@ -50,12 +44,15 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb"); # raises error if db not exists
-	$dbh->disconnect();
+	my $list = PMG::DBTools::database_list();
+
+	my $dbname = "Proxmox_ruledb";
+
+	die "Database '$dbname' does not exist\n" if !$list->{$dbname};
 
 	syslog('info', "delete rule database");
 
-	PMG::DBTools::delete_ruledb("Proxmox_ruledb");
+	PMG::DBTools::delete_ruledb($dbname);
 
 	return undef;
     }});
@@ -69,16 +66,9 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    init => {
+	    force => {
 		type => 'boolean',
-		description => "Initialize the database.",
-		optional => 1,
-		default => 0,
-	    },
-	    fail => {
-		type => 'boolean',
-		description => "Fail if databse already exists. We normally try to update and reinitialize the existing database.",
-		requires => 'init',
+		description => "Delete existing database.",
 		optional => 1,
 		default => 0,
 	    },
@@ -94,12 +84,44 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	syslog('info', "init rule database");
-	
-	print "INIT\n";
-	print Dumper($param);
+	my $list = PMG::DBTools::database_list();
 
-	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
+	my $dbname = "Proxmox_ruledb";
+
+	if (!$list->{$dbname} || $param->{force}) {
+
+	    if ($list->{$dbname}) {
+		print "Destroy existing rule database\n";
+		PMG::DBTools::delete_ruledb($dbname);
+	    }
+
+	    print "Initialize rule database\n";
+
+	    my $dbh = PMG::DBTools::create_ruledb ($dbname);
+	    #$ruledb = Proxmox::RuleDB->new ($dbh);
+	    #Proxmox::Utils::init_ruledb ($ruledb);
+
+	    $dbh->disconnect();
+
+	} else {
+
+	    my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
+	    #$ruledb = Proxmox::RuleDB->new ($dbh);
+
+	    #print "Analyzing/Upgrading existing Databases...";
+	    #Proxmox::Utils::upgradedb ($ruledb);
+	    #print "done\n";
+
+	    # reset and update statistic databases
+	    if ($param->{statistics}) {
+		print "Generating Proxmox Statistic Databases... ";
+		#Proxmox::Statistic::clear_stats($dbh);
+		#Proxmox::Statistic::update_stats($dbh, $cinfo);
+		print "done\n";
+	    }
+
+	    $dbh->disconnect();
+	}
 
 	return undef;
     }});
