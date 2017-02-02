@@ -1,12 +1,12 @@
-package PMG::RuleDB::Quarantine;
+package PMG::RuleDB::Accept;
 
 use strict;
 use warnings;
 use Carp;
 use DBI;
-use Digest::SHA;
 
 use PVE::SafeSyslog;
+use Digest::SHA;
 
 use PMG::Utils;
 use PMG::ModGroup;
@@ -15,7 +15,7 @@ use PMG::RuleDB::Object;
 use base qw(PMG::RuleDB::Object);
 
 sub otype {
-    return 4006;
+    return 4000;
 }
 
 sub oclass {
@@ -23,16 +23,15 @@ sub oclass {
 }
 
 sub otype_text {
-    return 'Quarantine';
-}
-
-sub oinfo {
-    return 'Move to quarantine.';
+    return 'Accept';
 }
 
 sub oicon {
-    # fixme:
     return 'accept.gif';
+}
+
+sub oinfo {
+    return 'Accept mail for delivery.';
 }
 
 sub oisedit {
@@ -44,7 +43,7 @@ sub final {
 }
 
 sub priority {
-    return 90;
+    return 99;
 }
 
 sub new {
@@ -53,7 +52,7 @@ sub new {
     my $class = ref($type) || $type;
  
     my $self = $class->SUPER::new(otype(), $ogroup);
-
+   
     return $self;
 }
 
@@ -75,19 +74,20 @@ sub save {
 
     defined($self->{ogroup}) || return undef;
 
-    if (defined ($self->{id})) {
+    if (defined($self->{id})) {
 	# update
 	
 	# nothing to update
 
     } else {
 	# insert
-	my $sth = $ruledb->{dbh}->prepare (
+
+	my $sth = $ruledb->{dbh}->prepare(
 	    "INSERT INTO Object (Objectgroup_ID, ObjectType) VALUES (?, ?);");
 
 	$sth->execute($self->ogroup, $self->otype);
-
-	$self->{id} = PMG::Utils::lastid($ruledb->{dbh}, 'object_id_seq'); 
+    
+	$self->{id} = PMG::Utils::lastid($ruledb->{dbh}, 'object_id_seq');
     }
 	
     return $self->{id};
@@ -95,8 +95,8 @@ sub save {
 
 sub execute {
     my ($self, $queue, $ruledb, $mod_group, $targets, 
-	$msginfo, $vars, $marks, $ldap) = @_;
-    
+	$msginfo, $vars, $marks) = @_;
+
     my $subgroups = $mod_group->subgroups($targets, 1);
 
     foreach my $ta (@$subgroups) {
@@ -104,24 +104,34 @@ sub execute {
 
 	PMG::Utils::remove_marks($entity);
 
-	if ($queue->{vinfo}) {
-	    if (my $qid = $queue->quarantine_mail($ruledb, 'V', $entity, $tg, $msginfo, $vars, $ldap)) {
+	if ($msginfo->{testmode}) {
+	    my $fh = $msginfo->{test_fh};
+	    print $fh "accept from: $msginfo->{sender}\n";
+	    printf $fh "accept   to: %s\n", join (',', @$tg);
+	    print $fh "accept content:\n";
 
-		foreach (@$tg) {
-		    syslog ('info', "$queue->{logid}: moved mail for <%s> to virus quarantine - $qid", $_);
-		}
-
-		$queue->set_status ($tg, 'delivered');
-	    }
-
+	    $entity->print($fh);
+	    print $fh "accept end\n";
+	    $queue->set_status($tg, 'delivered');
 	} else {
-	    if (my $qid = $queue->quarantine_mail($ruledb, 'S', $entity, $tg, $msginfo, $vars, $ldap)) {
-
+	    my ($qid, $code, $mess) = PMG::Utils::reinject_mail(
+		$entity, $msginfo->{sender}, $tg,
+		$msginfo->{xforward}, $msginfo->{fqdn});
+	    if ($qid) {
 		foreach (@$tg) {
-		    syslog ('info', "$queue->{logid}: moved mail for <%s> to spam quarantine - $qid", $_);
+		    syslog('info', "%s: accept mail to <%s> (%s)", $queue->{logid}, $_, $qid);
 		}
-
-		$queue->set_status($tg, 'delivered');
+		$queue->set_status ($tg, 'delivered', $qid);
+	    } else {
+		foreach (@$tg) {
+		    syslog('err', "%s: reinject mail to <%s> failed", $queue->{logid}, $_);
+		}
+		if ($code) {
+		    my $resp = substr($code, 0, 1);
+		    if ($resp eq '4' || $resp eq '5') {
+			$queue->set_status($tg, 'error', $code, $mess);
+		    }
+		}
 	    }
 	}
     }
@@ -132,7 +142,12 @@ sub execute {
 sub short_desc {
     my $self = shift;
 
-    return oinfo();
+    return "";
 }
 
 1;
+__END__
+
+=head1 PMG::RuleDB::Accept
+
+Accept a message.

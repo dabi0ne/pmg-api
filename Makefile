@@ -20,6 +20,8 @@ CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS})
 
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
+	PMG/Utils.pm			\
+	PMG/SMTPPrinter.pm		\
 	PMG/NoVncIndex.pm		\
 	PMG/Cluster.pm			\
 	PMG/HTTPServer.pm		\
@@ -39,7 +41,13 @@ LIBSOURCES =				\
 	PMG/RuleDB/TimeFrame.pm		\
 	PMG/RuleDB/MatchField.pm	\
 	PMG/RuleDB/ContentTypeFilter.pm	\
+	PMG/RuleDB/Spam.pm		\
 	PMG/RuleDB/Virus.pm		\
+	PMG/RuleDB/Remove.pm		\
+	PMG/RuleDB/Notify.pm		\
+	PMG/RuleDB/Disclaimer.pm	\
+	PMG/RuleDB/Accept.pm		\
+	PMG/RuleDB/Block.pm		\
 	PMG/RuleDB.pm			\
 	PMG/CLI/pmgdb.pm		\
 	${CLI_CLASSES} 			\

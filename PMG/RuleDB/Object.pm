@@ -5,6 +5,8 @@ use warnings;
 use Carp;
 use DBI;
 
+use PMG::Utils;
+
 sub new {
     my ($type, $otype, $ogroup) = @_;
 

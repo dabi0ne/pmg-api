@@ -6,6 +6,7 @@ use Carp;
 use DBI;
 use Digest::SHA;
 
+use PMG::Utils;
 use PMG::RuleDB::Object;
 
 use base qw(Proxmox::RuleDB::Object);
@@ -108,7 +109,7 @@ sub save {
 
 	$sth->execute($self->ogroup, $self->otype, $v);
 
-	$self->{id} = PMG::RuleDB::lastid($ruledb->{dbh}, 'object_id_seq');
+	$self->{id} = PMG::Utils::lastid($ruledb->{dbh}, 'object_id_seq');
     }
 
     return $self->{id};

@@ -300,7 +300,7 @@ my $userprefs_ctablecmd =  <<__EOD;
     CREATE INDEX UserPrefs_MTime_Index ON UserPrefs (MTime);
 
 __EOD
-    
+
 sub cond_create_dbtable {
     my ($dbh, $name, $ctablecmd) = @_;
 
@@ -311,13 +311,13 @@ sub cond_create_dbtable {
 	    "WHERE tablename = lower ('$name')";
 
 	my $sth = $dbh->prepare ($cmd);
-    
+
 	$sth->execute();
 
 	if (!(my $ref = $sth->fetchrow_hashref())) {
 	    $dbh->do ($ctablecmd);
 	}
-	
+
 	$sth->finish();
 
 	$dbh->commit;
@@ -454,7 +454,7 @@ sub upgradedb {
 
     $dbh->do ($dbfunction_merge_greylist);
 
-    # make sure we do not use slow sequential scans when upgraing 
+    # make sure we do not use slow sequential scans when upgraing
     # database (before analyze can gather statistics)
     $dbh->do("set enable_seqscan = false");
 
@@ -464,7 +464,7 @@ sub upgradedb {
     cond_create_dbtable ($dbh, 'CMailStore', $cmailstore_ctablecmd);
     cond_create_dbtable ($dbh, 'UserPrefs', $userprefs_ctablecmd);
     cond_create_dbtable ($dbh, 'CGreylist', $cgreylist_ctablecmd);
-    cond_create_dbtable ($dbh, 'CStatistic', $cstatistic_ctablecmd); 
+    cond_create_dbtable ($dbh, 'CStatistic', $cstatistic_ctablecmd);
     cond_create_dbtable ($dbh, 'ClusterInfo', $clusterinfo_ctablecmd);
     cond_create_dbtable ($dbh, 'VirusInfo', $virusinfo_stat_ctablecmd);
 
@@ -486,7 +486,7 @@ sub upgradedb {
     eval {
 	$dbh->do ("UPDATE Object " .
 		  "SET value = 'content-type:application/java-vm' ".
-		  "WHERE objecttype = 3003 " . 
+		  "WHERE objecttype = 3003 " .
 		  "AND value = 'content-type:application/x-java-vm';");
     };
 
@@ -524,7 +524,7 @@ sub init_ruledb {
     my $obj =  PMG::RuleDB::EMail->new ('nomail@fromthisdomain.com');
     my $blacklist = $ruledb->create_group_with_obj(
 	$obj, 'Blacklist', 'Global blacklist');
-   
+
     # Whitelist
     $obj = PMG::RuleDB::EMail->new('mail@fromthisdomain.com');
     my $whitelist = $ruledb->create_group_with_obj(
@@ -556,19 +556,19 @@ sub init_ruledb {
     $obj = PMG::RuleDB::ContentTypeFilter->new('application/vnd\.ms-excel');
     my $office_content = $ruledb->create_group_with_obj(
 	$obj, 'Office Files', 'Common Office Files');
-    
+
     $obj = PMG::RuleDB::ContentTypeFilter->new(
 	'application/vnd\.ms-powerpoint');
-    
+
     $ruledb->group_add_object($office_content, $obj);
-    
+
     $obj = PMG::RuleDB::ContentTypeFilter->new('application/msword');
     $ruledb->group_add_object ($office_content, $obj);
-    
+
     $obj = PMG::RuleDB::ContentTypeFilter->new(
 	'application/vnd\.openxmlformats-officedocument\..*');
     $ruledb->group_add_object($office_content, $obj);
-    
+
     $obj = PMG::RuleDB::ContentTypeFilter->new(
 	'application/vnd\.oasis\.opendocument\..*');
     $ruledb->group_add_object($office_content, $obj);
@@ -576,17 +576,17 @@ sub init_ruledb {
     $obj = PMG::RuleDB::ContentTypeFilter->new(
 	'application/vnd\.stardivision\..*');
     $ruledb->group_add_object($office_content, $obj);
-    
+
     $obj = PMG::RuleDB::ContentTypeFilter->new(
 	'application/vnd\.sun\.xml\..*');
     $ruledb->group_add_object($office_content, $obj);
-    
+
     # Dangerous Content
     $obj = PMG::RuleDB::ContentTypeFilter->new(
 	'application/x-ms-dos-executable');
     my $exe_content = $ruledb->create_group_with_obj(
 	$obj, 'Dangerous Content', 'executable files and partial messages');
-    
+
     $obj = PMG::RuleDB::ContentTypeFilter->new('application/x-java');
     $ruledb->group_add_object($exe_content, $obj);
     $obj = PMG::RuleDB::ContentTypeFilter->new('application/javascript');
@@ -601,95 +601,81 @@ sub init_ruledb {
     $ruledb->group_add_object($exe_content, $obj);
 
     # Virus
-    $obj = Proxmox::RuleDB::Virus->new ();
-    my $virus = $ruledb->create_group_with_obj ($obj, 'Virus', 
-						'Matches virus infected mail');
+    $obj = PMG::RuleDB::Virus->new();
+    my $virus = $ruledb->create_group_with_obj(
+	$obj, 'Virus', 'Matches virus infected mail');
+
     # WHAT Objects
 
     # Spam
-    $obj = Proxmox::RuleDB::Spam->new (3);
-    my $spam3 = $ruledb->create_group_with_obj ($obj, 'Spam (Level 3)',
-						'Matches possible spam mail');
-    $obj = Proxmox::RuleDB::Spam->new (5);
-    my $spam5 = $ruledb->create_group_with_obj ($obj, 'Spam (Level 5)',
-						'Matches possible spam mail');
-    $obj = Proxmox::RuleDB::Spam->new (10);
-    my $spam10 = $ruledb->create_group_with_obj ($obj, 'Spam (Level 10)',
-						 'Matches possible spam mail');
+    $obj = PMG::RuleDB::Spam->new(3);
+    my $spam3 = $ruledb->create_group_with_obj(
+	$obj, 'Spam (Level 3)', 'Matches possible spam mail');
     
-
-#    $obj = Proxmox::RuleDB::MatchField->new ('content-type', 'application/pdf');
-#    $ct_filter = $ruledb->create_group_with_obj ($obj, 'Content Type Filter', 
-#						 'Content Type Filter');
-
+    $obj = PMG::RuleDB::Spam->new(5);
+    my $spam5 = $ruledb->create_group_with_obj(
+	$obj, 'Spam (Level 5)', 'Matches possible spam mail');
+    
+    $obj = PMG::RuleDB::Spam->new(10);
+    my $spam10 = $ruledb->create_group_with_obj(
+	$obj, 'Spam (Level 10)', 'Matches possible spam mail');
 
     # ACTIONS
 
-    # Mark Spam 
-    $obj = Proxmox::RuleDB::ModField->new ('X-SPAM-LEVEL', '__SPAM_INFO__');
-    my $mod_spam_level = $ruledb->create_group_with_obj ($obj, 'Modify Spam Level', 
-							 'Mark mail as spam by adding a header tag.');
+    # Mark Spam
+    $obj = PMG::RuleDB::ModField->new('X-SPAM-LEVEL', '__SPAM_INFO__');
+    my $mod_spam_level = $ruledb->create_group_with_obj(
+	$obj, 'Modify Spam Level', 
+	'Mark mail as spam by adding a header tag.');
 
     # Mark Spam
-    $obj = Proxmox::RuleDB::ModField->new ('subject', 'SPAM: __SUBJECT__');
-    my $mod_spam_subject = $ruledb->create_group_with_obj ($obj, 'Modify Spam Subject', 
-							   'Mark mail as spam by modifying the subject.');
+    $obj = PMG::RuleDB::ModField->new('subject', 'SPAM: __SUBJECT__');
+    my $mod_spam_subject = $ruledb->create_group_with_obj(
+	$obj, 'Modify Spam Subject', 
+	'Mark mail as spam by modifying the subject.');
+    
     # Remove matching attachments
-    $obj = Proxmox::RuleDB::Remove->new (0);
-    my $remove = $ruledb->create_group_with_obj ($obj, 'Remove attachments', 
-						 'Remove matching attachments');
+    $obj = PMG::RuleDB::Remove->new(0);
+    my $remove = $ruledb->create_group_with_obj(
+	$obj, 'Remove attachments', 'Remove matching attachments');
+    
     # Remove all attachments
-    $obj = Proxmox::RuleDB::Remove->new (1);
-    my $remove_all = $ruledb->create_group_with_obj ($obj, 
-						     'Remove all attachments', 
-						     'Remove all attachments');
+    $obj = PMG::RuleDB::Remove->new(1);
+    my $remove_all = $ruledb->create_group_with_obj(
+	$obj, 'Remove all attachments', 'Remove all attachments');
 
     # Accept
-    $obj = Proxmox::RuleDB::Accept->new ();
-    my $accept = $ruledb->create_group_with_obj ($obj, 'Accept', 'Accept mail for Delivery');
+    $obj = PMG::RuleDB::Accept->new();
+    my $accept = $ruledb->create_group_with_obj(
+	$obj, 'Accept', 'Accept mail for Delivery');
 
     # Block
-    $obj = Proxmox::RuleDB::Block->new ();
-    my $block = $ruledb->create_group_with_obj ($obj, 'Block', 'Block mail');
+    $obj = PMG::RuleDB::Block->new ();
+    my $block = $ruledb->create_group_with_obj($obj, 'Block', 'Block mail');
 
     # Quarantine
-    $obj = Proxmox::RuleDB::Quarantine->new ();
-    my $quarantine = $ruledb->create_group_with_obj ($obj, 'Quarantine', 'Move mail to quarantine');
-
-    # Spam Counter
-    #$obj = Proxmox::RuleDB::Counter->new (0);
-    #my $count_spam = $ruledb->create_group_with_obj ($obj, 'Count Spam', 
-	#					     'Count spam mails');
-    # Virus Counter
-    #$obj = Proxmox::RuleDB::Counter->new (0);
-    #my $count_virus = $ruledb->create_group_with_obj ($obj, 'Count Viruses', 
-	#					      'Count virus mails');
-    # BCC dietmar
-    #$obj = Proxmox::RuleDB::BCC->new ('dietmar@maurer-it.com');
-    #$bcc = $ruledb->create_group_with_obj ($obj, 'BCC dietmar', 'send bcc');
-
-    # Store in quarantine
-    #$obj = Proxmox::RuleDB::Store->new ('quarantine', 'O');
-    #$storeq = $ruledb->create_group_with_obj ($obj, 'Quarantine', ' Store in quarantine');
+    $obj = PMG::RuleDB::Quarantine->new();
+    my $quarantine = $ruledb->create_group_with_obj(
+	$obj, 'Quarantine', 'Move mail to quarantine');
 
     # Notify Admin
-    $obj = Proxmox::RuleDB::Notify->new ('__ADMIN__');
-    my $notify_admin = $ruledb->create_group_with_obj ($obj, 'Notify Admin', 
-						       'Send notification');
+    $obj = PMG::RuleDB::Notify->new('__ADMIN__');
+    my $notify_admin = $ruledb->create_group_with_obj(
+	$obj, 'Notify Admin', 'Send notification');
 
     # Notify Sender
-    $obj = Proxmox::RuleDB::Notify->new ('__SENDER__');
-    my $notify_sender = $ruledb->create_group_with_obj ($obj, 'Notify Sender', 
-						       'Send notification');
+    $obj = PMG::RuleDB::Notify->new('__SENDER__');
+    my $notify_sender = $ruledb->create_group_with_obj(
+	$obj, 'Notify Sender', 'Send notification');
 
     # Add Disclaimer
-    $obj = Proxmox::RuleDB::Disclaimer->new ();
-    my $add_discl = $ruledb->create_group_with_obj ($obj, 'Disclaimer', 
-						    'Add Disclaimer');
+    $obj = PMG::RuleDB::Disclaimer->new ();
+    my $add_discl = $ruledb->create_group_with_obj(
+	$obj, 'Disclaimer', 'Add Disclaimer');
 
     # Attach original mail
     #$obj = Proxmox::RuleDB::Attach->new ();
-    #my $attach_orig = $ruledb->create_group_with_obj ($obj, 'Attach Original Mail', 
+    #my $attach_orig = $ruledb->create_group_with_obj ($obj, 'Attach Original Mail',
     #					      'Attach Original Mail');
 
     ####################### RULES ##################################
@@ -707,7 +693,7 @@ sub init_ruledb {
 
     $ruledb->rule_add_what_group ($rule, $virus);
     $ruledb->rule_add_action ($rule, $notify_admin);
-    
+
     if ($testmode) {
 	$ruledb->rule_add_action ($rule, $block);
     } else {
@@ -722,7 +708,7 @@ sub init_ruledb {
     $ruledb->rule_add_action ($rule, $notify_sender);
     $ruledb->rule_add_action ($rule, $notify_admin);
     $ruledb->rule_add_action ($rule, $block);
-    
+
     ## Blacklist
     $rule = PMG::RuleDB::Rule->new ('Blacklist', 98, 1, 0);
     $ruledb->save_rule ($rule);

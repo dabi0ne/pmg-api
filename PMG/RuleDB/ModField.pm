@@ -1,44 +1,51 @@
-package PMG::RuleDB::MatchField;
+package PMG::RuleDB::ModField;
 
 use strict;
 use warnings;
 use Carp;
 use DBI;
 use Digest::SHA;
-use MIME::Words;
 
 use PMG::Utils;
+use PMG::ModGroup;
 use PMG::RuleDB::Object;
 
 use base qw(PMG::RuleDB::Object);
 
 sub otype {
-    return 3002;
+    return 4003;
 }
 
 sub oclass {
-    return 'what';
+    return 'action';
 }
 
 sub otype_text {
-    return 'Match Field';
+    return 'Header Attribute';
 }
 
 sub oicon {
-    # fixme:
-    return 'matchfield.gif';
+    return 'modfield.gif';
+}
+
+sub final {
+    return 0;
+}
+
+sub priority {
+    return 10;
 }
 
 sub new {
     my ($type, $field, $field_value, $ogroup) = @_;
-   
+    
     my $class = ref($type) || $type;
-
+ 
     my $self = $class->SUPER::new(otype(), $ogroup);
-
+   
     $self->{field} = $field;
     $self->{field_value} = $field_value;
-    
+
     return $self;
 }
 
@@ -47,16 +54,15 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined value: ERROR";;
+    defined($value) || return undef;
 
-    my ($field, $field_value) = $value =~ m/^([^:]*)\:(.*)$/;
+    my ($field, $field_value) = $value =~ m/^([^\:]*)\:(.*)$/;
 
-    defined($field) || croak "undefined object attribute: ERROR";
-    defined($field_value) || croak "undefined object attribute: ERROR";
+    (defined($field) && defined($field_value)) || return undef;
 
     my $obj = $class->new($field, $field_value, $ogroup);
     $obj->{id} = $id;
-    
+
     $obj->{digest} = Digest::SHA::sha1_hex($id, $field, $field_value, $ogroup);
     
     return $obj;
@@ -65,10 +71,9 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined ogroup: ERROR";
+    defined($self->{ogroup}) || return undef;
 
     my $new_value = "$self->{field}:$self->{field_value}";
-    $new_value =~ s/\\/\\\\/g;
 
     if (defined ($self->{id})) {
 	# update
@@ -92,52 +97,35 @@ sub save {
     return $self->{id};
 }
 
-sub parse_entity {
-    my ($self, $entity) = @_;
+sub execute {
+    my ($self, $queue, $ruledb, $mod_group, $targets, 
+	$msginfo, $vars, $marks) = @_;
 
-    return undef if !$self->{field};
+    my $fvalue = PMG::Utils::subst_values ($self->{field_value}, $vars);
 
-    my $res;
+    # support for multiline values (i.e. __SPAM_INFO__)
+    $fvalue =~ s/\r?\n/\n\t/sg; # indent content
+    $fvalue =~ s/\n\s*\n//sg;   # remove empty line
+    $fvalue =~ s/\n?\s*$//s;    # remove trailing spaces
 
-    if (my $id = $entity->head->mime_attr ('x-proxmox-tmp-aid')) {
-	chomp $id;
+    my $subgroups = $mod_group->subgroups($targets);
 
-	if (my $value = $entity->head->get ($self->{field})) {
-	    chomp $value;
-
-	    my $decvalue = MIME::Words::decode_mimewords($value);
-
-	    if ($decvalue =~ m|$self->{field_value}|i) {
-		push @$res, $id;
-	    }
-	}
+    foreach my $ta (@$subgroups) {
+	my ($tg, $e) = (@$ta[0], @$ta[1]);
+	$e->head->replace($self->{field}, $fvalue);
     }
-
-    foreach my $part ($entity->parts)  {
-	if (my $match = $self->parse_entity($part)) {
-	    push @$res, @$match;
-	}
-    }
-
-    return $res;
-}
-
-sub what_match {
-    my ($self, $queue, $entity, $msginfo) = @_;
-
-    return $self->parse_entity ($entity);
 }
 
 sub short_desc {
     my $self = shift;
-    
-    return "$self->{field}=$self->{field_value}";
- }
+
+    return "modify field: $self->{field}:$self->{field_value}";
+}
 
 1;
 
 __END__
 
-=head1 PMG::RuleDB::MatchField
+=head1 PMG::RuleDB::ModField
 
-Match Header Fields
+Modify fields of a message.
