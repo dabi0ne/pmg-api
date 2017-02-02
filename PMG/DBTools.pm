@@ -533,60 +533,72 @@ sub init_ruledb {
     # WHEN Objects
 
     # Working hours
-    $obj = Proxmox::RuleDB::TimeFrame->new(8*60, 16*60);
+    $obj = PMG::RuleDB::TimeFrame->new(8*60, 16*60);
     my $working_hours =$ruledb->create_group_with_obj($obj, 'Office Hours' ,
 						      'Usual office hours');
 
     # WHAT Objects
 
-    die "fixme";
-
     # Images
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('image/.*');
-    my $img_content = $ruledb->create_group_with_obj ($obj, 'Images',
-						      'All kinds of graphic files');
-    # Multimedia
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('audio/.*');
-    my $mm_content = $ruledb->create_group_with_obj ($obj, 'Multimedia',
-						     'Audio and Video');
+    $obj = PMG::RuleDB::ContentTypeFilter->new('image/.*');
+    my $img_content = $ruledb->create_group_with_obj(
+	$obj, 'Images', 'All kinds of graphic files');
 
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('video/.*');
-    $ruledb->group_add_object ($mm_content, $obj);
+    # Multimedia
+    $obj = PMG::RuleDB::ContentTypeFilter->new('audio/.*');
+    my $mm_content = $ruledb->create_group_with_obj(
+	$obj, 'Multimedia', 'Audio and Video');
+
+    $obj = PMG::RuleDB::ContentTypeFilter->new('video/.*');
+    $ruledb->group_add_object($mm_content, $obj);
 
     # Office Files
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/vnd\.ms-excel');
-    my $office_content = $ruledb->create_group_with_obj ($obj, 'Office Files',
-							 'Common Office Files');
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/vnd\.ms-powerpoint');
-    $ruledb->group_add_object ($office_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/msword');
-    $ruledb->group_add_object ($office_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/vnd\.openxmlformats-officedocument\..*');
-    $ruledb->group_add_object ($office_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/vnd\.oasis\.opendocument\..*');
-    $ruledb->group_add_object ($office_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/vnd\.stardivision\..*');
-    $ruledb->group_add_object ($office_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/vnd\.sun\.xml\..*');
+    $obj = PMG::RuleDB::ContentTypeFilter->new('application/vnd\.ms-excel');
+    my $office_content = $ruledb->create_group_with_obj(
+	$obj, 'Office Files', 'Common Office Files');
+    
+    $obj = PMG::RuleDB::ContentTypeFilter->new(
+	'application/vnd\.ms-powerpoint');
+    
+    $ruledb->group_add_object($office_content, $obj);
+    
+    $obj = PMG::RuleDB::ContentTypeFilter->new('application/msword');
     $ruledb->group_add_object ($office_content, $obj);
     
+    $obj = PMG::RuleDB::ContentTypeFilter->new(
+	'application/vnd\.openxmlformats-officedocument\..*');
+    $ruledb->group_add_object($office_content, $obj);
+    
+    $obj = PMG::RuleDB::ContentTypeFilter->new(
+	'application/vnd\.oasis\.opendocument\..*');
+    $ruledb->group_add_object($office_content, $obj);
 
+    $obj = PMG::RuleDB::ContentTypeFilter->new(
+	'application/vnd\.stardivision\..*');
+    $ruledb->group_add_object($office_content, $obj);
+    
+    $obj = PMG::RuleDB::ContentTypeFilter->new(
+	'application/vnd\.sun\.xml\..*');
+    $ruledb->group_add_object($office_content, $obj);
+    
     # Dangerous Content
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/x-ms-dos-executable');
-    my $exe_content = $ruledb->create_group_with_obj ($obj, 'Dangerous Content',
-						      'executable files and partial messages');
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/x-java');
-    $ruledb->group_add_object ($exe_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/javascript');
-    $ruledb->group_add_object ($exe_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('application/x-executable');
-    $ruledb->group_add_object ($exe_content, $obj);
-    $obj = Proxmox::RuleDB::ContentTypeFilter->new ('message/partial');
-    $ruledb->group_add_object ($exe_content, $obj);
-    $obj = Proxmox::RuleDB::MatchFilename->new ('.*\.(vbs|pif|lnk|shs|shb)');
-    $ruledb->group_add_object ($exe_content, $obj);
-    $obj = Proxmox::RuleDB::MatchFilename->new ('.*\.{.+}');
-    $ruledb->group_add_object ($exe_content, $obj);
+    $obj = PMG::RuleDB::ContentTypeFilter->new(
+	'application/x-ms-dos-executable');
+    my $exe_content = $ruledb->create_group_with_obj(
+	$obj, 'Dangerous Content', 'executable files and partial messages');
+    
+    $obj = PMG::RuleDB::ContentTypeFilter->new('application/x-java');
+    $ruledb->group_add_object($exe_content, $obj);
+    $obj = PMG::RuleDB::ContentTypeFilter->new('application/javascript');
+    $ruledb->group_add_object($exe_content, $obj);
+    $obj = PMG::RuleDB::ContentTypeFilter->new('application/x-executable');
+    $ruledb->group_add_object($exe_content, $obj);
+    $obj = PMG::RuleDB::ContentTypeFilter->new('message/partial');
+    $ruledb->group_add_object($exe_content, $obj);
+    $obj = PMG::RuleDB::MatchFilename->new('.*\.(vbs|pif|lnk|shs|shb)');
+    $ruledb->group_add_object($exe_content, $obj);
+    $obj = PMG::RuleDB::MatchFilename->new('.*\.{.+}');
+    $ruledb->group_add_object($exe_content, $obj);
 
     # Virus
     $obj = Proxmox::RuleDB::Virus->new ();
@@ -683,14 +695,14 @@ sub init_ruledb {
     ####################### RULES ##################################
 
     ## Block Dangerous  Files
-    my $rule = Proxmox::RuleDB::Rule->new ('Block Dangerous Files', 93, 1, 0);
+    my $rule = PMG::RuleDB::Rule->new ('Block Dangerous Files', 93, 1, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $exe_content);
     $ruledb->rule_add_action ($rule, $remove);
 
     ## Block Viruses
-    $rule = Proxmox::RuleDB::Rule->new ('Block Viruses', 96, 1, 0);
+    $rule = PMG::RuleDB::Rule->new ('Block Viruses', 96, 1, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $virus);
@@ -703,7 +715,7 @@ sub init_ruledb {
     }
 
     ## Virus Alert
-    $rule = Proxmox::RuleDB::Rule->new ('Virus Alert', 96, 1, 1);
+    $rule = PMG::RuleDB::Rule->new ('Virus Alert', 96, 1, 1);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $virus);
@@ -712,7 +724,7 @@ sub init_ruledb {
     $ruledb->rule_add_action ($rule, $block);
     
     ## Blacklist
-    $rule = Proxmox::RuleDB::Rule->new ('Blacklist', 98, 1, 0);
+    $rule = PMG::RuleDB::Rule->new ('Blacklist', 98, 1, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_from_group ($rule, $blacklist);
@@ -720,20 +732,20 @@ sub init_ruledb {
 
     ## Modify header
     if (!$testmode) {
-	$rule = Proxmox::RuleDB::Rule->new ('Modify Header', 90, 1, 0);
+	$rule = PMG::RuleDB::Rule->new ('Modify Header', 90, 1, 0);
 	$ruledb->save_rule ($rule);
 	$ruledb->rule_add_action ($rule, $mod_spam_level);
     }
 
     ## Whitelist
-    $rule = Proxmox::RuleDB::Rule->new ('Whitelist', 85, 1, 0);
+    $rule = PMG::RuleDB::Rule->new ('Whitelist', 85, 1, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_from_group ($rule, $whitelist);
     $ruledb->rule_add_action ($rule, $accept);
 
     if ($testmode) {
-	$rule = Proxmox::RuleDB::Rule->new ('Mark Spam', 80, 1, 0);
+	$rule = PMG::RuleDB::Rule->new ('Mark Spam', 80, 1, 0);
 	$ruledb->save_rule ($rule);
 
 	$ruledb->rule_add_what_group ($rule, $spam10);
@@ -741,7 +753,7 @@ sub init_ruledb {
 	$ruledb->rule_add_action ($rule, $mod_spam_subject);
     } else {
 	# Quarantine/Mark Spam (Level 3)
-	$rule = Proxmox::RuleDB::Rule->new ('Quarantine/Mark Spam (Level 3)', 80, 1, 0);
+	$rule = PMG::RuleDB::Rule->new ('Quarantine/Mark Spam (Level 3)', 80, 1, 0);
 	$ruledb->save_rule ($rule);
 
 	$ruledb->rule_add_what_group ($rule, $spam3);
@@ -751,7 +763,7 @@ sub init_ruledb {
     }
 
     # Quarantine/Mark Spam (Level 5)
-    $rule = Proxmox::RuleDB::Rule->new ('Quarantine/Mark Spam (Level 5)', 79, 0, 0);
+    $rule = PMG::RuleDB::Rule->new ('Quarantine/Mark Spam (Level 5)', 79, 0, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $spam5);
@@ -759,14 +771,14 @@ sub init_ruledb {
     $ruledb->rule_add_action ($rule, $quarantine);
 
     ## Block Spam Level 10
-    $rule = Proxmox::RuleDB::Rule->new ('Block Spam (Level 10)', 78, 0, 0);
+    $rule = PMG::RuleDB::Rule->new ('Block Spam (Level 10)', 78, 0, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $spam10);
     $ruledb->rule_add_action ($rule, $block);
 
     ## Block Outgoing Spam
-    $rule = Proxmox::RuleDB::Rule->new ('Block outgoing Spam', 70, 0, 1);
+    $rule = PMG::RuleDB::Rule->new ('Block outgoing Spam', 70, 0, 1);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $spam3);
@@ -775,12 +787,12 @@ sub init_ruledb {
     $ruledb->rule_add_action ($rule, $block);
 
     ## Add disclaimer
-    $rule = Proxmox::RuleDB::Rule->new ('Add Disclaimer', 60, 0, 1);
+    $rule = PMG::RuleDB::Rule->new ('Add Disclaimer', 60, 0, 1);
     $ruledb->save_rule ($rule);
     $ruledb->rule_add_action ($rule, $add_discl);
 
     # Block Multimedia Files
-    $rule = Proxmox::RuleDB::Rule->new ('Block Multimedia Files', 87, 0, 2);
+    $rule = PMG::RuleDB::Rule->new ('Block Multimedia Files', 87, 0, 2);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $mm_content);

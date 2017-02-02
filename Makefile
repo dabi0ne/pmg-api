@@ -39,6 +39,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/TimeFrame.pm		\
 	PMG/RuleDB/MatchField.pm	\
 	PMG/RuleDB/ContentTypeFilter.pm	\
+	PMG/RuleDB/Virus.pm		\
 	PMG/RuleDB.pm			\
 	PMG/CLI/pmgdb.pm		\
 	${CLI_CLASSES} 			\
