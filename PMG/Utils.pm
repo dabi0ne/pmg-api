@@ -12,6 +12,12 @@ use MIME::Parser;
 
 use PVE::SafeSyslog;
 
+sub msgquote {
+    my $msg = shift || '';
+    $msg =~ s/%/%%/g;
+    return $msg;
+}
+
 sub lastid {
     my ($dbh, $seq) = @_;
 

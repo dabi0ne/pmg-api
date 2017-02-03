@@ -30,12 +30,6 @@ sub load_attr {
     croak "never call this method: ERROR"; 
 }
 
-sub load {
-    my ($ruledb, $objid) = @_;
-
-    return $ruledb->load_object($objid);
-}
-
 sub who_match {
     croak "never call this method: ERROR";
 }

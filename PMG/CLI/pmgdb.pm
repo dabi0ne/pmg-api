@@ -9,10 +9,50 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 
 use PMG::DBTools;
+use PMG::RuleCache;
 
 use base qw(PVE::CLIHandler);
 
-my $nodename = PVE::INotify::nodename();
+sub print_objects {
+    my ($ruledb, $og) = @_;
+
+    my $objects = $ruledb->load_group_objects ($og->{id});
+
+    foreach my $obj (@$objects) {
+	my $desc = $obj->short_desc ();
+	print "    OBJECT $obj->{id}: $desc\n";
+    }
+}
+
+sub print_rule {
+    my ($ruledb, $rule) = @_;
+
+    print "Found RULE $rule->{id}: $rule->{name}\n";
+
+    my ($from, $to, $when, $what, $action) =
+	$ruledb->load_groups($rule);
+
+    foreach my $og (@$from) {
+	print "  FOUND FROM GROUP $og->{id}: $og->{name}\n";
+	print_objects($ruledb, $og);
+    }
+    foreach my $og (@$to) {
+	print "  FOUND TO GROUP $og->{id}: $og->{name}\n";
+	print_objects($ruledb, $og);
+    }
+    foreach my $og (@$when) {
+	print "  FOUND WHEN GROUP $og->{id}: $og->{name}\n";
+	print_objects($ruledb, $og);
+    }
+    foreach my $og (@$what) {
+	print "  FOUND WHAT GROUP $og->{id}: $og->{name}\n";
+	print_objects($ruledb, $og);
+    }
+    foreach my $og (@$action) {
+	print "  FOUND ACTION GROUP $og->{id}: $og->{name}\n";
+	print_objects($ruledb, $og);
+    }
+}
 
 __PACKAGE__->register_method ({
     name => 'dump',
@@ -26,7 +66,18 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	print "DUMP\n";
+	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
+	my $ruledb = PMG::RuleDB->new($dbh);
+
+	my $rulecache = PMG::RuleCache->new($ruledb);
+
+	my $rules = $ruledb->load_rules();
+
+	foreach my $rule (@$rules) {
+	    print_rule($ruledb, $rule);
+	}
+
+	$ruledb->close();
 
 	return undef;
     }});
