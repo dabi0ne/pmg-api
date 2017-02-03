@@ -113,9 +113,14 @@ upload: ${DEB}
 	 ./repoid.pl .git/ check
 	# fixme tar cf - ${DEB} | ssh repoman@repo.proxmox.com upload
 
+.PHONY: check
+check:
+	make -C tests check
+
 distclean: clean
 
 clean:
+	make -C tests clean
 	rm -rf ./build *.deb *.changes *.buildinfo *.bash-completion *.service-bash-completion
 	if test -d .git; then  rm -f PMG/pmgcfg.pm; fi
 	find . -name '*~' -exec rm {} ';'
