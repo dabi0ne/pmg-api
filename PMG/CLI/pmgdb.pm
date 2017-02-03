@@ -110,10 +110,10 @@ __PACKAGE__->register_method ({
 
 
 __PACKAGE__->register_method ({
-    name => 'update',
-    path => 'update',
+    name => 'init',
+    path => 'init',
     method => 'POST',
-    description => "Update or initialize PMG rule database.",
+    description => "Initialize/Upgrade the PMG rule database.",
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -125,9 +125,9 @@ __PACKAGE__->register_method ({
 	    },
 	    statistics => {
 		type => 'boolean',
-		description => "Update/initialize statistic database (this is done by default).",
+		description => "Reset and update statistic database.",
 		optional => 1,
-		default => 1,
+		default => 0,
 	    },
 	}
     },
@@ -181,7 +181,7 @@ __PACKAGE__->register_method ({
 our $cmddef = {
     'dump' => [ __PACKAGE__, 'dump', []],
     delete => [ __PACKAGE__, 'delete', []],
-    update => [ __PACKAGE__, 'update', []],
+    init => [ __PACKAGE__, 'init', []],
 };
 
 1;
