@@ -30,6 +30,7 @@ LIBSOURCES =				\
 	PMG/AccessControl.pm		\
 	PMG/AtomicFile.pm		\
 	PMG/RuleCache.pm		\
+	PMG/LDAPCache.pm		\
 	PMG/DBTools.pm			\
 	PMG/RuleDB/Group.pm		\
 	PMG/RuleDB/Rule.pm		\

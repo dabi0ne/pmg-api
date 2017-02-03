@@ -6,7 +6,7 @@ use Carp;
 use DBI;
 use Net::Cmd;
 use Net::SMTP;
-
+use File::stat;
 use MIME::Words;
 use MIME::Parser;
 
@@ -23,6 +23,16 @@ sub lastid {
 
     return $dbh->last_insert_id(
 	undef, undef, undef, undef, { sequence => $seq});
+}
+
+sub file_older_than {
+    my ($filename, $lasttime) = @_;
+
+    my $st = stat($filename);
+
+    return 0 if !defined($st);
+
+    return ($lasttime >= $st->ctime);
 }
 
 sub extract_filename {
