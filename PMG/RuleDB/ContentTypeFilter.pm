@@ -10,7 +10,7 @@ use MIME::Words;
 
 use PMG::RuleDB::MatchField;
 
-use base qw(Proxmox::RuleDB::MatchField);
+use base qw(PMG::RuleDB::MatchField);
 
 my $mtypes = {
     'message/delivery-status' => undef,

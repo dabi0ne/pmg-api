@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Carp;
 use DBI;
+use Net::Cmd;
 use Net::SMTP;
 
 use MIME::Words;

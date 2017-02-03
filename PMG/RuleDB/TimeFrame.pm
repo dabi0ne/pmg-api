@@ -9,7 +9,7 @@ use Digest::SHA;
 use PMG::Utils;
 use PMG::RuleDB::Object;
 
-use base qw(Proxmox::RuleDB::Object);
+use base qw(PMG::RuleDB::Object);
 
 sub otype {
     return 2000;

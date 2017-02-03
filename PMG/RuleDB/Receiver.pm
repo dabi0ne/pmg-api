@@ -1,4 +1,4 @@
-package Proxmox::RuleDB::Receiver;
+package PMG::RuleDB::Receiver;
 
 use strict;
 use warnings;
