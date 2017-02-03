@@ -1,0 +1,74 @@
+Found RULE 4: Blacklist
+  FOUND FROM GROUP 1: Blacklist
+    OBJECT 1: nomail@fromthisdomain.com
+  FOUND ACTION GROUP 17: Block
+    OBJECT 30: block message
+Found RULE 2: Block Viruses
+  FOUND WHAT GROUP 8: Virus
+    OBJECT 21: active
+  FOUND ACTION GROUP 17: Block
+    OBJECT 30: block message
+  FOUND ACTION GROUP 19: Notify Admin
+    OBJECT 32: notify __ADMIN__
+Found RULE 3: Virus Alert
+  FOUND WHAT GROUP 8: Virus
+    OBJECT 21: active
+  FOUND ACTION GROUP 17: Block
+    OBJECT 30: block message
+  FOUND ACTION GROUP 19: Notify Admin
+    OBJECT 32: notify __ADMIN__
+  FOUND ACTION GROUP 20: Notify Sender
+    OBJECT 33: notify __SENDER__
+Found RULE 1: Block Dangerous Files
+  FOUND WHAT GROUP 7: Dangerous Content
+    OBJECT 16: content-type=content-type
+    OBJECT 17: content-type=content-type
+    OBJECT 15: content-type=content-type
+    OBJECT 14: content-type=content-type
+    OBJECT 18: content-type=content-type
+    OBJECT 19: filename=.*\.(vbs|pif|lnk|shs|shb)
+    OBJECT 20: filename=.*\.{.+}
+  FOUND ACTION GROUP 14: Remove attachments
+    OBJECT 27: remove matching attachments
+Found RULE 11: Block Multimedia Files
+  FOUND WHAT GROUP 5: Multimedia
+    OBJECT 5: content-type=content-type
+    OBJECT 6: content-type=content-type
+  FOUND ACTION GROUP 14: Remove attachments
+    OBJECT 27: remove matching attachments
+Found RULE 5: Whitelist
+  FOUND FROM GROUP 2: Whitelist
+    OBJECT 2: mail@fromthisdomain.com
+  FOUND ACTION GROUP 16: Accept
+    OBJECT 29: 
+Found RULE 6: Mark Spam
+  FOUND WHAT GROUP 11: Spam (Level 10)
+    OBJECT 24: Level 10
+  FOUND ACTION GROUP 12: Modify Spam Level
+    OBJECT 25: modify field: X-SPAM-LEVEL:__SPAM_INFO__
+  FOUND ACTION GROUP 13: Modify Spam Subject
+    OBJECT 26: modify field: subject:SPAM: __SUBJECT__
+Found RULE 7: Quarantine/Mark Spam (Level 5)
+  FOUND WHAT GROUP 10: Spam (Level 5)
+    OBJECT 23: Level 5
+  FOUND ACTION GROUP 13: Modify Spam Subject
+    OBJECT 26: modify field: subject:SPAM: __SUBJECT__
+  FOUND ACTION GROUP 18: Quarantine
+    OBJECT 31: Move to quarantine.
+Found RULE 8: Block Spam (Level 10)
+  FOUND WHAT GROUP 11: Spam (Level 10)
+    OBJECT 24: Level 10
+  FOUND ACTION GROUP 17: Block
+    OBJECT 30: block message
+Found RULE 9: Block outgoing Spam
+  FOUND WHAT GROUP 9: Spam (Level 3)
+    OBJECT 22: Level 3
+  FOUND ACTION GROUP 17: Block
+    OBJECT 30: block message
+  FOUND ACTION GROUP 19: Notify Admin
+    OBJECT 32: notify __ADMIN__
+  FOUND ACTION GROUP 20: Notify Sender
+    OBJECT 33: notify __SENDER__
+Found RULE 10: Add Disclaimer
+  FOUND ACTION GROUP 21: Disclaimer
+    OBJECT 34: disclaimer

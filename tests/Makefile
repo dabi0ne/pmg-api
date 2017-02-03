@@ -7,7 +7,8 @@ all:
 check:
 	./create_testdb.pl
 	./init_testdb.pl
-	./print_testdb.pl
+	./print_testdb.pl > testdb.txt.new
+	diff testdb.txt testdb.txt.new
 
 #	test_config.pl		\
 #	test_mimetype.pl	\
@@ -16,4 +17,5 @@ check:
 #	test_unpack.pl
 
 
-CLEANFILES=*~ /proxytest_report.out test.cfg
+clean:
+	rm -rf *~ proxytest_report.out test.cfg testdb.txt.new
