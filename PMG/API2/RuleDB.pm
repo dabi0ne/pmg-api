@@ -38,11 +38,27 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'actions' },
 	    { name => 'rules' },
+	    { name => 'what' },
+	    { name => 'when' },
+	    { name => 'who' },
 	];
 
 	return $result;
     }});
+
+my $format_object_group = sub {
+    my ($ogroups) = @_;
+
+    my $res = [];
+    foreach my $og (@$ogroups) {
+	push @$res, {
+	    id => $og->{id}, name => $og->{name}, info => $og->{info}
+	};
+    }
+    return $res;
+};
 
 __PACKAGE__->register_method({
     name => 'list_rules',
@@ -68,8 +84,6 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	# fixme: use RuleCache ?
-
 	my $dbh = PMG::DBTools::open_ruledb();
 	my $ruledb = PMG::RuleDB->new($dbh);
 
@@ -82,11 +96,7 @@ __PACKAGE__->register_method({
 
 	    return if !$groupdata;
 
-	    my $group = [];
-	    foreach my $og (@$groupdata) {
-		push @$group, { id => $og->{id}, name => $og->{name} };
-	    }
-	    $res->{$name} = $group;
+	    $res->{$name} = $format_object_group->($groupdata);
 	};
 
 	foreach my $rule (@$rules) {
@@ -112,6 +122,134 @@ __PACKAGE__->register_method({
 	$ruledb->close();
 
 	return $res;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'list_actions',
+    path => 'actions',
+    method => 'GET',
+    description => "Get list of 'action' objects.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+	    }
+	}
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $dbh = PMG::DBTools::open_ruledb();
+	my $ruledb = PMG::RuleDB->new($dbh);
+
+	my $ogroups = $ruledb->load_objectgroups('action');
+
+	return $format_object_group->($ogroups);
+    }});
+
+__PACKAGE__->register_method({
+    name => 'list_what_object',
+    path => 'what',
+    method => 'GET',
+    description => "Get list of 'what' objects.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+	    }
+	}
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $dbh = PMG::DBTools::open_ruledb();
+	my $ruledb = PMG::RuleDB->new($dbh);
+
+	my $ogroups = $ruledb->load_objectgroups('what');
+
+	return $format_object_group->($ogroups);
+    }});
+
+__PACKAGE__->register_method({
+    name => 'list_when_object',
+    path => 'when',
+    method => 'GET',
+    description => "Get list of 'when' objects.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+	    }
+	}
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $dbh = PMG::DBTools::open_ruledb();
+	my $ruledb = PMG::RuleDB->new($dbh);
+
+	my $ogroups = $ruledb->load_objectgroups('when');
+
+	return $format_object_group->($ogroups);
+    }});
+
+__PACKAGE__->register_method({
+    name => 'list_who_object',
+    path => 'who',
+    method => 'GET',
+    description => "Get list of 'who' objects.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+	    }
+	}
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $dbh = PMG::DBTools::open_ruledb();
+	my $ruledb = PMG::RuleDB->new($dbh);
+
+	my $ogroups = $ruledb->load_objectgroups('who');
+
+	return $format_object_group->($ogroups);
     }});
 
 1;
