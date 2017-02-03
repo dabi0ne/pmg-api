@@ -28,6 +28,7 @@ LIBSOURCES =				\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
+	PMG/AtomicFile.pm		\
 	PMG/RuleCache.pm		\
 	PMG/DBTools.pm			\
 	PMG/RuleDB/Group.pm		\
