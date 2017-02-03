@@ -15,8 +15,14 @@ use PMG::Ticket;
 use PMG::API2::Tasks;
 use PMG::API2::Services;
 use PMG::API2::Network;
+use PMG::API2::RuleDB;
 
 use base qw(PVE::RESTHandler);
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::RuleDB",
+    path => 'ruledb',
+});
 
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Network",
@@ -57,6 +63,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'ruledb' },
 	    { name => 'services' },
 	    { name => 'syslog' },
 	    { name => 'tasks' },

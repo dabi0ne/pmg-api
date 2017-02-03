@@ -68,6 +68,7 @@ LIBSOURCES =				\
 	PMG/API2/Tasks.pm		\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/AccessControl.pm	\
+	PMG/API2/RuleDB.pm		\
 	PMG/API2.pm
 
 all: ${LIBSOURCES} ${CLI_BINARIES}
