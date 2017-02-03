@@ -7,8 +7,10 @@ use Data::Dumper;
 use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
 use PVE::INotify;
+use PVE::CLIHandler;
 
 use PMG::DBTools;
+use PMG::RuleDB;
 
 use base qw(PVE::CLIHandler);
 
