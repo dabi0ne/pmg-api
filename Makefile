@@ -33,6 +33,9 @@ LIBSOURCES =				\
 	PMG/RuleDB/Object.pm		\
 	PMG/RuleDB/Quarantine.pm	\
 	PMG/RuleDB/WhoRegex.pm		\
+	PMG/RuleDB/IPAddress.pm		\
+	PMG/RuleDB/IPNet.pm		\
+	PMG/RuleDB/MatchFilename.pm	\
 	PMG/RuleDB/ReceiverRegex.pm	\
 	PMG/RuleDB/EMail.pm		\
 	PMG/RuleDB/Receiver.pm		\
@@ -43,7 +46,11 @@ LIBSOURCES =				\
 	PMG/RuleDB/ContentTypeFilter.pm	\
 	PMG/RuleDB/Spam.pm		\
 	PMG/RuleDB/Virus.pm		\
+	PMG/RuleDB/ReportSpam.pm	\
 	PMG/RuleDB/Remove.pm		\
+	PMG/RuleDB/Attach.pm		\
+	PMG/RuleDB/BCC.pm		\
+	PMG/RuleDB/Counter.pm		\
 	PMG/RuleDB/Notify.pm		\
 	PMG/RuleDB/Disclaimer.pm	\
 	PMG/RuleDB/Accept.pm		\
