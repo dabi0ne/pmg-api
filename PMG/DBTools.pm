@@ -443,51 +443,287 @@ sub cond_create_std_actions {
 }
 
 
+sub upgrade_mailstore_db {
+    my ($dbh) = @_;
+
+    eval {
+	$dbh->begin_work;
+
+	my $cmd = "SELECT tablename FROM pg_tables WHERE tablename = lower ('MailStore')";
+
+	my $sth = $dbh->prepare($cmd);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+
+	if ($ref) { # table exists
+
+	    $cmd = "INSERT INTO CMailStore " .
+		"(CID, RID, ID, Time, QType, Bytes, Spamlevel, Info, Header, Sender, File) " .
+		"SELECT 0, ID, ID, Time, QType, Bytes, Spamlevel, Info, Header, Sender, File FROM MailStore";
+
+	    $dbh->do($cmd);
+
+	    $cmd = "INSERT INTO CMSReceivers " .
+		"(CMailStore_CID, CMailStore_RID, PMail, Receiver, TicketID, Status, MTime) " .
+		"SELECT 0, MailStore_ID, PMail, Receiver, TicketID, Status, 0 FROM MSReceivers";
+
+	    $dbh->do($cmd);
+
+	    $dbh->do("SELECT setval ('cmailstore_id_seq', nextval ('mailstore_id_seq'))");
+
+	    $dbh->do("DROP TABLE MailStore");
+	    $dbh->do("DROP TABLE MSReceivers");
+	}
+
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+       $dbh->rollback;
+       die $err;
+    }
+}
+
+sub upgrade_dailystat_db {
+    my ($dbh) = @_;
+
+    eval { # make sure we have MTime
+	$dbh->do("ALTER TABLE DailyStat ADD COLUMN MTime INTEGER;" .
+		 "UPDATE DailyStat SET MTime = EXTRACT (EPOCH FROM now());");
+    };
+
+    eval { # make sure we have correct constraints for MTime
+	$dbh->do ("ALTER TABLE DailyStat ALTER COLUMN MTime SET NOT NULL;");
+    };
+
+    eval { # make sure we have RBLCount
+	$dbh->do ("ALTER TABLE DailyStat ADD COLUMN RBLCount INTEGER;" .
+		  "UPDATE DailyStat SET RBLCount = 0;");
+    };
+
+    eval { # make sure we have correct constraints for RBLCount
+	$dbh->do ("ALTER TABLE DailyStat ALTER COLUMN RBLCount SET DEFAULT 0;" .
+		  "ALTER TABLE DailyStat ALTER COLUMN RBLCount SET NOT NULL;");
+    };
+
+    eval {
+	$dbh->begin_work;
+
+	my $cmd = "SELECT indexname FROM pg_indexes WHERE indexname = lower ('DailyStat_MTime_Index')";
+
+	my $sth = $dbh->prepare($cmd);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+
+	if (!$ref) { # index does not exist
+	    $dbh->do ("CREATE INDEX DailyStat_MTime_Index ON DailyStat (MTime)");
+	}
+
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback;
+	die $err;
+    }
+}
+
+sub upgrade_domainstat_db {
+    my ($dbh) = @_;
+
+    eval { # make sure we have MTime
+	$dbh->do("ALTER TABLE DomainStat ADD COLUMN MTime INTEGER;" .
+		 "UPDATE DomainStat SET MTime = EXTRACT (EPOCH FROM now());" .
+		 "ALTER TABLE DomainStat ALTER COLUMN MTime SET NOT NULL;");
+    };
+
+    eval {
+	$dbh->begin_work;
+
+	my $cmd = "SELECT indexname FROM pg_indexes WHERE indexname = lower ('DomainStat_MTime_Index')";
+
+	my $sth = $dbh->prepare($cmd);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+
+	if (!$ref) { # index does not exist
+	    $dbh->do ("CREATE INDEX DomainStat_MTime_Index ON DomainStat (MTime)");
+	}
+
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback;
+	die $@;
+    }
+}
+
+sub upgrade_statistic_db {
+    my ($dbh) = @_;
+
+    eval {
+	$dbh->begin_work;
+
+	my $cmd = "SELECT tablename FROM pg_tables WHERE tablename = lower ('Statistic')";
+
+	my $sth = $dbh->prepare($cmd);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+
+	if ($ref) { # old table exists
+
+	    my $timezone = tz_local_offset();;
+
+	    $dbh->do("INSERT INTO VirusInfo (Time, Name, Count, MTime) " .
+		     "SELECT ((time + $timezone) / 86400) * 86400 as day, virusinfo, " .
+		     "count (virusinfo), max (Time) FROM Statistic " .
+		     "WHERE virusinfo IS NOT NULL GROUP BY day, virusinfo");
+
+	    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime (time());
+	    my $end = timelocal(0, 0, 0, $mday, $mon, $year);
+	    my $start = $end - 3600*24*7; # / days
+
+	    $cmd = "INSERT INTO CStatistic " .
+		"(CID, RID, ID, Time, Bytes, Direction, Spamlevel, VirusInfo, PTime, Sender) " .
+		"SELECT 0, ID, ID, Time, Bytes, Direction, Spamlevel, VirusInfo, PTime, Sender FROM Statistic " .
+		"WHERE time >= $start";
+
+	    $dbh->do($cmd);
+
+	    $dbh->do("SELECT setval ('cstatistic_id_seq', nextval ('statistic_id_seq'))");
+
+	    $dbh->do("INSERT INTO StatInfo (name, ivalue) VALUES ('virusinfo_index', " .
+		     "nextval ('statistic_id_seq'))");
+
+	    $cmd = "INSERT INTO CReceivers (CStatistic_CID, CStatistic_RID, Receiver, Blocked) " .
+		"SELECT 0, Mail_ID, Receiver, Blocked FROM Receivers " .
+		"WHERE EXISTS (SELECT * FROM CStatistic WHERE CID = 0 AND RID = Mail_ID)";
+
+	    $dbh->do($cmd);
+
+	    $dbh->do("DROP TABLE Statistic");
+	    $dbh->do("DROP TABLE Receivers");
+	}
+
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback;
+	die $err;
+    }
+}
+
+sub upgrade_greylist_db {
+    my ($dbh) = @_;
+
+    eval {
+	$dbh->begin_work;
+
+	my $cmd = "SELECT tablename FROM pg_tables WHERE tablename = lower ('Greylist')";
+
+	my $sth = $dbh->prepare($cmd);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+
+	if ($ref) { # table exists
+
+	    $cmd = "INSERT INTO CGreylist " .
+		"(IPNet, Host, Sender, Receiver, Instance, RCTime, ExTime, Delay, Blocked, Passed, MTime, CID) " .
+		"SELECT IPNet, Host, Sender, Receiver, Instance, RCTime, ExTime, Delay, Blocked, Passed, RCTime, 0 FROM Greylist";
+
+	    $dbh->do($cmd);
+
+	    $dbh->do("DROP TABLE Greylist");
+	}
+
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback;
+	die $err;
+    }
+}
+
+sub upgrade_userprefs_db {
+    my ($dbh) = @_;
+
+    eval {
+	$dbh->do("ALTER TABLE UserPrefs ADD COLUMN MTime INTEGER;" .
+		 "UPDATE UserPrefs SET MTime = EXTRACT (EPOCH FROM now());" .
+		 "ALTER TABLE UserPrefs ALTER COLUMN MTime SET NOT NULL;");
+    };
+
+
+    eval {
+	$dbh->begin_work;
+
+	my $cmd = "SELECT indexname FROM pg_indexes WHERE indexname = lower ('UserPrefs_MTime_Index')";
+
+	my $sth = $dbh->prepare($cmd);
+	$sth->execute();
+	my $ref = $sth->fetchrow_hashref();
+	$sth->finish();
+
+	if (!$ref) { # index does not exist
+	    $dbh->do("CREATE INDEX UserPrefs_MTime_Index ON UserPrefs (MTime)");
+	}
+
+	$dbh->commit;
+    };
+    if ($@) {
+	$dbh->rollback;
+	die $@;
+    }
+}
+
 sub upgradedb {
     my ($ruledb) = @_;
 
     my $dbh = $ruledb->{dbh};
 
-    $dbh->do ($dbfunction_minint);
+    $dbh->do($dbfunction_minint);
 
-    $dbh->do ($dbfunction_maxint);
+    $dbh->do($dbfunction_maxint);
 
-    $dbh->do ($dbfunction_merge_greylist);
+    $dbh->do($dbfunction_merge_greylist);
 
     # make sure we do not use slow sequential scans when upgraing
     # database (before analyze can gather statistics)
     $dbh->do("set enable_seqscan = false");
 
-    cond_create_dbtable ($dbh, 'DailyStat', $daily_stat_ctablecmd);
-    cond_create_dbtable ($dbh, 'DomainStat', $domain_stat_ctablecmd);
-    cond_create_dbtable ($dbh, 'StatInfo', $statinfo_ctablecmd);
-    cond_create_dbtable ($dbh, 'CMailStore', $cmailstore_ctablecmd);
-    cond_create_dbtable ($dbh, 'UserPrefs', $userprefs_ctablecmd);
-    cond_create_dbtable ($dbh, 'CGreylist', $cgreylist_ctablecmd);
-    cond_create_dbtable ($dbh, 'CStatistic', $cstatistic_ctablecmd);
-    cond_create_dbtable ($dbh, 'ClusterInfo', $clusterinfo_ctablecmd);
-    cond_create_dbtable ($dbh, 'VirusInfo', $virusinfo_stat_ctablecmd);
+    cond_create_dbtable($dbh, 'DailyStat', $daily_stat_ctablecmd);
+    cond_create_dbtable($dbh, 'DomainStat', $domain_stat_ctablecmd);
+    cond_create_dbtable($dbh, 'StatInfo', $statinfo_ctablecmd);
+    cond_create_dbtable($dbh, 'CMailStore', $cmailstore_ctablecmd);
+    cond_create_dbtable($dbh, 'UserPrefs', $userprefs_ctablecmd);
+    cond_create_dbtable($dbh, 'CGreylist', $cgreylist_ctablecmd);
+    cond_create_dbtable($dbh, 'CStatistic', $cstatistic_ctablecmd);
+    cond_create_dbtable($dbh, 'ClusterInfo', $clusterinfo_ctablecmd);
+    cond_create_dbtable($dbh, 'VirusInfo', $virusinfo_stat_ctablecmd);
 
-    cond_create_std_actions ($ruledb);
+    cond_create_std_actions($ruledb);
 
-    upgrade_mailstore_db ($dbh);
+    upgrade_mailstore_db($dbh);
 
-    upgrade_statistic_db ($dbh);
+    upgrade_statistic_db($dbh);
 
-    upgrade_userprefs_db ($dbh);
+    upgrade_userprefs_db($dbh);
 
-    upgrade_greylist_db ($dbh);
+    upgrade_greylist_db($dbh);
 
-    upgrade_dailystat_db ($dbh);
+    upgrade_dailystat_db($dbh);
 
-    upgrade_domainstat_db ($dbh);
+    upgrade_domainstat_db($dbh);
 
     # update obsolete content type names
     eval {
-	$dbh->do ("UPDATE Object " .
-		  "SET value = 'content-type:application/java-vm' ".
-		  "WHERE objecttype = 3003 " .
-		  "AND value = 'content-type:application/x-java-vm';");
+	$dbh->do("UPDATE Object " .
+		 "SET value = 'content-type:application/java-vm' ".
+		 "WHERE objecttype = 3003 " .
+		 "AND value = 'content-type:application/x-java-vm';");
     };
 
     eval {
@@ -611,11 +847,11 @@ sub init_ruledb {
     $obj = PMG::RuleDB::Spam->new(3);
     my $spam3 = $ruledb->create_group_with_obj(
 	$obj, 'Spam (Level 3)', 'Matches possible spam mail');
-    
+
     $obj = PMG::RuleDB::Spam->new(5);
     my $spam5 = $ruledb->create_group_with_obj(
 	$obj, 'Spam (Level 5)', 'Matches possible spam mail');
-    
+
     $obj = PMG::RuleDB::Spam->new(10);
     my $spam10 = $ruledb->create_group_with_obj(
 	$obj, 'Spam (Level 10)', 'Matches possible spam mail');
@@ -625,20 +861,20 @@ sub init_ruledb {
     # Mark Spam
     $obj = PMG::RuleDB::ModField->new('X-SPAM-LEVEL', '__SPAM_INFO__');
     my $mod_spam_level = $ruledb->create_group_with_obj(
-	$obj, 'Modify Spam Level', 
+	$obj, 'Modify Spam Level',
 	'Mark mail as spam by adding a header tag.');
 
     # Mark Spam
     $obj = PMG::RuleDB::ModField->new('subject', 'SPAM: __SUBJECT__');
     my $mod_spam_subject = $ruledb->create_group_with_obj(
-	$obj, 'Modify Spam Subject', 
+	$obj, 'Modify Spam Subject',
 	'Mark mail as spam by modifying the subject.');
-    
+
     # Remove matching attachments
     $obj = PMG::RuleDB::Remove->new(0);
     my $remove = $ruledb->create_group_with_obj(
 	$obj, 'Remove attachments', 'Remove matching attachments');
-    
+
     # Remove all attachments
     $obj = PMG::RuleDB::Remove->new(1);
     my $remove_all = $ruledb->create_group_with_obj(

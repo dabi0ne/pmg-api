@@ -106,7 +106,7 @@ __PACKAGE__->register_method ({
 	} else {
 
 	    my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
-	    my $ruledb = Proxmox::RuleDB->new($dbh);
+	    my $ruledb = PMG::RuleDB->new($dbh);
 
 	    print "Analyzing/Upgrading existing Databases...";
 	    PMG::DBTools::upgradedb ($ruledb);

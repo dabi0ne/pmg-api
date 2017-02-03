@@ -21,6 +21,7 @@ CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS})
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
 	PMG/Utils.pm			\
+	PMG/ModGroup.pm			\
 	PMG/SMTPPrinter.pm		\
 	PMG/NoVncIndex.pm		\
 	PMG/Cluster.pm			\
@@ -35,6 +36,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/WhoRegex.pm		\
 	PMG/RuleDB/IPAddress.pm		\
 	PMG/RuleDB/IPNet.pm		\
+	PMG/RuleDB/ModField.pm		\
 	PMG/RuleDB/MatchFilename.pm	\
 	PMG/RuleDB/ReceiverRegex.pm	\
 	PMG/RuleDB/EMail.pm		\
