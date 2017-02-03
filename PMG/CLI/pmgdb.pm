@@ -9,7 +9,6 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 
 use PMG::DBTools;
-use PMG::RuleCache;
 
 use base qw(PVE::CLIHandler);
 
@@ -68,8 +67,6 @@ __PACKAGE__->register_method ({
 
 	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
 	my $ruledb = PMG::RuleDB->new($dbh);
-
-	my $rulecache = PMG::RuleCache->new($ruledb);
 
 	my $rules = $ruledb->load_rules();
 

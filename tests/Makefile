@@ -6,9 +6,9 @@ all:
 
 check:
 	./create_testdb.pl
+	./init_testdb.pl
+	./print_testdb.pl
 
-#	init_testdb.pl		\
-#	print_testdb.pl		\
 #	test_config.pl		\
 #	test_mimetype.pl	\
 #	test_greylist.pl	\
