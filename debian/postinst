@@ -4,6 +4,17 @@ set -e
 
 
 case "$1" in
+    triggered)
+
+	test -e /proxmox_install_mode && exit 0;
+
+	# Note: reload-or-try-restart fails if service is not active
+	systemctl --quiet is-active pmgdaemon.service && deb-systemd-invoke reload-or-try-restart pmgdaemon.service
+	systemctl --quiet is-active pmgproxy.service && deb-systemd-invoke reload-or-try-restart pmgproxy.service
+
+	exit 0
+    ;;
+
     configure)
     ;;
 
