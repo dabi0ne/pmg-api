@@ -36,16 +36,14 @@ my $ldapcache = {};
 my @dbs = ('users', 'dnames', 'groups', 'mails', 'accounts', 'memberof');
 
 sub new {
-    my ($self) = @_;
+    my ($self, %args) = @_;
 
     my $type   = ref($self) || $self;
 
-    my %args = @_;
-
-    die "undefine ldap id" if !$args{id};
+    die "undefined ldap id" if !$args{id};
 
     my $id = $args{id};
-    $id =~ s/^server_//;
+    $id =~ s/^ldap_//;
 
     if ($ldapcache->{$id}) {
 	$self = $ldapcache->{$id};
@@ -110,7 +108,7 @@ sub lockdir {
 sub delete {
     my ($class, $id) = @_;
 
-    $id =~ s/^server_//;
+    $id =~ s/^ldap_//;
 
     if (my $lock = lockdir($id)) {
 	delete $ldapcache->{$id};
