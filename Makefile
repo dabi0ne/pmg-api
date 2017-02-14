@@ -30,6 +30,7 @@ LIBSOURCES =				\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
 	PMG/AtomicFile.pm		\
+	PMG/MailQueue.pm		\
 	PMG/RuleCache.pm		\
 	PMG/LDAPSet.pm			\
 	PMG/LDAPCache.pm		\
