@@ -9,8 +9,10 @@ use Net::SMTP;
 use File::stat;
 use MIME::Words;
 use MIME::Parser;
+use Time::HiRes qw (gettimeofday);
 
 use PVE::SafeSyslog;
+use PMG::MailQueue;
 
 sub msgquote {
     my $msg = shift || '';
@@ -39,7 +41,7 @@ sub extract_filename {
     my ($head) = @_;
 
     if (my $value = $head->recommended_filename()) {
-	chomp $value;	    
+	chomp $value;
 	if (my $decvalue = MIME::Words::decode_mimewords($value)) {
 	    $decvalue =~ s/\0/ /g;
 	    $decvalue = trim ($decvalue);
@@ -97,7 +99,7 @@ sub reinject_mail {
 
 	if (defined($xforward)) {
 	    my $xfwd;
-   
+
 	    foreach my $attr (keys %{$xforward}) {
 		$xfwd .= " $attr=$xforward->{$attr}";
 	    }
@@ -125,35 +127,115 @@ sub reinject_mail {
 
 	my $out = PMG::SMTPPrinter->new($smtp);
 	$entity->print($out);
-	
-	# make sure we always have a newline at the end of the mail 
+
+	# make sure we always have a newline at the end of the mail
 	# else dataend() fails
 	$smtp->datasend("\n");
 
 	if ($smtp->dataend()) {
 	    my @msgs = $smtp->message;
-	    $resmess = $msgs[$#msgs]; 
-	    ($resid) = $resmess =~ m/Ok: queued as ([0-9A-Z]+)/; 
+	    $resmess = $msgs[$#msgs];
+	    ($resid) = $resmess =~ m/Ok: queued as ([0-9A-Z]+)/;
 	    $rescode = $smtp->code;
 	    if (!$resid) {
 		die sprintf("unexpected SMTP result - got: %s %s : WARNING", $smtp->code, $resmess);
-	    } 
+	    }
 	} else {
 	    my @msgs = $smtp->message;
-	    $resmess = $msgs[$#msgs]; 
+	    $resmess = $msgs[$#msgs];
 	    $rescode = $smtp->code;
 	    die sprintf("sending data failed - got: %s %s : ERROR", $smtp->code, $resmess);
 	}
     };
     my $err = $@;
-    
+
     $smtp->quit if $smtp;
-    
+
     if ($err) {
 	syslog ('err', $err);
     }
 
     return wantarray ? ($resid, $rescode, $resmess) : $resid;
+}
+
+sub analyze_virus_clam {
+    my ($queue, $dname, $pmg_cfg) = @_;
+
+    my $timeout = 60*5;
+    my $vinfo;
+
+    my $clamdscan_opts = "--stdout";
+
+    my ($csec, $usec) = gettimeofday();
+
+    my $previous_alarm;
+
+    eval {
+
+	$previous_alarm = alarm($timeout);
+
+	$SIG{ALRM} = sub {
+	    die "$queue->{logid}: Maximum time ($timeout sec) exceeded. " .
+		"virus analyze (clamav) failed: ERROR";
+	};
+
+	open(CMD, "/usr/bin/clamdscan $clamdscan_opts '$dname'|") ||
+	    die "$queue->{logid}: can't exec clamdscan: $! : ERROR";
+
+	my $ifiles;
+	my $res;
+
+	while (<CMD>) {
+	    if (m/^$dname.*:\s+([^ :]*)\s+FOUND$/) {
+		# we just use the first detected virus name
+		$vinfo = $1 if !$vinfo;
+	    }
+	    if (m/^Infected files:\s(\d*)$/i) {
+		$ifiles = $1;
+	    }
+
+	    $res .= $_;
+	}
+
+	close(CMD);
+
+	alarm(0); # avoid race conditions
+
+	if (!defined($ifiles)) {
+	    die "$queue->{logid}: got undefined output from " .
+		"virus detector: $res : ERROR";
+	}
+
+	if ($vinfo) {
+	    syslog ('info', "$queue->{logid}: virus detected: $vinfo (clamav)");
+	}
+    };
+    my $err = $@;
+
+    alarm($previous_alarm);
+
+    my ($csec_end, $usec_end) = gettimeofday();
+    $queue->{ptime_clam} =
+	int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
+
+    if ($err) {
+	syslog ('err', $err);
+	$vinfo = undef;
+	$queue->{errors} = 1;
+    }
+
+    $queue->{vinfo_clam} = $vinfo;
+
+    return $vinfo ? "$vinfo (clamav)" : undef;
+}
+
+sub analyze_virus {
+    my ($queue, $filename, $pmg_cfg, $testmode) = @_;
+
+    # TODO: support other virus scanners?
+
+    # always scan with clamav
+    return analyze_virus_clam($queue, $filename, $pmg_cfg);
 }
 
 
