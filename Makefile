@@ -34,6 +34,7 @@ LIBSOURCES =				\
 	PMG/SMTP.pm			\
 	PMG/Unpack.pm			\
 	PMG/RuleCache.pm		\
+	PMG/Statistic.pm		\
 	PMG/LDAPSet.pm			\
 	PMG/LDAPCache.pm		\
 	PMG/DBTools.pm			\

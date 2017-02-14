@@ -1,13 +1,15 @@
-package Proxmox::Statistic;
+package PMG::Statistic;
 
 use strict;
-use vars qw(@ISA);
+use warnings;
 use Carp;
 use DBI;
-use Proxmox::SafeSyslog;
-use Proxmox::RuleDB;
 use Time::Local;
 use Time::Zone;
+
+use PVE::SafeSyslog;
+
+use PMG::RuleDB;
 
 sub new {
     my ($self, $start, $end, $advanced) = @_;
@@ -848,27 +850,5 @@ sub localhourspan {
     return ($from, $to);
 }
 
-sub out_bar {
-    
-    my ($self, $col_index, $width) = @_;
-    my $hwidth = sprintf("%ipx",$width);
-    my @col = ('#00C000','#C00000','#C0C000','#00C0C0','#C000C0','#FFD700');
-    my $html = "";
-    if ($width != 0 ) {
-        $html .= "<div style='padding:2px;background-color:$col[$col_index]; border: 1px solid #000000; width:$hwidth; height:8px; font-size:2px;'>&nbsp;</div>";
-    }
-    return $html;
-}
-
-sub out_membar {
-    
-    my ($self, $width1, $width2) = @_;
-    my $hwidth1 = sprintf("%ipx",$width1+$width2);
-    my $hwidth2 = sprintf("%ipx",$width1);
- 
-    return "<div style='padding:2px; background-color:#C0C0C0; border: 1px solid #000000; width:$hwidth1; height:8px; font-size:8px;'><div style='background-color:#00C000; border: 1px solid #000000; width:$hwidth2; height:6px; font-size:2px;'>&nbsp;</div></div>";    
-}
 
 1;
-
-__END__
