@@ -18,7 +18,7 @@ sub new_from_pmg_cfg {
     if ($serverid) {
 	$ids = [ $serverid ];
     } else {
-	foreach my $k (keys %{$pmg_conf->{ids}}) {
+	foreach my $k (keys %{$pmg_cfg->{ids}}) {
 	    push @$ids, $k if $k =~ m/^ldap_/;
 	}
     }
