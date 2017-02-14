@@ -6,10 +6,12 @@ use Carp;
 use DBI;
 use Net::Cmd;
 use Net::SMTP;
+use IO::File;
 use File::stat;
 use MIME::Words;
 use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
+use Xdgmime;
 
 use PVE::SafeSyslog;
 use PMG::MailQueue;
@@ -238,5 +240,29 @@ sub analyze_virus {
     return analyze_virus_clam($queue, $filename, $pmg_cfg);
 }
 
+sub magic_mime_type_for_file {
+    my ($filename) = @_;
+    
+    # we do not use get_mime_type_for_file, because that considers
+    # filename extensions - we only want magic type detection
+
+    my $bufsize = Xdgmime::xdg_mime_get_max_buffer_extents();
+    die "got strange value for max_buffer_extents" if $bufsize > 4096*10;
+
+    my $ct = "application/octet-stream";
+
+    my $fh = IO::File->new("<$filename") || 
+	die "unable to open file '$filename' - $!";
+
+    my ($buf, $len);
+    if (($len = $fh->read($buf, $bufsize)) > 0) {
+	$ct = xdg_mime_get_mime_type_for_data($buf, $len);
+    }
+    $fh->close();
+    
+    die "unable to read file '$filename' - $!" if ($len < 0);
+    
+    return $ct;
+}
 
 1;
