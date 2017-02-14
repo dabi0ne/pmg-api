@@ -1,21 +1,23 @@
-package Proxmox::Unpack;
+package PMG::Unpack;
 
 use strict;
+use warnings;
 use IO::File;
 use IO::Select;
 use Xdgmime;
-use Compress::Zlib qw (gzopen);
-use Compress::Bzip2 qw (bzopen);
+use Compress::Zlib qw(gzopen);
+use Compress::Bzip2 qw(bzopen);
 use File::Path;
-use File::Temp qw (tempdir);
+use File::Temp qw(tempdir);
 use File::Basename;
 use File::stat;
 use POSIX ":sys_wait_h";
-use Time::HiRes qw (usleep ualarm gettimeofday tv_interval);
+use Time::HiRes qw(usleep ualarm gettimeofday tv_interval);
 use Archive::Zip qw(:CONSTANTS :ERROR_CODES);
 use LibArchive;
-use Proxmox::Utils;
 use MIME::Parser;
+
+use PMG::Utils;
 
 my $unpackers = {
 
@@ -31,7 +33,6 @@ my $unpackers = {
 
     # ZIP
     #'application/zip' =>                   [ 'zip',  \&unpack_tar, 1],
-    #'application/zip' =>                  [ 'zip',  \&unpack_zip, 1],
     'application/zip' =>                  [ '7z',   \&generic_unpack ],
 
     # 7z
@@ -995,8 +996,8 @@ sub __unpack_archive {
     return if !$size; # nothing to do
 
     if (!$ct) {
-	$ct = Proxmox::Utils::magic_mime_type_for_file ($filename);
-	$self->add_glob_mime_type ($filename);
+	$ct = PMG::Utils::magic_mime_type_for_file($filename);
+	$self->add_glob_mime_type($filename);
     }
 
     if ($ct) {
@@ -1094,7 +1095,7 @@ sub unpack_archive {
 	return; # do nothing
     }
     
-    $ct = Proxmox::Utils::magic_mime_type_for_file ($filename) if !$ct;
+    $ct = PMG::Utils::magic_mime_type_for_file($filename) if !$ct;
 
     return if (!$ct || !is_archive ($ct)); # not an archive
 

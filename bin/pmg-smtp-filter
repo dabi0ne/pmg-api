@@ -37,9 +37,9 @@ use PMG::AtomicFile;
 use PMG::LDAPSet;
 use PMG::Config;
 use PMG::MailQueue;
+use PMG::Unpack;
 
 use Proxmox::SMTP;
-use Proxmox::Unpack;
 
 use base qw(Net::Server::PreFork);
 
