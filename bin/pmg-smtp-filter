@@ -58,7 +58,9 @@ my $opt_untrusted;
 my $opt_pidfile;
 my $opt_database;
 
-initlog ('proxprox', 'mail');
+my $prog_name = 'pmg-smtp-filter';
+
+initlog($prog_name, 'mail');
 
 if (!GetOptions ('testmode=s' => \$opt_testmode,
 		 'pidfile=s' => \$opt_pidfile,
@@ -68,7 +70,7 @@ if (!GetOptions ('testmode=s' => \$opt_testmode,
     exit (-1);
 }
 
-$opt_pidfile = "/var/run/proxprox.pid" if !$opt_pidfile;
+$opt_pidfile = "/var/run/${prog_name}.pid" if !$opt_pidfile;
 
 my $max_servers = 1;
 my $min_servers = 1;
@@ -449,7 +451,7 @@ sub pre_loop_hook {
 
     alarm (0); # SA forgets to clear alarm in some cases
     umask ($backup_umask);
-    initlog ('proxprox', 'mail');
+    initlog ($prog_name, 'mail');
 
     $SIG{'USR1'} = sub {
 	# reloading server configuration
@@ -464,7 +466,7 @@ sub pre_loop_hook {
 sub child_init_hook {
     my $self = shift;
 
-    $0 = 'proxprox child';
+    $0 = "$prog_name child";
 
     # $self->log (3, "init child");
 
@@ -842,7 +844,7 @@ sub process_request {
   $self->done (1) if $err;
 }
 
-# test sig_hup with: for ((;;)) ;do kill -HUP  `cat /var/run/proxprox.pid`; done;
+# test sig_hup with: for ((;;)) ;do kill -HUP  `cat /var/run/${prog_name}.pid`; done;
 # wrapper to avoid multiple calls to sig_hup
 sub sig_hup {
   my $self = shift;
