@@ -146,4 +146,164 @@ sub check_cert_fingerprint {
     return 0;
 }
 
+sub read_cluster_conf {
+    my ($filename, $fh) = @_;
+
+    my $localname = PVE::INotify::nodename();
+    my $localip = remote_node_ip($localname);
+
+    my $level = 0;
+    my $maxcid = 0;
+
+    my $cinfo;
+
+    $cinfo->{nodes} = [];
+    $cinfo->{remnodes} = [];
+
+    $cinfo->{local} = {
+	role => '-',
+	cid => 0,
+	ip => $localip,
+	name => $localname,
+	configport => 83,
+	dbport => 5432,
+    };
+
+    if (defined($fh)) {
+
+	$cinfo->{exists} = 1; # cluster configuratin file exists and is readable
+
+	while (defined(my $line = <$fh>)) {
+	    chomp $line;
+
+	    next if $line =~ m/^\s*$/; # skip empty lines
+
+	    if ($line =~ m/^maxcid\s+(\d+)\s*$/i) {
+		$maxcid = $1 > $maxcid ? $1 : $maxcid;
+		next;
+	    }
+
+	    if ($line =~ m/^(master|node)\s+(\d+)\s+\{\s*$/i) {
+		$level++;
+		my ($t, $cid) = (lc($1), $2);
+
+		$maxcid = $cid > $maxcid ? $cid : $maxcid;
+
+		my $res = {
+		    role => $t eq 'master' ? 'M' : 'N',
+		    cid => $cid
+		};
+
+		while (defined($line = <$fh>)) {
+		    chomp $line;
+		    next if $line =~ m/^\s*$/; # skip empty lines
+		    if ($line =~ m/^\}\s*$/) {
+			$level--;
+			last;
+		    }
+
+		    if ($line =~ m/^\s*(\S+)\s*:\s*(\S+)\s*$/) {
+			my ($n, $v) = (lc $1, $2);
+
+			# fixme: do syntax checks
+			if ($n eq 'ip') {
+			    $res->{$n} = $v;
+			} elsif ($n eq 'name') {
+			    $res->{$n} = $v;
+			} elsif ($n eq 'hostrsapubkey') {
+			    $res->{$n} = $v;
+			} elsif ($n eq 'rootrsapubkey') {
+			    $res->{$n} = $v;
+			} else {
+			    die "syntax error in configuration file\n";
+			}
+		    } else {
+			die "syntax error in configuration file\n";
+		    }
+		}
+
+		die "missing ip address for node '$cid'\n" if !$res->{ip};
+		die "missing name for node '$cid'\n" if !$res->{name};
+		#die "missing host RSA key for node '$cid'\n" if !$res->{hostrsapubkey};
+		#die "missing user RSA key for node '$cid'\n" if !$res->{rootrsapubkey};
+
+		push @{$cinfo->{nodes}}, $res;
+
+		if ($res->{role} eq 'M') {
+		    $cinfo->{master} = $res;
+		}
+
+		if ($res->{ip} eq $localip) {
+		    $cinfo->{local} = $res;
+		}
+	    } else {
+		die "syntax error in configuration file\n";
+	    }
+	}
+    }
+
+    die "syntax error in configuration file\n" if $level;
+
+    $cinfo->{maxcid} = $maxcid;
+
+    my @cidlist = ();
+    foreach my $ni (@{$cinfo->{nodes}}) {
+	next if $cinfo->{local}->{cid} == $ni->{cid}; # skip local CID
+	push @cidlist, $ni->{cid};
+    }
+
+    my $ind = 0;
+    my $portid = {};
+    foreach my $cid (sort @cidlist) {
+	$portid->{$cid} = $ind;
+	$ind++;
+    }
+
+    foreach my $ni (@{$cinfo->{nodes}}) {
+	# fixme: do we still need those ports?
+	$ni->{configport} = $ni->{cid} == $cinfo->{local}->{cid} ? 83 : 50000 + $portid->{$ni->{cid}};
+	$ni->{dbport} = $ni->{cid} == $cinfo->{local}->{cid} ? 5432 : 50100 + $portid->{$ni->{cid}};
+    }
+
+    foreach my $ni (@{$cinfo->{nodes}}) {
+	next if $ni->{cid} == $cinfo->{local}->{cid};
+	push @{$cinfo->{remnodes}}, $ni->{cid};
+    }
+
+    return $cinfo;
+}
+
+sub write_cluster_conf {
+    my ($filename, $fh, $cinfo) = @_;
+
+    my $raw = "maxcid $cinfo->{maxcid}\n\n";
+
+    foreach my $ni (@{$cinfo->{nodes}}) {
+
+	if ($ni->{role} eq 'M') {
+	    $raw .= "master $ni->{cid} {\n";
+	    $raw .= " IP: $ni->{ip}\n";
+	    $raw .= " NAME: $ni->{name}\n";
+	    $raw .= " HOSTRSAPUBKEY: $ni->{hostrsapubkey}\n";
+	    $raw .= " ROOTRSAPUBKEY: $ni->{rootrsapubkey}\n";
+	    $raw .= "}\n\n";
+	} elsif ($ni->{role} eq 'N') {
+	    $raw .= "node $ni->{cid} {\n";
+	    $raw .= " IP: $ni->{ip}\n";
+	    $raw .= " NAME: $ni->{name}\n";
+	    $raw .= " HOSTRSAPUBKEY: $ni->{hostrsapubkey}\n";
+	    $raw .= " ROOTRSAPUBKEY: $ni->{rootrsapubkey}\n";
+	    $raw .= "}\n\n";
+	}
+    }
+
+    PVE::Tools::safe_print($filename, $fh, $raw);
+}
+
+PVE::INotify::register_file('cluster.conf', "/etc/proxmox/cluster.conf",
+			    \&read_cluster_conf,
+			    \&write_cluster_conf,
+			    undef,
+			    always_call_parser => 1);
+
 1;
