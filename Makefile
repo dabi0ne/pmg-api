@@ -24,12 +24,14 @@ LIBSOURCES =				\
 	PMG/ModGroup.pm			\
 	PMG/SMTPPrinter.pm		\
 	PMG/NoVncIndex.pm		\
+	PMG/Config.pm			\
 	PMG/Cluster.pm			\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\
 	PMG/AtomicFile.pm		\
 	PMG/RuleCache.pm		\
+	PMG/LDAPSet.pm			\
 	PMG/LDAPCache.pm		\
 	PMG/DBTools.pm			\
 	PMG/RuleDB/Group.pm		\
