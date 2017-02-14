@@ -32,14 +32,14 @@ my $unpackers = {
     #'application/x-cpio' =>               [ '7z', \&generic_unpack ],
 
     # ZIP
-    #'application/zip' =>                   [ 'zip',  \&unpack_tar, 1],
-    'application/zip' =>                  [ '7z',   \&generic_unpack ],
+    #'application/zip' =>                  [ 'zip',  \&unpack_tar, 1],
+    'application/zip' =>                   [ '7z',   \&generic_unpack ],
 
     # 7z
     'application/x-7z-compressed' =>       [ '7z',   \&generic_unpack ],
 
     # RAR
-    'application/x-rar' =>                 [ '7z',   \&generic_unpack ],
+    'application/vnd.rar' =>               [ '7z',   \&generic_unpack ],
 
     # ARJ
     'application/x-arj' =>                 [ '7z',   \&generic_unpack ],
@@ -48,8 +48,7 @@ my $unpackers = {
     'application/x-rpm' =>                 [ '7z', \&generic_unpack ],
 
     # DEB
-    'application/x-deb' =>                 [ 'ar',   \&unpack_tar, 1],
-    #'application/x-deb' =>                [ '7z',   \&generic_unpack ],
+    'application/vnd.debian.binary-package' => [ 'ar',   \&unpack_tar, 1],
 
     # MS CAB
     'application/vnd.ms-cab-compressed' => [ '7z',   \&generic_unpack ],
@@ -71,14 +70,12 @@ my $unpackers = {
 };
 
 my $decompressors = {
-
-    'application/x-gzip' =>  [ 'guzip', \&uncompress_file ],
+    'application/gzip' =>  [ 'guzip', \&uncompress_file ],
     'application/x-compress' => [ 'uncompress', \&uncompress_file ],
     # 'application/x-compressed-tar' => [ 'guzip', \&uncompress_file ], # unpack_tar is faster
     'application/x-tarz' => [ 'uncompress', \&uncompress_file ],
     'application/x-bzip' => [ 'bunzip2', \&uncompress_file ],
     'application/x-bzip-compressed-tar' => [ 'bunzip2', \&uncompress_file ],
-
 };
 
 
@@ -97,11 +94,11 @@ sub helper_pipe_open {
     my ($fh, $inputfilename, $errorfilename, @cmd) = @_;
 
     my $pid = $fh->open ('-|');
-  
+
     die "unable to fork helper process: $!" if !defined $pid;
 
     return $pid if ($pid != 0); # parent process simply returns
-    
+
     $inputfilename = '/dev/null' if !$inputfilename;
 
     # same algorythm as used inside SA
@@ -111,8 +108,8 @@ sub helper_pipe_open {
     POSIX::close(0) if $fd != 0;
 
     if (!open (STDIN, "<$inputfilename")) {
-	POSIX::_exit (1); 
-	kill ('KILL', $$); 
+	POSIX::_exit (1);
+	kill ('KILL', $$);
     }
 
     $errorfilename = '&STDOUT' if !$errorfilename;
@@ -122,16 +119,16 @@ sub helper_pipe_open {
     POSIX::close(2) if $fd != 2;
 
     if (!open (STDERR, ">$errorfilename")) {
-	POSIX::_exit (1); 
-	kill ('KILL', $$); 
+	POSIX::_exit (1);
+	kill ('KILL', $$);
     }
 
     exec @cmd;
-    
+
     warn "exec failed";
 
-    POSIX::_exit (1); 
-    kill('KILL', $$); 
+    POSIX::_exit (1);
+    kill('KILL', $$);
     die;  # else -w complains
 }
 
@@ -158,7 +155,7 @@ sub helper_pipe_consume {
     };
 
     my $err = $@;
-            
+
     # send TERM first if process still exits
     if ($err) {
 	kill (15, $pid) if kill (0, $pid);
@@ -169,7 +166,7 @@ sub helper_pipe_consume {
 	    # do nothing
 	}
     }
-    
+
     # then close pipe
     my $closeerr;
     close ($cfh) || ($closeerr = $!);
@@ -213,7 +210,7 @@ sub run_with_timeout {
     };
 
     my $err = $@;
-    
+
     alarm ($prev_alarm) if defined ($prev_alarm);
 
     die "unknown error" if $sigcount && !$err; # seems to happen sometimes
@@ -247,12 +244,12 @@ sub new {
     $self->{maxrec} = $param{maxrec} || 8;     # 0 = disabled
     $self->{maxratio} = $param{maxratio} || 0; # 0 = disabled
 
-    $self->{maxquota} = $param{quota} || 250*1024*1024; # 250 MB 
+    $self->{maxquota} = $param{quota} || 250*1024*1024; # 250 MB
 
     $self->{ctonly} = $param{ctonly}; # only detect contained content types
 
     # internal
-    $self->{quota} = 0; 
+    $self->{quota} = 0;
     $self->{ratioquota} = 0;
     $self->{size} = 0;
     $self->{files} = 0;
@@ -311,20 +308,20 @@ sub uncompress_file {
     if ($app eq 'guzip' || $app eq 'bunzip2') {
 
 	my $cfh;
-	
+
 	eval {
 
 	    # bzip provides a gz compatible interface
-	    if ($app eq 'bunzip2') { 
+	    if ($app eq 'bunzip2') {
 		$self->{mime}->{'application/x-bzip'} = 1;
 		$cfh = bzopen ("$filename", 'r');
 		die "bzopen '$filename' failed" if !$cfh;
 	    } else {
-		$self->{mime}->{'application/x-gzip'} = 1;
+		$self->{mime}->{'application/gzip'} = 1;
 		$cfh = gzopen ("$filename", 'rb');
 		die "gzopen '$filename' failed" if !$cfh;
 	    }
-	   
+
 	    run_with_timeout ($timeout, sub {
 		my $count;
 		my $buf;
@@ -406,7 +403,7 @@ sub uncompress_file {
 
 	    });
 	};
-	
+
 	$err = $@;
     }
 
@@ -448,7 +445,7 @@ sub todo_list_add {
 
 sub check_timeout {
     my ($self) = @_;
-    
+
     my $elapsed = int (tv_interval ($self->{starttime}));
     my $timeout = $self->{timeout} - $elapsed;
 
@@ -476,7 +473,7 @@ sub check_quota {
     die "compresion ratio too large (> $self->{maxratio})"
 	if $self->{maxratio} && (($self->{size} + $sizediff) > $self->{ratioquota});
 
-    die "archive too large (> $self->{quota})" 
+    die "archive too large (> $self->{quota})"
 	if ($self->{size} + $sizediff) > $self->{quota};
 
     die "unexpected number of files '$files'" if $files <= 0;
@@ -490,7 +487,7 @@ sub check_quota {
 	$self->{files} += $files;
 	$self->{size} += $sizediff;
     }
-    
+
 }
 
 sub add_glob_mime_type {
@@ -537,11 +534,11 @@ sub unpack_mime {
 
     eval {
 	run_with_timeout ($timeout, sub {
-	  
+
 	    # Create a new MIME parser:
 	    my $parser = new MIME::Parser;
 	    $parser->output_under ($tmpdir);
-	    $parser->extract_nested_messages (1); 
+	    $parser->extract_nested_messages (1);
 	    $parser->ignore_errors (1);
 	    $parser->extract_uuencode (1);
 	    $parser->filer->ignore_filename(1);
@@ -554,7 +551,7 @@ sub unpack_mime {
 	    my $entity = $parser->parse_open ($filename);
 
 	    ($files, $size) = $self->walk_mime_entity ($entity);
-	    
+
 	});
     };
 
@@ -586,7 +583,7 @@ sub unpack_zip {
 
 	    my $status = $zip->read ($filename);
 	    die "unable to open zip file '$filename'" if $status != AZ_OK;
-	
+
 	    my $tid = 1;
 	    foreach my $mem ($zip->members) {
 
@@ -594,7 +591,7 @@ sub unpack_zip {
 
 		my $cm = $mem->compressionMethod();
 		die "unsupported zip compression method '$cm'\n"
-		    if !(($cm == COMPRESSION_DEFLATED || 
+		    if !(($cm == COMPRESSION_DEFLATED ||
 			  $cm == COMPRESSION_STORED));
 
 		die "encrypted archive detected\n"
@@ -624,7 +621,7 @@ sub unpack_zip {
 
 		my $outfd = IO::File->new;
 		if (!$outfd->open ($newfn, O_CREAT|O_EXCL|O_WRONLY, 0640)) {
-		    die "unable to create file $newfn: $!"; 
+		    die "unable to create file $newfn: $!";
 		}
 
 		my $ct;
@@ -641,7 +638,7 @@ sub unpack_zip {
 		    my $bytes = 0;
 		    while ($status == AZ_OK) {
 			($outRef, $status) = $mem->readChunk();
-			die "unable to read zip member" 
+			die "unable to read zip member"
 			    if ($status != AZ_OK && $status != AZ_STREAM_END);
 
 			my $len = length ($$outRef);
@@ -654,7 +651,7 @@ sub unpack_zip {
 			last if $status == AZ_STREAM_END;
 		    }
 
-		    $mem->endRead();			
+		    $mem->endRead();
 
 		    $self->todo_list_add ($newfn, $ct, $bytes);
 
@@ -700,7 +697,7 @@ sub unpack_tar {
 	run_with_timeout ($timeout, sub {
 
 	    if ((my $r = LibArchive::archive_read_open_filename ($a, $filename, 10240))) {
-		die "LibArchive error: %s", LibArchive::archive_error_string ($a); 
+		die "LibArchive error: %s", LibArchive::archive_error_string ($a);
 	    }
 	    my $tid = 1;
 	    for (;;) {
@@ -749,7 +746,7 @@ sub unpack_tar {
 			my $len;
 			my $buf;
 			while (($len = LibArchive::archive_read_data($a, $buf, 128*1024)) > 0) {
-			    
+
 			    if (!$bytes) {
 				if ($ct = xdg_mime_get_mime_type_for_data ($buf, $len)) {
 				    $self->{mime}->{$ct} = 1;
@@ -760,12 +757,12 @@ sub unpack_tar {
 				    }
 				}
 			    }
-			    
+
 			    $bytes += $len;
 
 			    if (!$outfd) { # create only when needed
 				$outfd = IO::File->new;
-		
+
 				if (!$outfd->open ($newfn, O_CREAT|O_EXCL|O_WRONLY, 0640)) {
 				    die "unable to create file $newfn: $!";
 				}
@@ -786,12 +783,12 @@ sub unpack_tar {
 		my $err = $@;
 
 		$outfd->close () if $outfd;
-		
+
 		if ($err) {
 		    unlink $newfn;
 		    die $err;
 		}
-	    }	
+	    }
 	});
     };
 
@@ -799,7 +796,7 @@ sub unpack_tar {
 
     LibArchive::archive_read_close($a);
     LibArchive::archive_read_finish($a);
-    
+
     die $err if $err;
 
     $self->check_quota ($files, $size, $csize, 1); # commit sizes
@@ -818,7 +815,7 @@ sub generic_unpack {
     my @listcmd;
     my @restorecmd = ('/bin/false');
 
-    my $filter; 
+    my $filter;
 
     if ($app eq 'tar') {
 	@listcmd = ('/bin/tar', '-tvf', $filename);
@@ -872,7 +869,7 @@ sub generic_unpack {
 		undef $path;
 		undef $folder;
 		undef $bytes;
- 
+
 	    } elsif ($line =~ m/^Path = (.*)\z/s) {
 		$path = $1;
 	    } elsif ($line =~ m/^Size = (\d+)\z/s) {
@@ -915,7 +912,7 @@ sub generic_unpack {
 
 	my $cfh = IO::File->new();
 	my $pid = helper_pipe_open ($cfh, '/dev/null', '/dev/null', @listcmd);
- 	
+
 	helper_pipe_consume ($cfh, $pid, $timeout, 0, $filter);
     };
 
@@ -950,7 +947,7 @@ sub unpack_dir {
 
     my $name;
 
-    while (defined ($name = readdir (DIR))) {	
+    while (defined ($name = readdir (DIR))) {
 	my $path = "$dirname/$name";
 	my $st = lstat ($path);
 
@@ -984,10 +981,10 @@ sub __unpack_archive {
 
     $level = 0 if !$level;
 
-    $self->{levels} = max2 ($self->{levels}, $level);
+    $self->{levels} = max2($self->{levels}, $level);
 
     if ($self->{maxrec} && ($level >= $self->{maxrec})) {
-	return if $self->{maxrec_soft}; 
+	return if $self->{maxrec_soft};
 	die "max recursion limit reached\n";
     }
 
@@ -1003,33 +1000,33 @@ sub __unpack_archive {
     if ($ct) {
 	$self->{mime}->{$ct} = 1;
 
-	if (defined ($decompressors->{$ct})) {
+	if (defined($decompressors->{$ct})) {
 
 	    my ($app, $code) = @{$decompressors->{$ct}};
 
 	    if ($app) {
 
 		# we try to keep extension correctly
-		my $tmp = basename ($filename);
-		($ct eq 'application/x-gzip') && 
+		my $tmp = basename($filename);
+		($ct eq 'application/gzip') &&
 		    $tmp =~ s/\.gz\z//;
-		($ct eq 'application/x-bzip') && 
+		($ct eq 'application/x-bzip') &&
 		    $tmp =~ s/\.bz2?\z//;
-		($ct eq 'application/x-compress') && 
+		($ct eq 'application/x-compress') &&
 		    $tmp =~ s/\.Z\z//;
-		($ct eq 'application/x-compressed-tar') && 
+		($ct eq 'application/x-compressed-tar') &&
 		    $tmp =~ s/\.gz\z// || $tmp =~ s/\.tgz\z/.tar/;
-		($ct eq 'application/x-bzip-compressed-tar') && 
+		($ct eq 'application/x-bzip-compressed-tar') &&
 		    $tmp =~ s/\.bz2?\z// || $tmp =~ s/\.tbz\z/.tar/;
 		($ct eq 'application/x-tarz') &&
 		    $tmp =~ s/\.Z\z//;
 
-		my $newname = sprintf "%s/DC_%08d_%s", $self->{tmpdir}, ++$self->{ufid}, $tmp; 
+		my $newname = sprintf "%s/DC_%08d_%s", $self->{tmpdir}, ++$self->{ufid}, $tmp;
 
 		print "Decomp: $filename\n\t($ct) with $app to $newname\n"
-		    if $self->{debug};
+		    if  $self->{debug};
 
-		if (my $res = &$code ($self, $app, $filename, $newname, $level ? $size : 0, $size)) {
+		if (my $res = &$code($self, $app, $filename, $newname, $level ? $size : 0, $size)) {
 		    unlink $filename if $level;
 		    $self->unpack_todo ($level + 1);
 		}
@@ -1040,9 +1037,9 @@ sub __unpack_archive {
 
 	    if ($app) {
 
-		my $tmpdir = sprintf "%s/DIR_%08d", $self->{tmpdir}, ++$self->{udid}; 
+		my $tmpdir = sprintf "%s/DIR_%08d", $self->{tmpdir}, ++$self->{udid};
 		mkdir $tmpdir;
- 
+
 		print "Unpack: $filename\n\t($ct) with $app to $tmpdir\n"
 		    if $self->{debug};
 
@@ -1061,28 +1058,28 @@ sub __unpack_archive {
 }
 
 sub is_archive {
-    my $ct = shift;
+    my ($ct) = @_;
 
-    return defined ($decompressors->{$ct}) || defined ($unpackers->{$ct});
+    return defined($decompressors->{$ct}) || defined($unpackers->{$ct});
 }
 
 # unpack_archive
 #
 # Description: unpacks an archive and records containing
 # content types (detected by magic numbers and file extension)
-# Extracted files are stored inside 'tempdir'. 
-# 
+# Extracted files are stored inside 'tempdir'.
+#
 # returns: true if file is archive, undef otherwhise
 
 sub unpack_archive {
     my ($self, $filename, $ct) = @_;
 
-    my $st = lstat ($filename);
+    my $st = lstat($filename);
     my $size = 0;
 
     if (!$st) {
 	die "no such file '$filename' - $!";
-    } elsif (POSIX::S_ISREG ($st->mode)) {
+    } elsif (POSIX::S_ISREG($st->mode)) {
 	$size = $st->size;
 
 	return if !$size; #  do nothing
@@ -1090,27 +1087,27 @@ sub unpack_archive {
 	$self->{quota} = $self->{maxquota} - $self->{size};
 
 	$self->{ratioquota} = $size * $self->{maxratio} if $self->{maxratio};
-	
+
     } else {
 	return; # do nothing
     }
-    
+
     $ct = PMG::Utils::magic_mime_type_for_file($filename) if !$ct;
 
-    return if (!$ct || !is_archive ($ct)); # not an archive
+    return if (!$ct || !is_archive($ct)); # not an archive
 
     eval {
-	$self->__unpack_archive ($filename, 0, $st->size, $ct);
+	$self->__unpack_archive($filename, 0, $st->size, $ct);
     };
 
     my $err = $@;
 
-    printf "ELAPSED: %.2f ms $filename\n", 
+    printf "ELAPSED: %.2f ms $filename\n",
     int(tv_interval ($self->{starttime}) * 1000)
 	if $self->{debug};
 
     if ($err) {
-	$self->{mime}->{'proxmox/unreadable-archive'} = 1;	
+	$self->{mime}->{'proxmox/unreadable-archive'} = 1;
 	die $err;
     }
     return 1;
