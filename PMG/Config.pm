@@ -136,6 +136,33 @@ sub options {
     };
 }
 	
+package PMG::Config::Mail;
+
+use strict;
+use warnings;
+
+use base qw(PMG::Config::Base);
+
+sub type {
+    return 'mail';
+}
+
+sub properties {
+    return {
+	banner => {
+	    description => "ESMTP banner.",
+	    type => 'string',
+	    maxLength => 1024,
+	    default => 'ESMTP Proxmox',
+	},
+    };
+}
+
+sub options {
+    return {
+	banner => { optional => 1 },
+    };
+}
 package PMG::Config;
 
 use strict;
@@ -147,6 +174,7 @@ use PVE::Tools;
 use PVE::INotify;
 
 PMG::Config::Administration->register();
+PMG::Config::Mail->register();
 PMG::Config::Spam->register();
 PMG::Config::LDAP->register();
 
