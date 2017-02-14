@@ -1,16 +1,17 @@
-package Proxmox::SMTP;
+package PMG::SMTP;
 
 use strict;
+use warnings;
 use Carp;
 use IO::Socket;
-use Proxmox::SafeSyslog;
-use Proxmox::MailQueue;
-use Proxmox::License;
 
-# New instance.
+use PVE::SafeSyslog;
+
+use PMG::MailQueue;
+
 sub new {
     my($this, $sock) = @_;
-    
+
     my $class = ref($this) || $this;
 
     croak("undefined socket: ERROR") if !defined($sock);
@@ -49,14 +50,8 @@ sub loop {
     my ($self, $func, $data, $maxcount) = @_;
 
     my($cmd, $args);
-    
-    my $sock = $self->{sock};
 
-    my $reject = 0;
-    my $lic = Proxmox::License->new ();
-    if (!$lic->valid || $lic->expired_trial) {
-	$reject = 1;
-    }
+    my $sock = $self->{sock};
 
     my $count = 0;
 
@@ -74,11 +69,6 @@ sub loop {
 
 	if ($cmd eq 'helo' || $cmd eq 'ehlo' || $cmd eq 'lhlo') {
 	    $self->reset();
-
-	    if ($reject) {
-		$self->reply ("500 5.5.1 Error: No valid License");
-		last;
-	    }
 
 	    $self->reply ("250-PIPELINING");
 	    $self->reply ("250-ENHANCEDSTATUSCODES");
@@ -171,7 +161,7 @@ sub loop {
 	    last if $data->{errors}; # abort if we find errors
 	    next;
 	}
-	
+
 	$self->reply ("500 5.5.1 Error: unknown command");
     }
 
@@ -182,12 +172,12 @@ sub loop {
 sub save_data {
     my $self = shift;
     my $done = undef;
-    
+
     if(!defined($self->{from})) {
 	$self->reply ("503 5.5.1 Tell me who you are.");
 	return 0;
     }
-    
+
     if(!defined($self->{to})) {
 	$self->reply ("503 5.5.1 Tell me who to send it.");
 	return 0;
@@ -200,19 +190,19 @@ sub save_data {
     my $queue;
 
     eval {
-	$queue = Proxmox::MailQueue->new ($self->{from}, $self->{to});
-       
+	$queue = PMG::MailQueue->new ($self->{from}, $self->{to});
+
 	while(<$sock>) {
 
 	    if(/^\.\015\012$/) {
 		$done = 1;
 		last;
 	    }
-	
+
 	    # RFC 2821 compliance.
 	    s/^\.\./\./;
 
-	    s/\015\012/\n/; 
+	    s/\015\012/\n/;
 
 	    print {$queue->{fh}} $_;
 	    $queue->{bytes} += length ($_);
@@ -220,7 +210,7 @@ sub save_data {
 
 	$queue->{fh}->flush ();
 
-	$self->{queue} = $queue;	
+	$self->{queue} = $queue;
     };
 
     if($@) {
@@ -237,5 +227,3 @@ sub save_data {
 }
 
 1;
-
-__END__
