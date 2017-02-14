@@ -38,8 +38,10 @@ use PMG::LDAPSet;
 use PMG::Config;
 use PMG::MailQueue;
 use PMG::Unpack;
+use PMG::SMTP;
 
-use Proxmox::SMTP;
+use PMG::Unpack;
+use PMG::Statistic;
 
 use base qw(Net::Server::PreFork);
 
@@ -166,11 +168,9 @@ sub get_prox_vars {
     $vars->{__spaminfo} = $spaminfo;
 
     if ($opt_testmode) {
-	if ($queue->{vinfo_avira} || $queue->{vinfo_clam} || $queue->{vinfo_commtouch}) {
+	if ($queue->{vinfo_clam}) {
 	    $vars->{'VIRUS_INFO'} = "Virus Info:";
 	    $vars->{'VIRUS_INFO'} .= " clam: $queue->{vinfo_clam}" if $queue->{vinfo_clam};
-	    $vars->{'VIRUS_INFO'} .= " avira: $queue->{vinfo_avira}" if $queue->{vinfo_avira};
-	    $vars->{'VIRUS_INFO'} .= " commtouch: $queue->{vinfo_commtouch}" if $queue->{vinfo_commtouch};
 	} else {
 	    $vars->{'VIRUS_INFO'} = '';
 	}
@@ -237,7 +237,7 @@ sub apply_rules {
 	my $actions = $rulecache->get_actions ($rule->{id});
 	if ($actions) {
 	    foreach my $action (@$actions) {
-		if ($action->isa ("Proxmox::RuleDB::ModField")) {
+		if ($action->isa ("PMG::RuleDB::ModField")) {
 		    my $fname = $action->{field};
 		    next if $fname !~ m/^X-/i;
 		    $entity->head->delete($fname);
@@ -347,7 +347,7 @@ sub apply_rules {
     }
 
     if ($unmatched) {
-	my $accept = Proxmox::RuleDB::Accept->new ();
+	my $accept = PMG::RuleDB::Accept->new ();
 	$accept->execute ($queue, $self->{ruledb}, $mod_group, $unmatched,
 			  $msginfo, undef, undef, undef);
     }
@@ -419,7 +419,7 @@ sub pre_loop_hook {
 
     $self->log (0, "Filter daemon (re)started (max. $max_servers processes)");
 
-    eval {  Proxmox::MailQueue::cleanup_active(); };
+    eval {  PMG::MailQueue::cleanup_active(); };
     $self->log (0, "Cleanup failures: $@") if $@;
 
     my $sig_set = POSIX::SigSet->new;
@@ -514,7 +514,7 @@ sub run_dequeue {
     }
 
     eval {
-	Proxmox::Statistic::update_stats($dbh, $cinfo);
+	PMG::Statistic::update_stats($dbh, $cinfo);
     };
     $err = $@;
 
@@ -542,7 +542,7 @@ sub unpack_entity {
 
 	my $filename = basename ($path);
 
-	if (Proxmox::Unpack::is_archive ($magic)) {
+	if (PMG::Unpack::is_archive ($magic)) {
 	    $self->log (3, "$queue->{logid}: found archive '$filename' ($magic)");
 
 	    my $start = [gettimeofday];
@@ -647,66 +647,11 @@ sub handle_smtp {
 	$queue->{vinfo} = PMG::Utils::analyze_virus(
 	    $queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
 
-	# commtouch scanner
-	# only run with valid license
-	# do not run when we already detected a virus
-	# do not run for outbound mail (requires separate ctasd)
-
-	$queue->{ptime_commtouch} = 0;
-
-	if ($opt_testmode ||
-	    ($queue->{lic_valid} && !$queue->{vinfo} && !$msginfo->{trusted})) {
-	    my ($ct_refid, $ct_spam, $ct_vod, $ct_virus);
-	    my ($csec, $usec) = gettimeofday ();
-	    eval {
-
-		($ct_refid, $ct_spam, $ct_vod, $ct_virus) =
-		    Proxmox::Commtouch::ctasd_classify($queue->{dataname}, $queue->{from});
-	    };
-	    my $err = $@;
-
-	    my ($csec_end, $usec_end) = gettimeofday ();
-	    $queue->{ptime_commtouch} =
-		int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
-
-	    if ($err) {
-		syslog ('err', "ctasd error: %s", $err);
-		$queue->{errors} = 1;
-	    } else {
-		if ($ct_virus) {
-		    syslog ('info', "$queue->{logid}: virus detected: $ct_virus (commtouch)");
-		    $queue->{vinfo_commtouch} = $ct_virus;
-		    $queue->{vinfo} = "$ct_virus (commtouch)";
-		}
-
-		if ($ct_spam && $ct_spam eq 'Confirmed') {
-		    syslog ('info', "$queue->{logid}: known spam mail (confirmed by commtouch)");
-		}
-
-		$queue->{commtouch_spam} = $ct_spam;
-		$queue->{commtouch_vod} = $ct_vod;
-
-		if ($opt_testmode) {
-		    $queue->{commtouch_refid} = "FAKEK_COMTOUCH_REFID(testmode)";
-		} else {
-		    $queue->{commtouch_refid} = $ct_refid;
-		}
-	    }
-	}
-
 	# always add this headers to incoming mails
 	# to enable user to report false negatives
 	if (!$msginfo->{trusted}) {
-	    if (!$queue->{lic_valid}) {
-		$entity->head->replace('X-Proxmox-License', 'Invalid');
-	    }
-
 	    if ($queue->{vinfo}) {
 		$entity->head->replace('X-Proxmox-VInfo', $queue->{vinfo});
-	    }
-
-	    if ($queue->{commtouch_refid}) {
-		$entity->head->replace('X-Proxmox-CTCH-Refid', $queue->{commtouch_refid});
 	    }
 	}
 
@@ -718,7 +663,6 @@ sub handle_smtp {
 	# once (bad performance).
 
 	# should we scan content types inside archives
-
 
 	my $rulecache = $self->{rulecache};
 
@@ -744,11 +688,12 @@ sub handle_smtp {
 		# limits: We use clamav limit for maxfiles, and scan
 		# only 4 levels, timeout of 30 seconds
 
-		$unpack = Proxmox::Unpack->new (tmpdir => $decdir,
-						timeout => 30,
-						ctonly => 1, # only detect CTs
-						maxrec => -4,
-						maxfiles => $maxfiles);
+		$unpack = PMG::Unpack->new (
+		    tmpdir => $decdir,
+		    timeout => 30,
+		    ctonly => 1, # only detect CTs
+		    maxrec => -4,
+		    maxfiles => $maxfiles);
 
 		$self->unpack_entity ($unpack, $entity, $msginfo, $queue);
 	    };
@@ -837,11 +782,9 @@ sub handle_smtp {
     $time_total = $time_total/1000;
 
     my $ptspam = ($queue->{ptime_spam} || 0)/1000;
-    my $ptcommtouch = ($queue->{ptime_commtouch} || 0)/1000;
-    my $ptavira = ($queue->{ptime_avira} || 0)/1000;
     my $ptclam = ($queue->{ptime_clam} || 0)/1000;
 
-    $self->log (3, "$queue->{logid}: processing time: ${time_total} seconds ($ptcommtouch, $ptspam, $ptclam, $ptavira)");
+    $self->log (3, "$queue->{logid}: processing time: ${time_total} seconds ($ptspam, $ptclam)");
 
     $msginfo->{test_fh}->close if $opt_testmode;
 
@@ -866,7 +809,7 @@ sub process_request {
 	  $self->{trusted} = 1;
       }
 
-      my $smtp = Proxmox::SMTP->new ($sock);
+      my $smtp = PMG::SMTP->new ($sock);
 
       my $maxcount = $max_requests - $prop->{requests};
 
