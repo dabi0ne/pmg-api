@@ -6,13 +6,11 @@ use Carp;
 
 use PVE::SafeSyslog;
 
-# fixme
-use Proxmox::Config::System;
-
 use PMG::LDAPCache;
+use PMG::Config;
 
-sub new_from_system_cfg {
-    my ($self, $system_cfg, $syncmode, $serverid) = @_;
+sub new_from_pmg_cfg {
+    my ($self, $pmg_cfg, $syncmode, $serverid) = @_;
     my $type = ref($self) || $self;
 
     my $ids = [];
@@ -20,9 +18,8 @@ sub new_from_system_cfg {
     if ($serverid) {
 	$ids = [ $serverid ];
     } else {
-	my @keys = $system_cfg->getkeys('ldap');
-	foreach my $k (@keys) {
-	    push @$ids, $k if $k =~ m/^server_/;
+	foreach my $k (keys %{$pmg_conf->{ids}}) {
+	    push @$ids, $k if $k =~ m/^ldap_/;
 	}
     }
 
@@ -30,7 +27,8 @@ sub new_from_system_cfg {
 
     foreach my $id (@$ids) {
 
-	my $data = $system_cfg->get('ldap', $id);
+	# fixme: does it work?
+	my $data = $pmg_cfg->{ids}->{$id};
 	next if !ref($data);
 
 	$data->{syncmode} = $syncmode;
@@ -43,9 +41,9 @@ sub new_from_system_cfg {
 }
 
 sub ldap_resync {
-    my ($system_cfg, $tostderr) = @_;
+    my ($pmg_cfg, $tostderr) = @_;
 
-    my $ldap = __PACKAGE__->new_from_system_cfg($system_cfg, 1);
+    my $ldap = __PACKAGE__->new_from_pmg_cfg($pmg_cfg, 1);
 
     foreach my $p (@{$ldap->ids()}) {
 	my $server = $ldap->{$p}->{server1};

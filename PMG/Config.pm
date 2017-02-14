@@ -70,12 +70,23 @@ sub properties {
 	    type => 'boolean',
 	    default => 1,
 	},
+	demo => {
+	    description => "Demo mode - do not start SMTP filter.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	email => {
+	    description => "Administrator E-Mail address.",
+	    type => 'string', format => 'email',
+	    default => 'admin@domain.tld',
+	}
     };
 }
 
 sub options {
     return {
 	dailyreport => { optional => 1 },
+	demo => { optional => 1 },
     };
 }
 
@@ -99,12 +110,53 @@ sub properties {
 	    maximum => 1000,
 	    default => 0,
 	},
+	rbl_checks => {
+	    description => "Enable real time blacklists (RBL) checks.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	maxspamsize => {
+	    description => "Maximum size of spam messages in bytes.",
+	    type => 'integer',
+	    minimim => 64,
+	    default => 200*1024,
+	},
     };
 }
 
 sub options {
     return {
 	bounce_score => { optional => 1 },
+	rbl_checks => { optional => 1 },
+	maxspamsize => { optional => 1 },
+    };
+}
+
+package PMG::Config::ClamAV;
+
+use strict;
+use warnings;
+
+use base qw(PMG::Config::Base);
+
+sub type {
+    return 'clamav';
+}
+
+sub properties {
+    return {
+	archivemaxfiles => {
+	    description => "Number of files to be scanned within an archive.",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 1000,
+	},
+    };
+}
+
+sub options {
+    return {
+	archivemaxfiles => { optional => 1 },
     };
 }
 
@@ -135,16 +187,42 @@ sub options {
 	mode => { optional => 1 },
     };
 }
-	
+
 package PMG::Config::Mail;
 
 use strict;
 use warnings;
 
+use PVE::ProcFSTools;
+
 use base qw(PMG::Config::Base);
 
 sub type {
     return 'mail';
+}
+
+my $physicalmem = 0;
+sub physical_memory {
+
+    return $physicalmem if $physicalmem;
+
+    my $info = PVE::ProcFSTools::read_meminfo();
+    my $total = int($info->{memtotal} / (1024*1024));
+
+    return $total;
+}
+
+sub get_max_filters {
+    # estimate optimal number of filter servers
+
+    my $max_servers = 5;
+    my $servermem = 120;
+    my $memory = physical_memory();
+    my $add_servers = int(($memory - 512)/$servermem);
+    $max_servers += $add_servers if $add_servers > 0;
+    $max_servers = 40 if  $max_servers > 40;
+
+    return $max_servers - 2;
 }
 
 sub properties {
@@ -155,12 +233,26 @@ sub properties {
 	    maxLength => 1024,
 	    default => 'ESMTP Proxmox',
 	},
+	max_filters => {
+	    description => "Maximum number of filter processes.",
+	    type => 'integer',
+	    minimum => 3,
+	    maximum => 40,
+	    default => get_max_filters(),
+	},
+	hide_received => {
+	    description => "Hide received header in outgoing mails.",
+	    type => 'boolean',
+	    degault => 0,
+	},
     };
 }
 
 sub options {
     return {
 	banner => { optional => 1 },
+	max_filters => { optional => 1 },
+	hide_received => { optional => 1 },
     };
 }
 package PMG::Config;
@@ -177,16 +269,47 @@ PMG::Config::Administration->register();
 PMG::Config::Mail->register();
 PMG::Config::Spam->register();
 PMG::Config::LDAP->register();
+PMG::Config::ClamAV->register();
 
 # initialize all plugins
 PMG::Config::Base->init();
 
-#print Dumper(PMG::Config::Base->private());
+
+sub new {
+    my ($type) = @_;
+
+    my $class = ref($type) || $type;
+
+    my $cfg = PVE::INotify::read_file("pmg.conf");
+
+    return bless $cfg, $class;
+}
+
+# get section value or default
+# this does not work for ldap entries
+sub get {
+    my ($self, $section, $key) = @_;
+
+    my $pdata = PMG::Config::Base->private();
+    return undef if !defined($pdata->{options}->{$section});
+    return undef if !defined($pdata->{options}->{$section}->{$key});
+    my $pdesc = $pdata->{propertyList}->{$key};
+    return undef if !defined($pdesc);
+
+    my $configid = "section_$section";
+    if (defined($self->{ids}->{$configid}) &&
+	defined(my $value = $self->{ids}->{$configid}->{$key})) {
+	return $value;
+    };
+
+    return $pdesc->{default};
+}
+
 sub read_pmg_conf {
     my ($filename, $fh) = @_;
-    
+
     local $/ = undef; # slurp mode
-    
+
     my $raw = <$fh>;
 
     return  PMG::Config::Base->parse_config($filename, $raw);
@@ -200,8 +323,8 @@ sub write_pmg_conf {
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
-PVE::INotify::register_file('pmg.conf', "/etc/proxmox/pmg.conf",  
-			    \&read_pmg_conf, 
+PVE::INotify::register_file('pmg.conf', "/etc/proxmox/pmg.conf",
+			    \&read_pmg_conf,
 			    \&write_pmg_conf);
 
 

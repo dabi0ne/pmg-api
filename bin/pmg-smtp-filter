@@ -1,10 +1,11 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Carp;
 use Getopt::Long;
 use Time::HiRes qw (gettimeofday tv_interval);
-use Proxmox::SafeSyslog;
 use POSIX qw(:sys_wait_h errno_h signal_h);
 
 use MIME::Parser;
@@ -13,27 +14,32 @@ use Net::Server::PreFork;
 use Net::Server::SIG qw(register_sig check_sigs);
 use Fcntl ':flock';
 use File::Basename;
-
-use Proxmox::proxcfg;
-use Proxmox::Utils;
-use Proxmox::RuleDB;
-use Proxmox::ModGroup;
-use Proxmox::Config::System;
-use Proxmox::SMTP;
-use Proxmox::MailQueue;
-use Proxmox::AtomicFile;
-use Proxmox::LDAPCache;
 use Xdgmime;
-use Proxmox::Unpack;
+
+use PVE::SafeSyslog;
+use PVE::ProcFSTools;
+use PVE::INotify;
 
 use Mail::SpamAssassin;
 use Mail::SpamAssassin::NetSet;
-use Proxmox::Commtouch;
 
-use vars qw(@ISA);
-@ISA = qw(Net::Server::PreFork);
+use PMG::pmgcfg;
+use PMG::Utils;
+use PMG::Cluster;
 
+use PMG::DBTools;
+use PMG::RuleDB;
+use PMG::RuleCache;
+use PMG::ModGroup;
+use PMG::AtomicFile;
+use PMG::LDAPSet;
+use PMG::Config;
 
+use Proxmox::SMTP;
+use Proxmox::MailQueue;
+use Proxmox::Unpack;
+
+use base qw(Net::Server::PreFork);
 
 my $opt_commandline = [$0, @ARGV];
 my $opt_max_dequeue = 1;
@@ -51,8 +57,8 @@ my $opt_database;
 initlog ('proxprox', 'mail');
 
 if (!GetOptions ('testmode=s' => \$opt_testmode,
-		 'pidfile=s' => \$opt_pidfile, 
-		 'untrusted' => \$opt_untrusted, 
+		 'pidfile=s' => \$opt_pidfile,
+		 'untrusted' => \$opt_untrusted,
 		 'database=s' => \$opt_database)) {
     die "usage error\n";
     exit (-1);
@@ -68,15 +74,16 @@ my $max_requests = 1;
 
 if (!$opt_testmode) {
 
-    my $system_cfg = Proxmox::Config::System->new ();
-    my $demo = $system_cfg->get ('administration', 'demo');
+    my $pmg_cfg = PMG::Config->new();
+
+    my $demo = $pmg_cfg->get('administration', 'demo');
 
     if ($demo) {
 	syslog ('info', 'demo mode detected - not starting server');
 	exit (0);
     }
 
-    $max_servers = $system_cfg->get ('mail', 'max_filters') + 2;
+    $max_servers = $pmg_cfg->get('mail', 'max_filters') + 2;
     $min_servers = 2;
     $min_spare_servers = 1;
     $max_spare_servers = 4;
@@ -146,12 +153,12 @@ sub get_prox_vars {
 	'RECEIVERS' => join (', ', @{$msginfo->{targets}}),
 	'SPAMLEVEL' => $spaminfo->{sa_score},
 	'SPAMSTARS' => '*' x (($spaminfo->{sa_score} || 0) > 100 ? 100 : $spaminfo->{sa_score} || 0),
-	'ADMIN' =>  $self->{system_cfg}->get ('administration', 'email'),
+	'ADMIN' =>  $self->{pmg_cfg}->get('administration', 'email'),
 	'HOST' =>  $msginfo->{hostname},
 	'DOMAIN' =>  $msginfo->{domain},
 	'FQDN' => $msginfo->{fqdn},
 	'MSGID' => $queue->{msgid},
-	'VERSION' => Proxmox::proxcfg::package() . "/" .Proxmox::proxcfg::version() . "/" . Proxmox::proxcfg::repoid(),
+	'VERSION' => PMG::pmgcfg::package() . "/" . PMG::pmgcfg::version() . "/" . PMG::pmgcfg::repoid(),
     };
 
     $vars->{__spaminfo} = $spaminfo;
@@ -188,10 +195,10 @@ sub get_prox_vars {
 
 	foreach my $s (@$sscores) {
 	    if ($opt_testmode) {
-		$sa_text .= sprintf ("%-22s %6s %s\n", $s->{rule}, 
+		$sa_text .= sprintf ("%-22s %6s %s\n", $s->{rule},
 				     1, $s->{desc} || '-');
 	    } else {
-		$sa_text .= sprintf ("%-22s %6s %s\n", $s->{rule}, 
+		$sa_text .= sprintf ("%-22s %6s %s\n", $s->{rule},
 				     $s->{score}, $s->{desc} || '-');
 	    }
 	}
@@ -218,8 +225,8 @@ sub apply_rules {
     my $rulecache = $self->{rulecache};
     my $rules = $rulecache->rules ();
     my $dbh = $self->{ruledb}->{dbh};
-     
-    # first, we remove all conditional written 'X-' header attributes 
+
+    # first, we remove all conditional written 'X-' header attributes
     foreach my $rule (@$rules) {
 	next if !$rule->{active};
 	next if ($rule->{direction} == 0) &&  $msginfo->{trusted};
@@ -248,7 +255,7 @@ sub apply_rules {
 	    next;
 	}
 
-	$rule_marks{$rule->{id}} = 
+	$rule_marks{$rule->{id}} =
 	    $rulecache->what_match ($rule->{id}, $queue, $entity, $msginfo, $dbh);
 
 	$rule_actions{$rule->{id}} = $rulecache->get_actions ($rule->{id});
@@ -265,11 +272,11 @@ sub apply_rules {
 	    $final->{$target} = $fin;
 
 	    push @{$rule_targets{$rule->{id}}}, $target;
-	} 
+	}
     }
 
     # Compute rule_info (summary about matching rule)
-    # this can be used for debugging 
+    # this can be used for debugging
     my $rule_info = "";
     foreach my $rule (@$rules) {
 	next if !$rule_targets{$rule->{id}};
@@ -280,7 +287,7 @@ sub apply_rules {
 
 	foreach my $target (@{$rule_targets{$rule->{id}}}) {
 	    $rule_info .= "  Receiver: $target\n";
-	}	
+	}
 	foreach my $action (@{$rule_actions{$rule->{id}}}) {
 	    $rule_info .= "  Action: " . $action->short_desc () . "\n";
 	}
@@ -291,19 +298,19 @@ sub apply_rules {
     if ($msginfo->{testmode}) {
 	my $vars = $self->get_prox_vars ($queue, $entity, $msginfo, undef, [], undef);
 	my $out = "__RULE_INFO__";
-	$out = Proxmox::Utils::subst_values ($out, $vars);
+	$out = PMG::Utils::subst_values ($out, $vars);
 	my $fh = $msginfo->{test_fh};
 	print $fh $out;
     }
 
     # apply actions
 
-    my $mod_group = Proxmox::ModGroup->new ($entity, $msginfo->{targets});
+    my $mod_group = PMG::ModGroup->new($entity, $msginfo->{targets});
 
     foreach my $rule (@$rules) {
 	my $targets = $rule_targets{$rule->{id}};
 	next if !$targets;
-	
+
 	my $spaminfo;
 	foreach my $t (@$targets) {
 	    if ($rule_marks{$rule->{id}}->{$t} && $rule_marks{$rule->{id}}->{$t}->{spaminfo}) {
@@ -317,11 +324,11 @@ sub apply_rules {
 					 $rule_targets{$rule->{id}}, $spaminfo);
 
 
-	my @sorted_actions = 
+	my @sorted_actions =
 	    sort {$a->priority <=> $b->priority} @{$rule_actions{$rule->{id}}};
-	
+
 	foreach my $action (@sorted_actions) {
-	    $action->execute ($queue, $self->{ruledb}, $mod_group,  
+	    $action->execute ($queue, $self->{ruledb}, $mod_group,
 			      $rule_targets{$rule->{id}},
 			      $msginfo, $vars, $rule_marks{$rule->{id}}->{marks}, $ldap);
 	    last if $action->final;
@@ -339,14 +346,14 @@ sub apply_rules {
 
     if ($unmatched) {
 	my $accept = Proxmox::RuleDB::Accept->new ();
-	$accept->execute ($queue, $self->{ruledb}, $mod_group, $unmatched, 
+	$accept->execute ($queue, $self->{ruledb}, $mod_group, $unmatched,
 			  $msginfo, undef, undef, undef);
     }
 
     return $matching_rules;
 }
 
-# reload ruledb and system config
+# reload ruledb and pmg config
 sub load_config {
     my $self = shift;
     my $prop = $self->{server};
@@ -356,15 +363,15 @@ sub load_config {
 	$self->{ruledb}->close ();
     }
 
-    $self->{system_cfg} = Proxmox::Config::System->new ();
-    $self->{cinfo} = $self->{system_cfg}->clusterinfo ();
+    $self->{pmg_cfg} = PMG::Config->new();
+    $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
 
     eval {
-	my $dbh = Proxmox::Utils::open_ruledb ($database);
-	$self->{ruledb} = Proxmox::RuleDB->new ($dbh);
+	my $dbh = PMG::DBTools::open_ruledb ($database);
+	$self->{ruledb} = PMG::RuleDB->new ($dbh);
 
 	# load rulecache
-	$self->{rulecache} = Proxmox::RuleDB::RuleCache->new ($self->{ruledb});
+	$self->{rulecache} = PMG::RuleCache->new ($self->{ruledb});
     };
 
     my $err = $@;
@@ -374,11 +381,19 @@ sub load_config {
 	die $err;
     }
 
-    # create LDAP object 
-    $self->{ldap} = Proxmox::LDAPSet->new_from_system_cfg ($self->{system_cfg}, 1);
+    # create LDAP object
+    $self->{ldap} = PMG::LDAPSet->new_from_pmg_cfg($self->{pmg_cfg}, 1);
 
-    $self->{reload_config} = 0; 
+    $self->{reload_config} = 0;
 }
+
+my $syslog_map = {
+    0 => 'err',
+    1 => 'warning',
+    2 => 'notice',
+    3 => 'info',
+    4 => 'debug'
+};
 
 sub log {
     my ($self, $level, $msg, @therest) = @_;
@@ -386,7 +401,7 @@ sub log {
 
     return if $level =~ /^\d+$/ && $level > $prop->{log_level};
 
-    $level = $Proxmox::SafeSyslog::syslog_map->{$level} || $level;
+    $level = $syslog_map->{$level} || $level;
     if (@therest) {
         syslog($level, $msg, @therest);
     } else {
@@ -406,23 +421,22 @@ sub pre_loop_hook {
     $self->log (0, "Cleanup failures: $@") if $@;
 
     my $sig_set = POSIX::SigSet->new;
-    $sig_set->addset (&POSIX::SIGHUP); 
-    $sig_set->addset (&POSIX::SIGCHLD); 
+    $sig_set->addset (&POSIX::SIGHUP);
+    $sig_set->addset (&POSIX::SIGCHLD);
     my $old_sig_set = POSIX::SigSet->new();
 
     sigprocmask (SIG_UNBLOCK, $sig_set, $old_sig_set);
 
     my ($backup_umask) = umask;
 
-    my $system_cfg = Proxmox::Config::System->new ();
-    
-    # Note: you ned to restart the daemon when you change 'rbl_checks'
-    $system_cfg->get ('spam', 'rbl_checks');
+    my $pmg_cfg = PMG::Config->new();
+
+    # Note: you need to restart the daemon when you change 'rbl_checks'
+    my $rbl_checks = $pmg_cfg->get('spam', 'rbl_checks');
 
     $self->{sa} = Mail::SpamAssassin->new ({
 	debug => 0,
-	local_tests_only => $opt_testmode || 
-	    !$system_cfg->get('spam', 'rbl_checks'),
+	local_tests_only => $opt_testmode || !$rbl_checks,
 	home_dir_for_helpers => '/root',
 	userstate_dir => '/root/.spamassassin',
 	dont_copy_prefs   => 1,
@@ -463,13 +477,13 @@ sub child_init_hook {
     }
 
     $SIG{'USR1'} = sub {
-	$self->{reload_config} = 1; 
+	$self->{reload_config} = 1;
     }
 }
 
 sub child_finish_hook {
     my $self = shift;
-  
+
     # $self->log (3, "finish child");
     $self->{ruledb}->close () if $self->{ruledb};
 }
@@ -483,33 +497,30 @@ sub run_dequeue {
 
     my ($csec, $usec) = gettimeofday ();
 
-    my $system_cfg = Proxmox::Config::System->new ();
-    my $cinfo = $system_cfg->clusterinfo();
-  
+    my $cinfo = PVE::INotify::read_file("cluster.conf");
+
     my $dbh;
-    
+
     eval {
-	$dbh = Proxmox::Utils::open_ruledb ($database);
+	$dbh = PMG::DBTools::open_ruledb($database);
     };
-    
     my $err = $@;
 
     if ($err) {
-	$self->log (0, msgquote ("ERROR: $err"));
+	$self->log (0, msgquote("ERROR: $err"));
 	return;
     }
 
     eval {
-	Proxmox::Statistic::update_stats  ($dbh, $cinfo);
+	Proxmox::Statistic::update_stats($dbh, $cinfo);
     };
-
     $err = $@;
 
     my ($csec_end, $usec_end) = gettimeofday ();
     my $ptime = int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
 
     if ($err) {
-	$self->log (0, msgquote ($err));
+	$self->log (0, msgquote($err));
     } else {
 	$self->log (2, "end database maintainance ($ptime ms)");
     }
@@ -524,7 +535,7 @@ sub unpack_entity {
     my $magic;
     my $path;
 
-    if (($magic = $entity->{PMX_magic_ct}) && 
+    if (($magic = $entity->{PMX_magic_ct}) &&
 	($path = $entity->{PMX_decoded_path})) {
 
 	my $filename = basename ($path);
@@ -536,14 +547,14 @@ sub unpack_entity {
 
 	    $unpack->{mime} = {};
 
-	    eval { 
-		$unpack->unpack_archive ($path, $magic); 
+	    eval {
+		$unpack->unpack_archive ($path, $magic);
 	    };
 
 	    $self->log (3, "$queue->{logid}: unpack failed - $@") if $@;
 
 	    $entity->{PMX_content_types} = $unpack->{mime};
-		
+
 	    if ($opt_testmode) {
 		my $types = join (", ", sort keys (%{$entity->{PMX_content_types}}));
 		my $fh = $msginfo->{test_fh};
@@ -570,12 +581,12 @@ sub handle_smtp {
 
     my $queue;
     my $msginfo = {};
-    my $system_cfg = $self->{system_cfg};
+    my $pmg_cfg = $self->{pmg_cfg};
     my $ldap = $self->{ldap};
     my $cinfo = $self->{cinfo};
     my $lcid = $cinfo->{local}->{cid};
-   
-    $msginfo->{test_fh} = Proxmox::AtomicFile->new ("testresult.out", "w") 
+
+    $msginfo->{test_fh} = PMG::AtomicFile->new("testresult.out", "w")
 	if $opt_testmode;
 
     $msginfo->{trusted} = $self->{trusted};
@@ -587,10 +598,7 @@ sub handle_smtp {
     $queue = $smtp->{queue};
     $queue->{sa} = $self->{sa};
 
-    $queue->{bulk_score} = $system_cfg->get ('spam', 'bulk_score');
-
-    my $lic = $system_cfg->{license};
-    $queue->{lic_valid} = ($lic->valid && !$lic->expired) ? 1 : 0;
+    $queue->{lic_valid} = 1;
 
     my $matching_rules;
 
@@ -600,11 +608,13 @@ sub handle_smtp {
 	$msginfo->{xforward} = $smtp->{xforward};
 	$msginfo->{targets} = $smtp->{to};
 
-	$msginfo->{hostname} = $system_cfg->get ('dns', 'hostname');
-	$msginfo->{domain} = $system_cfg->get ('dns', 'domain');
+	$msginfo->{hostname} = PVE::INotify::nodename();
+	my $resolv = PVE::INotify::read_file('resolvconf');
+
+	$msginfo->{domain} = $resolv->{search};
 	$msginfo->{fqdn} = "$msginfo->{hostname}.$msginfo->{domain}";
 	$msginfo->{lcid} = $lcid;
-	
+
 	# $msginfo->{targets} is case sensitive,
 	# but pmail is always lower case!
 
@@ -619,10 +629,10 @@ sub handle_smtp {
 
 # PHASE 2 - parse mail
 # on error: exit
-	
-	my $maxfiles = $system_cfg->get ('clamav', 'archivemaxfiles') || 0;
 
-	my $entity = $queue->parse_mail ($maxfiles);
+	my $maxfiles = $pmg_cfg->get('clamav', 'archivemaxfiles');
+
+	my $entity = $queue->parse_mail($maxfiles);
 
 	$self->log (3, "$queue->{logid}: new mail message-id=%s", $queue->{msgid});
 
@@ -632,8 +642,8 @@ sub handle_smtp {
 
 
 	# test for virus first
-	$queue->{vinfo} = Proxmox::Utils::analyze_virus ($queue, $queue->{dataname}, 
-							 $system_cfg, $opt_testmode);
+	$queue->{vinfo} = PMG::Utils::analyze_virus(
+	    $queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
 
 	# commtouch scanner
 	# only run with valid license
@@ -642,26 +652,26 @@ sub handle_smtp {
 
 	$queue->{ptime_commtouch} = 0;
 
-	if ($opt_testmode || 
+	if ($opt_testmode ||
 	    ($queue->{lic_valid} && !$queue->{vinfo} && !$msginfo->{trusted})) {
 	    my ($ct_refid, $ct_spam, $ct_vod, $ct_virus);
 	    my ($csec, $usec) = gettimeofday ();
 	    eval {
 
-		($ct_refid, $ct_spam, $ct_vod, $ct_virus) = 
+		($ct_refid, $ct_spam, $ct_vod, $ct_virus) =
 		    Proxmox::Commtouch::ctasd_classify($queue->{dataname}, $queue->{from});
 	    };
 	    my $err = $@;
 
 	    my ($csec_end, $usec_end) = gettimeofday ();
-	    $queue->{ptime_commtouch} = 
+	    $queue->{ptime_commtouch} =
 		int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
-	    
+
 	    if ($err) {
 		syslog ('err', "ctasd error: %s", $err);
 		$queue->{errors} = 1;
 	    } else {
-		if ($ct_virus) { 
+		if ($ct_virus) {
 		    syslog ('info', "$queue->{logid}: virus detected: $ct_virus (commtouch)");
 		    $queue->{vinfo_commtouch} = $ct_virus;
 		    $queue->{vinfo} = "$ct_virus (commtouch)";
@@ -669,7 +679,7 @@ sub handle_smtp {
 
 		if ($ct_spam && $ct_spam eq 'Confirmed') {
 		    syslog ('info', "$queue->{logid}: known spam mail (confirmed by commtouch)");
-		} 
+		}
 
 		$queue->{commtouch_spam} = $ct_spam;
 		$queue->{commtouch_vod} = $ct_vod;
@@ -702,9 +712,9 @@ sub handle_smtp {
 	# This way virus scanners gets the whole mail files and are able
 	# to detect phishing signature for example - which would not work
 	# if we decompose first and only analyze the decomposed attachments.
-	# Disadvantage is that we need to unpack more than 
+	# Disadvantage is that we need to unpack more than
 	# once (bad performance).
-	
+
 	# should we scan content types inside archives
 
 
@@ -725,7 +735,7 @@ sub handle_smtp {
 	    mkdir $decdir;
 
 	    my $start = [gettimeofday];
-	    
+
 	    my $unpack;
 	    eval {
 
@@ -738,7 +748,7 @@ sub handle_smtp {
 						maxrec => -4,
 						maxfiles => $maxfiles);
 
-		$self->unpack_entity ($unpack, $entity, $msginfo, $queue);               
+		$self->unpack_entity ($unpack, $entity, $msginfo, $queue);
 	    };
 
 	    my $err = $@;
@@ -754,19 +764,19 @@ sub handle_smtp {
 
 # PHASE 4 - apply rules
 # on error: exit (cleanup process should do the rest)
-	$msginfo->{maxspamsize} = $system_cfg->get ('spam', 'maxspamsize');
+	$msginfo->{maxspamsize} = $pmg_cfg->get('spam', 'maxspamsize');
 	if ($msginfo->{maxspamsize} <= 1024*64) {
 	    $msginfo->{maxspamsize} = 1024*64;
 	}
 
 	if ($msginfo->{trusted}) {
-	    my $hide = $system_cfg->get ('mail', 'hide_received');
+	    my $hide = $pmg_cfg->get('mail', 'hide_received');
 	    $entity->head->delete("Received") if $hide;
 	}
 
-	$matching_rules = $self->apply_rules ($queue, $msginfo, $entity, $ldap);
+	$matching_rules = $self->apply_rules($queue, $msginfo, $entity, $ldap);
     };
-    
+
     my $err = $@;
 
     $self->{errors} = $queue->{errors};
@@ -779,7 +789,7 @@ sub handle_smtp {
     die $err if $err;
 
     my ($csec_end, $usec_end) = gettimeofday ();
-    my $time_total = 
+    my $time_total =
 	int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
 
 # PHASE 5 - log statistics
@@ -818,7 +828,7 @@ sub handle_smtp {
 
 	$dbh->do ($insert_cmds);
     };
-		
+
     # save $err (because log clears $@)
     $err = $@;
 
@@ -833,7 +843,7 @@ sub handle_smtp {
 
     $msginfo->{test_fh}->close if $opt_testmode;
 
-    die $err if ($err);    
+    die $err if ($err);
 }
 
 
@@ -847,7 +857,7 @@ sub process_request {
       # make sure the ldap cache is up to date
       $self->{ldap}->update (1);
 
-      $self->load_config() if $self->{reload_config}; 
+      $self->load_config() if $self->{reload_config};
 
       $self->{trusted} = 0;
       if ($prop->{sockport} == $opt_int_port && !$opt_untrusted) {
@@ -863,14 +873,14 @@ sub process_request {
 	  $prop->{requests} += $count - 1;
       }
   };
-  
+
   my $err = $@;
 
   $self->log (0, $err) if $err;
 
   kill (15, $prop->{ppid}) if $opt_testmode;
 
-  my $mem = Proxmox::Utils::get_mem_usage();
+  my $mem = PVE::ProcFSTools::read_memory_usage();
 
   if ($opt_testmode) {
       $self->log (0, "memory usage: $mem->{size} bytes");
@@ -902,7 +912,7 @@ sub restart_close_hook {
   my $self = shift;
 
   my $sig_set = POSIX::SigSet->new;
-  $sig_set->addset (&POSIX::SIGHUP); 
+  $sig_set->addset (&POSIX::SIGHUP);
   $sig_set->addset (&POSIX::SIGCHLD); # to avoid zombies
   my $old_sig_set = POSIX::SigSet->new();
 
@@ -914,7 +924,7 @@ sub pre_server_close_hook {
     my $prop = $self->{server};
 
     if (defined $prop->{_HUP}) {
-	undef $prop->{pid_file_unlink};     
+	undef $prop->{pid_file_unlink};
     }
 
     if (defined $prop->{children}) {
@@ -927,7 +937,7 @@ sub pre_server_close_hook {
     my $previous_alarm = alarm (30);
     eval {
 	local $SIG{ALRM} = sub { die "Timed Out!\n" };
-	
+
 	my $pid;
 	1 while ((($pid = waitpid (-1, 0)) > 0) || ($! == EINTR));
     };
@@ -948,8 +958,8 @@ if (!$opt_testmode) {
 	$server->run ();
     } else {
 	sleep (1);
-	my $sender ='sender@proxtest.com'; 
-	my $targets = ['target1@proxtest.com', 
+	my $sender ='sender@proxtest.com';
+	my $targets = ['target1@proxtest.com',
 		       'target2@proxtest.com',
 		       'target3@proxtest.com'];
 
@@ -964,8 +974,8 @@ if (!$opt_testmode) {
 
 	$smtp->data();
 
-	open (TMP, $opt_testmode) || 
-	    croak ("unable to upen file '$opt_testmode' - $! :ERROR");
+	open (TMP, $opt_testmode) ||
+	    die "unable to upen file '$opt_testmode' - $! :ERROR";
 	while (<TMP>) {
 	    $smtp->datasend ($_);
 	}
@@ -983,16 +993,13 @@ exit (0);
 __END__
 
 =head1 NAME
-                                          
-proxprox - the Proxmox mail filter
+
+pmg-smtp-filter - the Proxmox mail filter
 
 =head1 SYNOPSIS
 
-proxprox [-u] [-t testfile]
+pmg-smtp-filter [-u] [-t testfile]
 
 =head1 DESCRIPTION
 
 Documentation is available at www.proxmox.com
-
-
-
