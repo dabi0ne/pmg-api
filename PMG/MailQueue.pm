@@ -1,19 +1,22 @@
-package Proxmox::MailQueue;
+package PMG::MailQueue;
 
 use strict;
+use warnings;
 use Carp;
-use Proxmox::SafeSyslog;
+
+use PVE::SafeSyslog;
 use MIME::Parser;
 use IO::File;
 use File::Sync;
 use File::Basename;
 use File::Path;
 use File::stat;
-use Time::HiRes qw (gettimeofday);
+use Time::HiRes qw(gettimeofday);
 use Mail::Header;
 
-use Proxmox::LDAPCache;
+use PMG::LDAPSet;
 
+# fixme:
 my $spooldir = "/var/spool/proxmox";
 
 my $fileseq = rand 1000;
@@ -41,9 +44,9 @@ sub new_fileid {
 
     if (!($fh = IO::File->new ($path, 'w+', 0600))) {
 	croak "unable to create file '$path': $! : ERROR";
-    } 
+    }
 
-    if (my $st = stat ($fh)) { 
+    if (my $st = stat ($fh)) {
 	$uid = sprintf ("%X%X%05X", $st->ino, $sec, $usec);
 	if ($subdir ne 'active') {
 	    $subsubdir .= sprintf ("%02X/", $usec % 256);
@@ -62,7 +65,7 @@ sub new_fileid {
 	croak "unable to rename file: ERROR";
     }
 
-    return ($fh, $uid, $subpath); 
+    return ($fh, $uid, $subpath);
 }
 
 sub new {
@@ -116,7 +119,7 @@ sub quarantinedb_insert {
 	my $dbh = $ruledb->{dbh};
 
 	my $insert_cmds = "SELECT nextval ('cmailstore_id_seq'); INSERT INTO CMailStore " .
-	    "(CID, RID, ID, Time, QType, Bytes, Spamlevel, Info, Header, Sender, File) VALUES (" . 
+	    "(CID, RID, ID, Time, QType, Bytes, Spamlevel, Info, Header, Sender, File) VALUES (" .
 	    "$lcid, currval ('cmailstore_id_seq'), currval ('cmailstore_id_seq'), ";
 
 	my $spaminfo = $vars->{__spaminfo};
@@ -165,7 +168,7 @@ sub quarantinedb_insert {
 
 
 	    $pmail = $dbh->quote ($pmail);
-	    $insert_cmds .= "INSERT INTO CMSReceivers " . 
+	    $insert_cmds .= "INSERT INTO CMSReceivers " .
 		"(CMailStore_CID, CMailStore_RID, PMail, Receiver, TicketID, Status, MTime) " .
 		"VALUES ($lcid, currval ('cmailstore_id_seq'), $pmail, $receiver, $tid, 'N', $now); ";
 
@@ -190,7 +193,7 @@ sub get_primary_mail {
 
     if (my $info = $ldap->account_info ($mail)) {
 	return $info->{pmail};
-    } 
+    }
 
     return $mail;
 }
@@ -306,14 +309,14 @@ sub quarantine_mail {
 #    $self->set_status ($targets, "delay|$hm");
 #}
 
-sub msgid { 
-    my ($self, $msgid) = @_; 
+sub msgid {
+    my ($self, $msgid) = @_;
 
     if (defined ($msgid)) {
 	$self->{msgid} = $msgid;
     }
 
-    $self->{msgid}; 
+    $self->{msgid};
 }
 
 sub close {
@@ -332,7 +335,7 @@ sub _new_mime_parser {
     # Create a new MIME parser:
     my $parser = new MIME::Parser;
     #$parser->decode_headers(1);
-    $parser->extract_nested_messages (1); 
+    $parser->extract_nested_messages (1);
     $parser->ignore_errors (1);
     $parser->extract_uuencode (0);
     $parser->decode_bodies (0);
@@ -342,7 +345,7 @@ sub _new_mime_parser {
     rmtree $self->{dumpdir};
 
     # Create and set the output directory:
-    (-d $self->{dumpdir} || mkdir ($self->{dumpdir} ,0755)) || 
+    (-d $self->{dumpdir} || mkdir ($self->{dumpdir} ,0755)) ||
 	croak "can't create $self->{dumpdir}: $! : ERROR";
     (-w $self->{dumpdir}) ||
 	croak "can't write to directory $self->{dumpdir}: $! : ERROR";
@@ -359,7 +362,7 @@ sub parse_mail {
     my $ctime = time;
 
     my $parser = $self->_new_mime_parser ($maxfiles);
-	
+
     $self->{fh}->seek (0, 0);
 
     eval {
@@ -373,7 +376,7 @@ sub parse_mail {
     # bug fix for bin/tests/content/mimeparser.txt
     if ($entity->mime_type =~ m|multipart/|i && !$entity->head->multipart_boundary) {
 	$entity->head->mime_attr('Content-type' => "application/x-unparseable-multipart");
-    } 
+    }
 
     if ((my $idcount = $entity->head->count ('Message-Id')) > 0) {
 	$self->msgid ($entity->head->get ('Message-Id', $idcount - 1));
@@ -385,13 +388,13 @@ sub parse_mail {
     # also save decoded data
     decode_entities ($parser, $self->{logid}, $entity);
 
-    # we also remove all proxmox-marks from the mail and add an unique 
+    # we also remove all proxmox-marks from the mail and add an unique
     # id to each attachment.
 
     Proxmox::Utils::remove_marks ($entity, 1);
-    
+
     Proxmox::Utils::add_ct_marks ($entity);
-    
+
     return $entity;
 }
 
@@ -418,14 +421,14 @@ sub decode_entities {
 		my $in = $entity->bodyhandle->open ("r") ||
 		    die "unable to read raw data '$path'";
 
-		my $decfh = $body->open ("w") || 
+		my $decfh = $body->open ("w") ||
 		    die "unable to open body: $!";
 
 		$decoder->decode ($in, $decfh);
 
 		$in->close;
- 
-		$decfh->close || 
+
+		$decfh->close ||
 		    die "can't close bodyhandle: $!";
 
 		$entity->{PMX_decoded_path} = $body->path;
@@ -437,7 +440,7 @@ sub decode_entities {
 	if ($err) {
 	    syslog ('err', "$logid: $err");
 	}
-	
+
     }
 
     foreach my $part ($entity->parts)  {
