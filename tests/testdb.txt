@@ -27,7 +27,7 @@ Found RULE 1: Block Dangerous Files
     OBJECT 14: content-type=content-type
     OBJECT 18: content-type=content-type
     OBJECT 19: filename=.*\.(vbs|pif|lnk|shs|shb)
-    OBJECT 20: filename=.*\.{.+}
+    OBJECT 20: filename=.*\.\{.+\}
   FOUND ACTION GROUP 14: Remove attachments
     OBJECT 27: remove matching attachments
 Found RULE 11: Block Multimedia Files

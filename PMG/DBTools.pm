@@ -833,7 +833,7 @@ sub init_ruledb {
     $ruledb->group_add_object($exe_content, $obj);
     $obj = PMG::RuleDB::MatchFilename->new('.*\.(vbs|pif|lnk|shs|shb)');
     $ruledb->group_add_object($exe_content, $obj);
-    $obj = PMG::RuleDB::MatchFilename->new('.*\.{.+}');
+    $obj = PMG::RuleDB::MatchFilename->new('.*\.\{.+\}');
     $ruledb->group_add_object($exe_content, $obj);
 
     # Virus
