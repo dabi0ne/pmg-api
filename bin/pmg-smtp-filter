@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -T
 
 use strict;
 use warnings;
@@ -94,6 +94,9 @@ if (!$opt_testmode) {
     $min_spare_servers = 1;
     $max_spare_servers = 4;
     $max_requests = 20;
+} else {
+    # untaint $opt_testmode
+    ($opt_testmode) = $opt_testmode =~ /^(.*)$/;
 }
 
 $opt_max_dequeue = 0 if $opt_testmode;
@@ -825,7 +828,7 @@ sub process_request {
 
   $self->log (0, $err) if $err;
 
-  kill (15, $prop->{ppid}) if $opt_testmode;
+  kill(15, $prop->{ppid}) if $opt_testmode;
 
   my $mem = PVE::ProcFSTools::read_memory_usage();
 
