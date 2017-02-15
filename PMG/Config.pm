@@ -295,9 +295,10 @@ package PMG::Config;
 
 use strict;
 use warnings;
-
+use IO::File;
 use Data::Dumper;
 
+use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
 
@@ -406,5 +407,45 @@ PVE::INotify::register_file('pmg.conf', "/etc/proxmox/pmg.conf",
 			    \&read_pmg_conf,
 			    \&write_pmg_conf);
 
+
+# rewrite spam configuration
+sub rewrite_config_spam {
+    my ($self) = @_;
+
+    my $use_awl = $self->get('spam', 'use_awl');
+    my $use_bayes = $self->get('spam', 'use_bayes');
+    my $use_razor = $self->get('spam', 'use_razor');
+
+    # delete AW and bayes databases if those features are disabled
+    unlink '/root/.spamassassin/auto-whitelist' if !$use_awl;
+    if (!$use_bayes) {
+	unlink '/root/.spamassassin/bayes_journal';
+	unlink '/root/.spamassassin/bayes_seen';
+	unlink '/root/.spamassassin/bayes_toks';
+    }
+
+    # make sure we have a custom.cf file (else cluster sync fails)
+    IO::File->new('/etc/mail/spamassassin/custom.cf', 'a', 0644);
+
+    PMG::Utils::rewrite_config_file($self, 'local.cf.in', '/etc/mail/spamassassin/local.cf');
+    PMG::Utils::rewrite_config_file($self, 'init.pre.in', '/etc/mail/spamassassin/init.pre');
+    PMG::Utils::rewrite_config_file($self, 'v310.pre.in', '/etc/mail/spamassassin/v310.pre');
+    PMG::Utils::rewrite_config_file($self, 'v320.pre.in', '/etc/mail/spamassassin/v320.pre');
+
+    if ($use_razor) {
+	mkdir "/root/.razor";
+	PMG::Utils::rewrite_config_file(
+	    $self, 'razor-agent.conf.in', '/root/.razor/razor-agent.conf');
+	if (! -e '/root/.razor/identity') {
+	    eval {
+		my $timeout = 30;
+		PVE::Tools::run_command (['razor-admin', '-discover'], timeout => $timeout);
+		PVE::Tools::run_command (['razor-admin', '-register'], timeout => $timeout);
+	    };
+	    my $err = $@;
+	    syslog('info', msgquote ("registering razor failed: $err")) if $err;
+	}
+    }
+}
 
 1;
