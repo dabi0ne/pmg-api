@@ -103,6 +103,21 @@ sub type {
 
 sub properties {
     return {
+	languages => {
+	    description => "This option is used to specify which languages are considered OK for incoming mail.",
+	    type => 'string',
+	    pattern => '(all|([a-z][a-z])+( ([a-z][a-z])+)*)',
+	    default => 'all',
+	},
+	use_bayes => {
+	    description => "Whether to use the naive-Bayesian-style classifier.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	wl_bounce_relays => {
+	    description => "Whitelist legitimate bounce relays.",
+	    type => 'string',
+	},
 	bounce_score => {
 	    description => "Additional score for bounce mails.",
 	    type => 'integer',
@@ -126,6 +141,9 @@ sub properties {
 
 sub options {
     return {
+	wl_bounce_relays => { optional => 1 },
+	languages => { optional => 1 },
+	use_bayes => { optional => 1 },
 	bounce_score => { optional => 1 },
 	rbl_checks => { optional => 1 },
 	maxspamsize => { optional => 1 },
@@ -300,9 +318,35 @@ sub get {
     if (defined($self->{ids}->{$configid}) &&
 	defined(my $value = $self->{ids}->{$configid}->{$key})) {
 	return $value;
-    };
+    }
 
     return $pdesc->{default};
+}
+
+# get a whole section with default value
+# this does not work for ldap entries
+sub get_section {
+    my ($self, $section) = @_;
+
+    my $pdata = PMG::Config::Base->private();
+    return undef if !defined($pdata->{options}->{$section});
+
+    my $res = {};
+
+    foreach my $key (keys %{$pdata->{options}->{$section}}) {
+
+	my $pdesc = $pdata->{propertyList}->{$key};
+
+	my $configid = "section_$section";
+	if (defined($self->{ids}->{$configid}) &&
+	    defined(my $value = $self->{ids}->{$configid}->{$key})) {
+	    $res->{$key} = $value;
+	    next;
+	}
+	$res->{$key} = $pdesc->{default};
+    }
+
+    return $res;
 }
 
 sub read_pmg_conf {
