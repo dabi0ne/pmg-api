@@ -1,4 +1,4 @@
-#!/usr/bin/perl -T
+#!/usr/bin/perl
 
 use strict;
 use warnings;
@@ -94,9 +94,6 @@ if (!$opt_testmode) {
     $min_spare_servers = 1;
     $max_spare_servers = 4;
     $max_requests = 20;
-} else {
-    # untaint $opt_testmode
-    ($opt_testmode) = $opt_testmode =~ /^(.*)$/;
 }
 
 $opt_max_dequeue = 0 if $opt_testmode;
