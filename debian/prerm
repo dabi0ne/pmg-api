@@ -3,7 +3,12 @@
 set -e
 
 case "$1" in
-    remove|upgrade|deconfigure)
+    remove)
+	echo "removing proxmox database";
+	pmgdb delete
+    ;;
+
+    upgrade|deconfigure)
     ;;
 
     failed-upgrade)

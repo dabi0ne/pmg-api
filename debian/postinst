@@ -16,6 +16,10 @@ case "$1" in
     ;;
 
     configure)
+
+	test -e /proxmox_install_mode || pmgdb init
+	test -e /proxmox_install_mode || pmgdb update  >/dev/null 2>&1 &
+ 
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
