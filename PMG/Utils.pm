@@ -14,6 +14,7 @@ use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
 use Xdgmime;
 
+use PVE::Tools;
 use PVE::SafeSyslog;
 use PMG::MailQueue;
 
@@ -47,7 +48,7 @@ sub extract_filename {
 	chomp $value;
 	if (my $decvalue = MIME::Words::decode_mimewords($value)) {
 	    $decvalue =~ s/\0/ /g;
-	    $decvalue = trim ($decvalue);
+	    $decvalue = PVE::Tools::trim($decvalue);
 	    return $decvalue;
 	}
     }
