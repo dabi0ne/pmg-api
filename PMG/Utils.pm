@@ -298,9 +298,7 @@ sub add_ct_marks {
 }
 
 sub rewrite_config_file {
-    my ($tmplname, $dstfn) = @_;
-
-    my $pmg_cfg = PMG::Config->new();
+    my ($pmg_cfg, $tmplname, $dstfn) = @_;
 
     my $demo = $pmg_cfg->get('administration', 'demo');
 
@@ -348,9 +346,9 @@ sub rewrite_config_file {
 }
 
 sub rewrite_config_script {
-    my ($tmplname, $dstfn) = @_;
+    my ($pmg_cfg, $tmplname, $dstfn) = @_;
 
-    rewrite_config_file($tmplname, $dstfn);
+    rewrite_config_file($pmg_cfg, $tmplname, $dstfn);
     system("chmod +x $dstfn");
 }
 
