@@ -117,9 +117,9 @@ sub loop {
 	} elsif ($cmd eq 'data') {
 	    if ($self->save_data ()) {
 		eval { &$func ($data, $self); };
-		if ($@) {
+		if (my $err = $@) {
 		    $data->{errors} = 1;
-		    syslog ('err', $@);
+		    syslog ('err', $err);
 		}
 
 		if ($self->{lmtp}) {
@@ -212,10 +212,9 @@ sub save_data {
 
 	$self->{queue} = $queue;
     };
-
-    if($@) {
-	syslog ('err', $@);
-	$self->reply ("451 4.5.0 Local delivery failed: $@");
+    if (my $err = $@) {
+	syslog ('err', $err);
+	$self->reply ("451 4.5.0 Local delivery failed: $err");
 	return 0;
     }
     if(!defined($done)) {
