@@ -7,6 +7,8 @@ use DBI;
 use Digest::SHA;
 use MIME::Words;
 
+use PVE::SafeSyslog;
+
 use PMG::Utils;
 use PMG::RuleDB::Object;
 
@@ -54,7 +56,11 @@ sub load_attr {
     defined($field) || croak "undefined object attribute: ERROR";
     defined($field_value) || croak "undefined object attribute: ERROR";
 
-    my $obj = $class->new($field, $field_value, $ogroup);
+    # use known constructor, bless afterwards (because sub class can have constructor
+    # with other parameter signature).
+    my $obj =  PMG::RuleDB::MatchField->new($field, $field_value, $ogroup);
+    bless $obj, $class;
+
     $obj->{id} = $id;
     
     $obj->{digest} = Digest::SHA::sha1_hex($id, $field, $field_value, $ogroup);
@@ -132,7 +138,7 @@ sub short_desc {
     my $self = shift;
     
     return "$self->{field}=$self->{field_value}";
- }
+}
 
 1;
 
