@@ -1,0 +1,5 @@
+# See razor-agent.conf (5)
+
+# Change this to 5 for safer classification of MIME attachments.  This will let more spam through
+logic_method = 4
+logfile = razor-agent.log
