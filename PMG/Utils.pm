@@ -8,6 +8,7 @@ use Net::Cmd;
 use Net::SMTP;
 use IO::File;
 use File::stat;
+use File::Basename;
 use MIME::Words;
 use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
