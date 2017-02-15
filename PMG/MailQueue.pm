@@ -16,10 +16,14 @@ use Mail::Header;
 
 use PMG::LDAPSet;
 
-# fixme:
-my $spooldir = "/var/spool/proxmox";
+our $spooldir = "/var/spool/pmg";
 
 my $fileseq = rand 1000;
+
+sub create_sppoldirs {
+    File::Path::make_path(
+	"$spooldir/active", "$spooldir/spam", "$spooldir/virus");
+}
 
 # called on service startup to remove any stale files
 sub cleanup_active {
