@@ -1,0 +1,29 @@
+DatabaseOwner clamav
+LogVerbose false
+LogSyslog true
+LogFacility LOG_LOCAL6
+LogFileMaxSize 0
+Foreground false
+Debug false
+MaxAttempts 5
+Checks 24
+AllowSupplementaryGroups false
+DatabaseDirectory /var/lib/clamav/
+PidFile /var/run/clamav/freshclam.pid
+DatabaseMirror [% pmg.clamav.dbmirror %]
+ConnectTimeout 30
+ReceiveTimeout 30
+ScriptedUpdates no
+CompressLocalDatabase no
+NotifyClamd /etc/clamav/clamd.conf
+DNSDatabaseInfo current.cvd.clamav.net
+[% IF pmg.admin.proxyserver %]
+HTTPProxyServer [% pmg.admin.proxyserver %]
+HTTPProxyPort [% pmg.admin.proxyport %]
+[% IF pmg.admin.proxyuser %]
+HTTPProxyUsername [% pmg.admin.proxyuser %]
+[% END %]
+[% IF pmg.admin.proxypassword %]
+HTTPProxyPassword [% pmg.admin.proxypassword %]
+[% END %]
+[% END %]
