@@ -13,9 +13,12 @@ use MIME::Words;
 use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
 use Xdgmime;
+use Template;
+use Data::Dumper;
 
 use PVE::Tools;
 use PVE::SafeSyslog;
+use PMG::AtomicFile;
 use PMG::MailQueue;
 
 sub msgquote {
@@ -292,6 +295,63 @@ sub add_ct_marks {
     foreach my $part ($entity->parts)  {
 	add_ct_marks ($part);
     }
+}
+
+sub rewrite_config_file {
+    my ($tmplname, $dstfn) = @_;
+
+    my $pmg_cfg = PMG::Config->new();
+
+    my $demo = $pmg_cfg->get('administration', 'demo');
+
+    my $srcfn = ($tmplname =~ m|^.?/|) ? $tmplname : "/var/lib/pmg/templates/$tmplname";
+
+    if ($demo) {
+
+	my $demosrc = "$srcfn.demo";
+	$srcfn = $demosrc if -f $demosrc;
+
+    }
+
+    my $srcfd = IO::File->new ($srcfn, "r")
+	|| die "cant read template '$srcfn' - $!: ERROR";
+    my $dstfd = PMG::AtomicFile->open ($dstfn, "w")
+	|| die "cant open config file '$dstfn' - $!: ERROR";
+
+    if ($dstfn eq '/etc/fetchmailrc') {
+	my ($login, $pass, $uid, $gid) = getpwnam('fetchmail');
+	if ($uid && $gid) {
+	    chown($uid, $gid, ${*$dstfd}{'io_atomicfile_temp'});
+	}
+	chmod (0600, ${*$dstfd}{'io_atomicfile_temp'});
+    } elsif ($dstfn eq '/etc/clamav/freshclam.conf') {
+	# needed if file contains a HTTPProxyPasswort
+
+	my $uid = getpwnam('clamav');
+	my $gid = getgrnam('adm');
+
+	if ($uid && $gid) {
+	    chown ($uid, $gid, ${*$dstfd}{'io_atomicfile_temp'});
+	}
+	chmod (0600, ${*$dstfd}{'io_atomicfile_temp'});
+    }
+
+    my $template = Template->new({});
+
+    my $vars = { pmg => $pmg_cfg->get_config() };
+
+    $template->process($srcfd, $vars, $dstfd) ||
+	die $template->error();
+
+    $srcfd->close();
+    $dstfd->close (1);
+}
+
+sub rewrite_config_script {
+    my ($tmplname, $dstfn) = @_;
+
+    rewrite_config_file($tmplname, $dstfn);
+    system("chmod +x $dstfn");
 }
 
 1;
