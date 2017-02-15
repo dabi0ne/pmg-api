@@ -265,4 +265,31 @@ sub magic_mime_type_for_file {
     return $ct;
 }
 
+sub add_ct_marks {
+    my ($entity) = @_;
+
+    if (my $path = $entity->{PMX_decoded_path}) {
+
+	# set a reasonable default if magic does not give a result
+	$entity->{PMX_magic_ct} = $entity->head->mime_attr('content-type');
+
+	if (my $ct = magic_mime_type_for_file($path)) {
+	    if ($ct ne 'application/octet-stream' || !$entity->{PMX_magic_ct}) {
+		$entity->{PMX_magic_ct} = $ct;
+	    }
+	}
+
+	my $filename = $entity->head->recommended_filename;
+	$filename = basename($path) if !defined($filename) || $filename eq '';
+
+	if (my $ct = xdg_mime_get_mime_type_from_file_name($filename)) {
+	    $entity->{PMX_glob_ct} = $ct;
+	}
+    }
+
+    foreach my $part ($entity->parts)  {
+	add_ct_marks ($part);
+    }
+}
+
 1;
