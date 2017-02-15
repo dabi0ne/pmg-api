@@ -24,6 +24,8 @@ TEMPLATES =				\
 	v310.pre.in			\
 	v320.pre.in			\
 	razor-agent.conf.in		\
+	freshclam.conf.in		\
+	clamd.conf.in 			\
 	postgresql.conf.in		\
 	pg_hba.conf.in
 
