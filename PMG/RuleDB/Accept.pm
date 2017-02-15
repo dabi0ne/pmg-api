@@ -142,10 +142,11 @@ sub execute {
 sub short_desc {
     my $self = shift;
 
-    return "";
+    return "accept message";
 }
 
 1;
+
 __END__
 
 =head1 PMG::RuleDB::Accept
