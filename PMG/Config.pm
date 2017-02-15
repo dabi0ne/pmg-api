@@ -52,7 +52,7 @@ sub parse_section_header {
     return undef;
 }
 
-package PMG::Config::Administration;
+package PMG::Config::Admin;
 
 use strict;
 use warnings;
@@ -60,7 +60,7 @@ use warnings;
 use base qw(PMG::Config::Base);
 
 sub type {
-    return 'administration';
+    return 'admin';
 }
 
 sub properties {
@@ -79,7 +79,25 @@ sub properties {
 	    description => "Administrator E-Mail address.",
 	    type => 'string', format => 'email',
 	    default => 'admin@domain.tld',
-	}
+	},
+	proxyport => {
+	    description => "HTTP proxy port.",
+	    type => 'integer',
+	    minimum => 1,
+	    default => 8080,
+	},
+	proxyserver => {
+	    description => "HTTP proxy server address.",
+	    type => 'string',
+	},
+	proxyuser => {
+	    description => "HTTP proxy user name.",
+	    type => 'string',
+	},
+	proxypassword => {
+	    description => "HTTP proxy password.",
+	    type => 'string',
+	},
     };
 }
 
@@ -87,6 +105,10 @@ sub options {
     return {
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },
+	proxyport => { optional => 1 },
+	proxyserver => { optional => 1 },
+	proxyuser => { optional => 1 },
+	proxypassword => { optional => 1 },
     };
 }
 
@@ -181,18 +203,57 @@ sub type {
 
 sub properties {
     return {
+	dbmirror => {
+	    description => "ClamAV database mirror server.",
+	    type => 'string',
+	    default => 'database.clamav.net',
+	},
+	archiveblockencrypted => {
+	    description => "Wether to block encrypted archives. Mark encrypted archives as viruses.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	archivemaxrec => {
+	    description => "Nested archives are scanned recursively, e.g. if a ZIP archive contains a TAR  file,  all files within it will also be scanned. This options specifies how deeply the process should be continued. Warning: setting this limit too high may result in severe damage to the system.",
+	    minimum => 1,
+	    default => 5,
+	},
 	archivemaxfiles => {
-	    description => "Number of files to be scanned within an archive.",
+	    description => "Number of files to be scanned within an archive, a document, or any other kind of container. Warning: disabling this limit or setting it too high may result in severe damage to the system.",
 	    type => 'integer',
 	    minimum => 0,
 	    default => 1000,
+	},
+	archivemaxsize => {
+	    description => "Files larger than this limit won't be scanned.",
+	    type => 'integer',
+	    minimum => 1000000,
+	    default => 25000000,
+	},
+	maxscansize => {
+	    description => "Sets the maximum amount of data to be scanned for each input file.",
+	    type => 'integer',
+	    minimum => 1000000,
+	    default => 100000000,
+	},
+	maxcccount => {
+	    description => "This option sets the lowest number of Credit Card or Social Security numbers found in a file to generate a detect.",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 0,
 	},
     };
 }
 
 sub options {
     return {
+	archiveblockencrypted => { optional => 1 },
+	archivemaxrec => { optional => 1 },
 	archivemaxfiles => { optional => 1 },
+	archivemaxsize => { optional => 1 },
+	maxscansize  => { optional => 1 },
+	dbmirror => { optional => 1 },
+	maxcccount => { optional => 1 },
     };
 }
 
@@ -279,13 +340,20 @@ sub properties {
 	hide_received => {
 	    description => "Hide received header in outgoing mails.",
 	    type => 'boolean',
-	    degault => 0,
+	    default => 0,
+	},
+	max_size => {
+	    description => "Maximum email size. Larger mails are rejected.",
+	    type => 'integer',
+	    minimum => 1024,
+	    default => 1024*1024*10,
 	},
     };
 }
 
 sub options {
     return {
+	max_size => { optional => 1 },
 	banner => { optional => 1 },
 	max_filters => { optional => 1 },
 	hide_received => { optional => 1 },
@@ -302,7 +370,7 @@ use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
 
-PMG::Config::Administration->register();
+PMG::Config::Admin->register();
 PMG::Config::Mail->register();
 PMG::Config::Spam->register();
 PMG::Config::LDAP->register();
@@ -446,6 +514,14 @@ sub rewrite_config_spam {
 	    syslog('info', msgquote ("registering razor failed: $err")) if $err;
 	}
     }
+}
+
+# rewrite ClamAV configuration
+sub rewrite_config_clam {
+    my ($self) = @_;
+
+    PMG::Utils::rewrite_config_file($self, 'clamd.conf.in', '/etc/clamav/clamd.conf');
+    PMG::Utils::rewrite_config_file($self, 'freshclam.conf.in', '/etc/clamav/freshclam.conf');
 }
 
 1;

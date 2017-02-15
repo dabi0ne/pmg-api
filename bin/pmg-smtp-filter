@@ -85,7 +85,7 @@ if (!$opt_testmode) {
 
     my $pmg_cfg = PMG::Config->new();
 
-    my $demo = $pmg_cfg->get('administration', 'demo');
+    my $demo = $pmg_cfg->get('admin', 'demo');
 
     if ($demo) {
 	syslog ('info', 'demo mode detected - not starting server');
@@ -162,7 +162,7 @@ sub get_prox_vars {
 	'RECEIVERS' => join (', ', @{$msginfo->{targets}}),
 	'SPAMLEVEL' => $spaminfo->{sa_score},
 	'SPAMSTARS' => '*' x (($spaminfo->{sa_score} || 0) > 100 ? 100 : $spaminfo->{sa_score} || 0),
-	'ADMIN' =>  $self->{pmg_cfg}->get('administration', 'email'),
+	'ADMIN' =>  $self->{pmg_cfg}->get('admin', 'email'),
 	'HOST' =>  $msginfo->{hostname},
 	'DOMAIN' =>  $msginfo->{domain},
 	'FQDN' => $msginfo->{fqdn},

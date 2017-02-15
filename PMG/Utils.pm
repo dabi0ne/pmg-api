@@ -300,7 +300,7 @@ sub add_ct_marks {
 sub rewrite_config_file {
     my ($pmg_cfg, $tmplname, $dstfn) = @_;
 
-    my $demo = $pmg_cfg->get('administration', 'demo');
+    my $demo = $pmg_cfg->get('admin', 'demo');
 
     my $srcfn = ($tmplname =~ m|^.?/|) ? $tmplname : "/var/lib/pmg/templates/$tmplname";
 
