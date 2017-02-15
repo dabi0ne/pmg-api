@@ -9,6 +9,7 @@ use Digest::SHA;
 use PMG::Utils;
 use PMG::ModGroup;
 use PMG::RuleDB::Object;
+use PMG::MailQueue;
 
 use base qw(PMG::RuleDB::Object);
 
@@ -101,7 +102,8 @@ sub execute {
     foreach my $ta (@$subgroups) {
 	my ($tg, $entity) = (@$ta[0], @$ta[1]);
 
-	my $path = "/var/spool/proxmox/active/$queue->{uid}";
+	my $spooldir = $PMG::MailQueue::spooldir;
+	my $path = "$spooldir/active/$queue->{uid}";
 	$entity->attach(
 	    Path => $path,
 	    Filename => "original_message.eml",

@@ -13,6 +13,7 @@ use PVE::SafeSyslog;
 use PMG::Utils;
 use PMG::ModGroup;
 use PMG::RuleDB::Object;
+use PMG::MailQueue;
 
 use base qw(PMG::RuleDB::Object);
 
@@ -227,7 +228,8 @@ sub execute {
 
     if ($self->{attach} eq 'O') {
 	# attach original mail
-	my $path = "/var/spool/proxmox/active/$queue->{uid}";
+	my $spooldir = $PMG::MailQueue::spooldir;
+	my $path = "$spooldir/active/$queue->{uid}";
 	$original = $top->attach(
 	    Path => $path,
 	    Filename => "original_message.eml",
