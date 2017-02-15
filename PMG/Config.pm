@@ -114,6 +114,16 @@ sub properties {
 	    type => 'boolean',
 	    default => 1,
 	},
+	use_awl => {
+	    description => "Use the Auto-Whitelist plugin.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	use_razor => {
+	    description => "Whether to use Razor2, if it is available.",
+	    type => 'boolean',
+	    default => 1,
+	},
 	use_ocr => {
 	    description => "Enable OCR to scan pictures.",
 	    type => 'boolean',
@@ -146,6 +156,8 @@ sub properties {
 
 sub options {
     return {
+	use_awl => { optional => 1 },
+	use_razor => { optional => 1 },
 	use_ocr => { optional => 1 },
 	wl_bounce_relays => { optional => 1 },
 	languages => { optional => 1 },
