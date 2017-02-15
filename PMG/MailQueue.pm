@@ -395,9 +395,8 @@ sub parse_mail {
     # we also remove all proxmox-marks from the mail and add an unique
     # id to each attachment.
 
-    Proxmox::Utils::remove_marks ($entity, 1);
-
-    Proxmox::Utils::add_ct_marks ($entity);
+    PMG::Utils::remove_marks ($entity, 1);
+    PMG::Utils::add_ct_marks ($entity);
 
     return $entity;
 }
