@@ -44,8 +44,7 @@ use PMG::RuleDB::Counter;
 use PMG::RuleDB::Notify;
 use PMG::RuleDB::Rule;
 use PMG::RuleDB::ContentTypeFilter;
-# fixme
-#use Proxmox::RuleDB::ArchiveFilter;
+use PMG::RuleDB::ArchiveFilter;
 
 sub new {
     my ($type, $dbh) = @_;
@@ -329,10 +328,9 @@ sub get_object {
     elsif ($otype == PMG::RuleDB::ContentTypeFilter::otype) {
         $obj = PMG::RuleDB::ContentTypeFilter->new();
     }
-# fixme
-#    elsif ($otype == Proxmox::RuleDB::ArchiveFilter::otype) {
-#        $obj = Proxmox::RuleDB::ArchiveFilter->new();
-#    }
+    elsif ($otype == PMG::RuleDB::ArchiveFilter::otype) {
+        $obj = PMG::RuleDB::ArchiveFilter->new();
+    }
     # ACTION OBJECTS
     elsif ($otype == PMG::RuleDB::ModField::otype) {
         $obj = PMG::RuleDB::ModField->new();

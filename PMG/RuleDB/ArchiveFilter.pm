@@ -1,16 +1,16 @@
-package Proxmox::RuleDB::ArchiveFilter;
+package PMG::RuleDB::ArchiveFilter;
 
 use strict;
-use vars qw(@ISA);
+use warnings;
 use Carp;
 use DBI;
-use Proxmox::Utils;
-use Proxmox::RuleDB;
-use Proxmox::SafeSyslog;
 use MIME::Words;
 
-@ISA = qw(Proxmox::RuleDB::ContentTypeFilter);
+use PVE::SafeSyslog;
 
+use PMG::RuleDB::ContentTypeFilter;
+
+use base qw(PMG::RuleDB::ContentTypeFilter);
 
 sub otype {
     return 3005;
@@ -30,6 +30,7 @@ my $pmtypes = {
 
 sub new {
     my ($type, $fvalue, $ogroup) = @_;
+    
     my $class = ref($type) || $type;
 
     my $self = $class->SUPER::new ($fvalue, $ogroup);
@@ -39,9 +40,10 @@ sub new {
 
 sub load_attr {
     my ($type, $ruledb, $id, $ogroup, $value) = @_;
+    
     my $class = ref($type) || $type;
 
-    my $obj = $class->SUPER::load_attr ($ruledb, $id, $ogroup, $value);
+    my $obj = $class->SUPER::load_attr($ruledb, $id, $ogroup, $value);
 
     return $obj;
 }
@@ -96,67 +98,10 @@ sub what_match {
     return $self->parse_entity ($entity);
 }
 
-sub push_mthash {
-    my ($mime, $mthash) = @_;
-
-    my $lasttype='';
-
-    foreach my $mt (sort (keys %$mthash)) {
-	my ($type, $subtype) = split ('/', $mt);
-
-	if ($type ne $lasttype && $type ne 'proxmox') {
-	    push @$mime, ["$type/.*", "$type/.*"]; 
-	    $lasttype = $type;
-	}
-    
-	my $text =  $mthash->{$mt} ? "$mt ($mthash->{$mt})" : $mt;
-	$text =~ s/\\\./\./g;
-	$text =~ s/\\\+/\+/g;
-    
-	push @$mime, [$mt, $text];
-    }
-}
-
-sub out_form {
-    my ($self, $fdata, %args ) = @_;
-    my $frm = Proxmox::Form->new ($fdata);
-
-    my $mime = [];
-
-    push_mthash ($mime, $self->{mtypes});
-    push_mthash ($mime, $pmtypes);
-    
-    $frm->add_element("seldropdown", "dynamicdropdown", $fdata->{seltext}, "Choose ContentType", $mime);
-
-    if ($frm->postback) {
-	$fdata->{seltext} = $fdata->{seldropdown};
-    }
-
-    $frm->add_element("seltext", "text", $fdata->{seltext}, "ContentType");
-
-    # use large dropdown (width >= 300) 
-    $frm->set_style ("normal wide");
-
-    return $frm->out_form ("object", %args);
-}
-
-sub form_load {
-    my ($self, $fdata ) = @_;
-
-    $fdata->{seltext} = $self->{field_value};
-}
-
-sub form_save {
-    my ($self, $rueldb, $fdata) = @_;
-
-    $self->{field_value} = $fdata->{seltext};
-    $self->save($rueldb);
-    return undef;
-}
-
 1;
+
 __END__
 
-=head1 Proxmox::RuleDB::ArchiveFilter
+=head1 PMG::RuleDB::ArchiveFilter
 
 Content type filter for Archives

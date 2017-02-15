@@ -55,6 +55,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/TimeFrame.pm		\
 	PMG/RuleDB/MatchField.pm	\
 	PMG/RuleDB/ContentTypeFilter.pm	\
+	PMG/RuleDB/ArchiveFilter.pm	\
 	PMG/RuleDB/Spam.pm		\
 	PMG/RuleDB/Virus.pm		\
 	PMG/RuleDB/ReportSpam.pm	\
