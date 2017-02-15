@@ -349,6 +349,23 @@ sub get_section {
     return $res;
 }
 
+# get a whole config with default values
+# this does not work for ldap entries
+sub get_config {
+    my ($self) = @_;
+
+    my $res = {};
+
+    foreach my $key (keys %{$self->{ids}}) {
+	if ($key =~ m/^section_(\S+)$/) {
+	    my $section = $1;
+	    $res->{$section} = $self->get_section($section);
+	}
+    }
+
+    return $res;
+}
+
 sub read_pmg_conf {
     my ($filename, $fh) = @_;
 
