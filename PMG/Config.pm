@@ -441,13 +441,14 @@ sub get_section {
 sub get_config {
     my ($self) = @_;
 
+    my $pdata = PMG::Config::Base->private();
+
     my $res = {};
 
-    foreach my $key (keys %{$self->{ids}}) {
-	if ($key =~ m/^section_(\S+)$/) {
-	    my $section = $1;
-	    $res->{$section} = $self->get_section($section);
-	}
+    foreach my $type (keys %{$pdata->{plugins}}) {
+	next if $type eq 'ldap';
+	my $plugin = $pdata->{plugins}->{$type};
+	$res->{$type} = $self->get_section($type);
     }
 
     return $res;
