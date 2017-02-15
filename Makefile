@@ -18,6 +18,17 @@ CLITOOLS = pmgdb
 CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS})
 
+TEMPLATES =				\
+	init.pre.in			\
+	local.cf.in			\
+	v310.pre.in			\
+	v320.pre.in			\
+	razor-agent.conf.in		\
+	postgresql.conf.in		\
+	pg_hba.conf.in
+
+TEMPLATES_FILES = $(addprefix, 'templates/', ${TEMPLATES})
+
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
 	PMG/Utils.pm			\
@@ -78,10 +89,10 @@ LIBSOURCES =				\
 	PMG/API2/RuleDB.pm		\
 	PMG/API2.pm
 
-all: ${LIBSOURCES} ${CLI_BINARIES}
+all: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES}
 
 .PHONY: deb
-deb ${DEB}: ${LIBSOURCES} ${CLI_BINARIES}
+deb ${DEB}: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES}
 	rm -rf build
 	rsync -a * build
 	cd build; dpkg-buildpackage -b -us -uc
@@ -100,7 +111,7 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	perl -I. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
 	mv $@.tmp $@
 
-install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS})
+install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS}) ${TEMPLATES_FILES}
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
 	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
 	install -d -m 0755 ${DESTDIR}/usr/bin
@@ -115,6 +126,7 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 	for i in ${CLITOOLS}; do install -D -m 0644 PMG/CLI/$$i.pm ${PERL5DIR}/PMG/CLI/$$i.pm; done
 	for i in ${CLITOOLS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/bin/$$i; done
 	for i in ${CLITOOLS}; do install -D -m 0644 $$i.bash-completion ${BASHCOMPLDIR}/$$i; done
+	for i in ${TEMPLATES}; do install -D -m 0644 templates/$$i ${DESTDIR}/var/lib/pmg/templates/$$i; done
 
 .PHONY: upload
 upload: ${DEB}
