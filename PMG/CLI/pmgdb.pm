@@ -11,6 +11,8 @@ use PVE::CLIHandler;
 
 use PMG::DBTools;
 use PMG::RuleDB;
+use PMG::Cluster;
+use PMG::Statistic;
 
 use base qw(PVE::CLIHandler);
 
@@ -165,8 +167,9 @@ __PACKAGE__->register_method ({
 	    # reset and update statistic databases
 	    if ($param->{statistics}) {
 		print "Generating Proxmox Statistic Databases... ";
-		#Proxmox::Statistic::clear_stats($dbh);
-		#Proxmox::Statistic::update_stats($dbh, $cinfo);
+		PMG::Statistic::clear_stats($dbh);
+		my $cinfo = PVE::INotify::read_file("cluster.conf");
+		PMG::Statistic::update_stats($dbh, $cinfo);
 		print "done\n";
 	    }
 
@@ -177,10 +180,33 @@ __PACKAGE__->register_method ({
     }});
 
 
+__PACKAGE__->register_method ({
+    name => 'update',
+    path => 'update',
+    method => 'POST',
+    description => "Update the PMG statistic database.",
+    parameters => {
+	additionalProperties => 0,
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
+	print "Updateing Proxmox Statistic Databases... ";
+	my $cinfo = PVE::INotify::read_file("cluster.conf");
+	PMG::Statistic::update_stats($dbh, $cinfo);
+	print "done\n";
+	$dbh->disconnect();
+
+	return undef;
+    }});
+
 our $cmddef = {
     'dump' => [ __PACKAGE__, 'dump', []],
     delete => [ __PACKAGE__, 'delete', []],
     init => [ __PACKAGE__, 'init', []],
+    update => [ __PACKAGE__, 'update', []],
 };
 
 1;
