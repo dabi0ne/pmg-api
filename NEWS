@@ -1,0 +1,10 @@
+Proxmox Mail Gateway 5.0 News
+=============================
+
+- changed license to AGPL3
+
+
+Incompatible changes:
+---------------------
+
+- dangerous content need a new ct filter for 'application/x-ms-dos-executable'
