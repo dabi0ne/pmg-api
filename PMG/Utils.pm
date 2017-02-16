@@ -189,18 +189,17 @@ sub analyze_virus_clam {
 	    die "$queue->{logid}: can't exec clamdscan: $! : ERROR";
 
 	my $ifiles;
-	my $res;
 
-	while (<CMD>) {
-	    if (m/^$dname.*:\s+([^ :]*)\s+FOUND$/) {
+	my $response = '';
+	while (defined(my $line = <CMD>)) {
+	    if ($line =~ m/^$dname.*:\s+([^ :]*)\s+FOUND$/) {
 		# we just use the first detected virus name
 		$vinfo = $1 if !$vinfo;
-	    }
-	    if (m/^Infected files:\s(\d*)$/i) {
+	    } elsif ($line =~ m/^Infected files:\s(\d*)$/i) {
 		$ifiles = $1;
 	    }
 
-	    $res .= $_;
+	    $response .= $line;
 	}
 
 	close(CMD);
@@ -209,11 +208,11 @@ sub analyze_virus_clam {
 
 	if (!defined($ifiles)) {
 	    die "$queue->{logid}: got undefined output from " .
-		"virus detector: $res : ERROR";
+		"virus detector: $response : ERROR";
 	}
 
 	if ($vinfo) {
-	    syslog ('info', "$queue->{logid}: virus detected: $vinfo (clamav)");
+	    syslog('info', "$queue->{logid}: virus detected: $vinfo (clamav)");
 	}
     };
     my $err = $@;
