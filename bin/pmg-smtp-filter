@@ -303,11 +303,9 @@ sub apply_rules {
     $msginfo->{rule_info} = $rule_info;
 
     if ($msginfo->{testmode}) {
-	my $vars = $self->get_prox_vars ($queue, $entity, $msginfo, undef, [], undef);
-	my $out = "__RULE_INFO__";
-	$out = PMG::Utils::subst_values ($out, $vars);
+	my $vars = $self->get_prox_vars($queue, $entity, $msginfo, undef, [], undef);
 	my $fh = $msginfo->{test_fh};
-	print $fh $out;
+	print $fh $rule_info;
     }
 
     # apply actions
