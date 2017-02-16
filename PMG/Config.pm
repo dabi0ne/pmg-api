@@ -393,6 +393,33 @@ sub new {
     return bless $cfg, $class;
 }
 
+# set section values
+# this does not work for ldap entries
+sub set {
+    my ($self, $section, $key, $value) = @_;
+
+    my $pdata = PMG::Config::Base->private();
+
+    die "internal error" if $section eq 'ldap';
+
+    my $plugin = $pdata->{plugins}->{$section};
+    die "no such section '$section'" if !$plugin;
+
+    my $configid = "section_$section";
+    if (defined($value)) {
+	my $tmp = PMG::Config::Base->check_value($section, $key, $value, $section, 0);
+	print Dumper($self->{ids});
+	$self->{ids}->{$configid} = { type => $section } if !defined($self->{ids}->{$configid});
+	$self->{ids}->{$configid}->{$key} = PMG::Config::Base->decode_value($section, $key, $tmp);
+    } else {
+	if (defined($self->{ids}->{$configid})) {
+	    delete $self->{ids}->{$configid}->{$key};
+	}
+    }
+
+    return undef;
+}
+
 # get section value or default
 # this does not work for ldap entries
 sub get {
