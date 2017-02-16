@@ -5,7 +5,6 @@ use warnings;
 use Carp;
 use DBI;
 
-
 use PVE::SafeSyslog;
 
 use PMG::Utils;
@@ -143,7 +142,7 @@ sub execute {
 	my ($tg, $entity) = (@$ta[0], @$ta[1]);
 
 	$entity = $entity->dup();
-	Proxmox::Utils::remove_marks ($entity);
+	PMG::Utils::remove_marks($entity);
 
 	if ($msginfo->{testmode}) {
 	    my $fh = $msginfo->{test_fh};
