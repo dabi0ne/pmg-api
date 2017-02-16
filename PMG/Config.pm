@@ -610,9 +610,36 @@ sub rewrite_config_clam {
     $self->rewrite_config_file('freshclam.conf.in', '/etc/clamav/freshclam.conf');
 }
 
+sub rewrite_config_postgres {
+    my ($self) = @_;
+
+    my $pgconfdir = "/etc/postgresql/9.6/main";
+
+    $self->rewrite_config_file('pg_hba.conf.in', "$pgconfdir/pg_hba.conf");
+    $self->rewrite_config_file('postgresql.conf.in', "$pgconfdir/postgresql.conf");
+}
+
+# rewrite /root/.forward
+sub rewrite_dot_forward {
+    my ($self) = @_;
+
+    my $fname = '/root/.forward';
+
+    my $email = $self->get('administration', 'email');
+    open(TMP, ">$fname");
+    if ($email && $email =~ m/\s*(\S+)\s*/) {
+	print (TMP "$1\n");
+    } else {
+	# empty .forward does not forward mails (see man local)
+    }
+    close (TMP);
+}
+
 sub rewrite_config {
     my ($self) = @_;
 
+    $self->rewrite_dot_forward();
+    $self->rewrite_config_postgres();
     $self->rewrite_config_spam();
     $self->rewrite_config_clam();
 }
