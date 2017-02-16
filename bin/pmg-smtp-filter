@@ -5,7 +5,7 @@ use warnings;
 
 use Carp;
 use Getopt::Long;
-use Time::HiRes qw (gettimeofday tv_interval);
+use Time::HiRes qw (usleep gettimeofday tv_interval);
 use POSIX qw(:sys_wait_h errno_h signal_h);
 
 use MIME::Parser;
@@ -903,17 +903,20 @@ if (!$opt_testmode) {
     $server->run ();
 } else {
     if (fork) {
-	$server->run ();
+	$server->run();
     } else {
-	sleep (1);
+
 	my $sender ='sender@proxtest.com';
 	my $targets = ['target1@proxtest.com',
 		       'target2@proxtest.com',
 		       'target3@proxtest.com'];
 
-	my $smtp = Net::SMTP->new ('127.0.0.1', Port => 10023);
-
-	die "unable to connect $!" if !$smtp;
+	my $smtp;
+	while (!$smtp) {
+	    $smtp = Net::SMTP->new ('127.0.0.1', Port => 10023);
+	    last if $smtp;
+	    usleep(10);
+	}
 
 	# syslog ('info', "connected to " . $smtp->domain);
 
