@@ -83,8 +83,8 @@ sub subst_values {
 
     foreach my $k (keys %$dh) {
 	my $v = $dh->{$k};
-	if (defined ($v)) {
-	    $body =~ s/__${k}__/$v/gs;
+	if (defined($v)) {
+	    $body =~ s/__\Q${k}\E__/$v/gs;
 	}
     }
 
