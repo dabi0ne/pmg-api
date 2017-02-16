@@ -365,10 +365,13 @@ use strict;
 use warnings;
 use IO::File;
 use Data::Dumper;
+use Template;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
+
+use PMG::AtomicFile;
 
 PMG::Config::Admin->register();
 PMG::Config::Mail->register();
@@ -477,6 +480,62 @@ PVE::INotify::register_file('pmg.conf', "/etc/proxmox/pmg.conf",
 			    \&write_pmg_conf);
 
 
+# config file generation using templates
+
+sub rewrite_config_file {
+    my ($self, $tmplname, $dstfn) = @_;
+
+    my $demo = $self->get('admin', 'demo');
+
+    my $srcfn = ($tmplname =~ m|^.?/|) ?
+	$tmplname : "/var/lib/pmg/templates/$tmplname";
+
+    if ($demo) {
+	my $demosrc = "$srcfn.demo";
+	$srcfn = $demosrc if -f $demosrc;
+    }
+
+    my $srcfd = IO::File->new ($srcfn, "r")
+	|| die "cant read template '$srcfn' - $!: ERROR";
+    my $dstfd = PMG::AtomicFile->open ($dstfn, "w")
+	|| die "cant open config file '$dstfn' - $!: ERROR";
+
+    if ($dstfn eq '/etc/fetchmailrc') {
+	my ($login, $pass, $uid, $gid) = getpwnam('fetchmail');
+	if ($uid && $gid) {
+	    chown($uid, $gid, ${*$dstfd}{'io_atomicfile_temp'});
+	}
+	chmod (0600, ${*$dstfd}{'io_atomicfile_temp'});
+    } elsif ($dstfn eq '/etc/clamav/freshclam.conf') {
+	# needed if file contains a HTTPProxyPasswort
+
+	my $uid = getpwnam('clamav');
+	my $gid = getgrnam('adm');
+
+	if ($uid && $gid) {
+	    chown ($uid, $gid, ${*$dstfd}{'io_atomicfile_temp'});
+	}
+	chmod (0600, ${*$dstfd}{'io_atomicfile_temp'});
+    }
+
+    my $template = Template->new({});
+
+    my $vars = { pmg => $self->get_config() };
+
+    $template->process($srcfd, $vars, $dstfd) ||
+	die $template->error();
+
+    $srcfd->close();
+    $dstfd->close (1);
+}
+
+sub rewrite_config_script {
+    my ($self, $tmplname, $dstfn) = @_;
+
+    $self->rewrite_config_file($tmplname, $dstfn);
+    system("chmod +x $dstfn");
+}
+
 # rewrite spam configuration
 sub rewrite_config_spam {
     my ($self) = @_;
@@ -496,15 +555,14 @@ sub rewrite_config_spam {
     # make sure we have a custom.cf file (else cluster sync fails)
     IO::File->new('/etc/mail/spamassassin/custom.cf', 'a', 0644);
 
-    PMG::Utils::rewrite_config_file($self, 'local.cf.in', '/etc/mail/spamassassin/local.cf');
-    PMG::Utils::rewrite_config_file($self, 'init.pre.in', '/etc/mail/spamassassin/init.pre');
-    PMG::Utils::rewrite_config_file($self, 'v310.pre.in', '/etc/mail/spamassassin/v310.pre');
-    PMG::Utils::rewrite_config_file($self, 'v320.pre.in', '/etc/mail/spamassassin/v320.pre');
+    $self->rewrite_config_file('local.cf.in', '/etc/mail/spamassassin/local.cf');
+    $self->rewrite_config_file('init.pre.in', '/etc/mail/spamassassin/init.pre');
+    $self->rewrite_config_file('v310.pre.in', '/etc/mail/spamassassin/v310.pre');
+    $self->rewrite_config_file('v320.pre.in', '/etc/mail/spamassassin/v320.pre');
 
     if ($use_razor) {
 	mkdir "/root/.razor";
-	PMG::Utils::rewrite_config_file(
-	    $self, 'razor-agent.conf.in', '/root/.razor/razor-agent.conf');
+	$self->rewrite_config_file('razor-agent.conf.in', '/root/.razor/razor-agent.conf');
 	if (! -e '/root/.razor/identity') {
 	    eval {
 		my $timeout = 30;
@@ -521,8 +579,8 @@ sub rewrite_config_spam {
 sub rewrite_config_clam {
     my ($self) = @_;
 
-    PMG::Utils::rewrite_config_file($self, 'clamd.conf.in', '/etc/clamav/clamd.conf');
-    PMG::Utils::rewrite_config_file($self, 'freshclam.conf.in', '/etc/clamav/freshclam.conf');
+    $self->rewrite_config_file('clamd.conf.in', '/etc/clamav/clamd.conf');
+    $self->rewrite_config_file('freshclam.conf.in', '/etc/clamav/freshclam.conf');
 }
 
 1;
