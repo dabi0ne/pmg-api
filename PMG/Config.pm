@@ -610,4 +610,11 @@ sub rewrite_config_clam {
     $self->rewrite_config_file('freshclam.conf.in', '/etc/clamav/freshclam.conf');
 }
 
+sub rewrite_config {
+    my ($self) = @_;
+
+    $self->rewrite_config_spam();
+    $self->rewrite_config_clam();
+}
+
 1;
