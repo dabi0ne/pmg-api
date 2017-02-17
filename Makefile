@@ -120,6 +120,7 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS}) ${TEMPLATES_FILES}
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
 	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
+	perl -I. bin/pmgsh verifyapi
 	install -d -m 0755 ${DESTDIR}/usr/bin
 	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
 	install -d -m 0755 ${DOCDIR}
