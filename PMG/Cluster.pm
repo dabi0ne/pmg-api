@@ -8,12 +8,9 @@ use PVE::Tools;
 use PVE::INotify;
 
 # this is also used to get the IP of the local node
-sub remote_node_ip {
+sub lookup_node_ip {
     my ($nodename, $noerr) = @_;
 
-    # todo: implement cluster node list
-
-    # fallback: try to get IP by other means
     my ($family, $packed_ip);
 
     eval {
@@ -34,6 +31,24 @@ sub remote_node_ip {
     }
 
     return wantarray ? ($ip, $family) : $ip;
+}
+
+sub remote_node_ip {
+    my ($nodename, $noerr) = @_;
+
+    my $cinfo = PVE::INotify::read_file("cluster.conf");
+
+    foreach my $entry (@{$cinfo->{nodes}}) {
+	if ($entry->{name} eq $nodename) {
+	    my $ip = $entry->{ip};
+	    return $ip if !wantarray;
+	    my $family = PVE::Tools::get_host_address_family($ip);
+	    return ($ip, $family);
+	}
+    }
+
+    # fallback: try to get IP by other means
+    return lookup_node_ip($nodename, $noerr);
 }
 
 # X509 Certificate cache helper
@@ -150,7 +165,7 @@ sub read_cluster_conf {
     my ($filename, $fh) = @_;
 
     my $localname = PVE::INotify::nodename();
-    my $localip = remote_node_ip($localname);
+    my $localip = lookup_node_ip($localname);
 
     my $level = 0;
     my $maxcid = 0;
@@ -169,6 +184,7 @@ sub read_cluster_conf {
 	dbport => 5432,
     };
 
+    # fixme: add test is local node is part of node list
     if (defined($fh)) {
 
 	$cinfo->{exists} = 1; # cluster configuratin file exists and is readable
@@ -233,7 +249,7 @@ sub read_cluster_conf {
 		    $cinfo->{master} = $res;
 		}
 
-		if ($res->{ip} eq $localip) {
+		if ($res->{ip} eq $localname) {
 		    $cinfo->{local} = $res;
 		}
 	    } else {
