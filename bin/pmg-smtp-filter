@@ -836,7 +836,7 @@ sub process_request {
       if ($self->{errors}) {
 	  $self->log (0, "fast exit because of errors (free $mem->{size} bytes)");
 	  $self->done (1);
-      } elsif ($mem->{size} > (300*1024*1024)) {
+      } elsif ($mem->{size} > (400*1024*1024)) {
 	  $self->log (0, "fast exit to reduce server load (free $mem->{size} bytes)");
 	  $self->done (1);
      }
