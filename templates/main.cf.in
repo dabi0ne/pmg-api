@@ -31,7 +31,7 @@ mynetworks = [% postfix.mynetworks %]
 
 relay_domains = /etc/proxmox/domains
 
-transport_maps = hash:/etc/postfix/transport
+transport_maps = texthash:/etc/postfix/transport
 
 [% IF pmg.mail.relay %]
 [% IF pmg.mail.relaynomx %]
