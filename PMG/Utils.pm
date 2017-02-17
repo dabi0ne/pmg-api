@@ -22,6 +22,7 @@ use PVE::SafeSyslog;
 use PVE::ProcFSTools;
 use PMG::AtomicFile;
 use PMG::MailQueue;
+use PMG::SMTPPrinter;
 
 sub msgquote {
     my $msg = shift || '';
