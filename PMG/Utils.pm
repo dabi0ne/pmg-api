@@ -14,9 +14,12 @@ use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
 use Xdgmime;
 use Data::Dumper;
+use Net::IP;
 
+use PVE::Network;
 use PVE::Tools;
 use PVE::SafeSyslog;
+use PVE::ProcFSTools;
 use PMG::AtomicFile;
 use PMG::MailQueue;
 
@@ -295,5 +298,88 @@ sub add_ct_marks {
     }
 }
 
+# x509 certificate utils
+
+my $proxmox_tls_cert_fn = "/etc/proxmox/proxmox-tls.pem";
+
+sub gen_proxmox_tls_cert {
+    my ($force, $company, $cn) = @_;
+
+    return if !$force && -f $proxmox_tls_cert_fn;
+
+    my $sslconf = <<__EOD__;
+RANDFILE = /root/.rnd
+extensions = v3_req
+
+[ req ]
+default_bits = 4096
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+string_mask = nombstr
+
+[ req_distinguished_name ]
+organizationalUnitName = Proxmox Mail Gateway
+organizationName = $company
+commonName = $cn
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+nsCertType = server
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+__EOD__
+
+    my $cfgfn = "/tmp/proxmoxtlsconf-$$.tmp";
+    my $fh = IO::File->new ($cfgfn, "w");
+    print $fh $sslconf;
+    close ($fh);
+
+    eval {
+	PVE::Tools::run_command(['openssl', 'req', '-batch', '-x509', '-new', '-sha256',
+				 '-config', $cfgfn, '-days', 3650, '-nodes',
+				 '-out', $proxmox_tls_cert_fn,
+				 '-keyout', $proxmox_tls_cert_fn]);
+    };
+
+    if (my $err = $@) {
+	unlink $proxmox_tls_cert_fn;
+	unlink $cfgfn;
+	die "unable to generate proxmox certificate request:\n$err";
+    }
+
+    unlink $cfgfn;
+}
+
+sub find_local_network_for_ip {
+    my ($ip) = @_;
+
+    my $testip = Net::IP->new($ip);
+
+    my $isv6 = $testip->version == 6;
+    my $routes = $isv6 ?
+	PVE::ProcFSTools::read_proc_net_ipv6_route() :
+	PVE::ProcFSTools::read_proc_net_route();
+
+    foreach my $entry (@$routes) {
+	my $mask;
+	if ($isv6) {
+	    $mask = $entry->{prefix};
+	    next if !$mask; # skip the default route...
+	} else {
+	    $mask = $PVE::Network::ipv4_mask_hash_localnet->{$entry->{mask}};
+	    next if !defined($mask);
+	}
+	my $cidr = "$entry->{dest}/$mask";
+	my $testnet = Net::IP->new($cidr);
+	my $overlap = $testnet->overlaps($testip);
+	if ($overlap == $Net::IP::IP_B_IN_A_OVERLAP ||
+	    $overlap == $Net::IP::IP_IDENTICAL)
+	{
+	    return $cidr;
+	}
+    }
+
+    die "unable to detect local network for ip '$ip'\n";
+}
 
 1;

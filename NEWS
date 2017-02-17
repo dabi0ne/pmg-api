@@ -3,6 +3,10 @@ Proxmox Mail Gateway 5.0 News
 
 - changed license to AGPL3
 
+- remove commtouch integration
+
+- new 'dnsbl_sites' setting
+
 
 Incompatible changes:
 ---------------------

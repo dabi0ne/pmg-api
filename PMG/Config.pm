@@ -322,8 +322,41 @@ sub get_max_filters {
     return $max_servers - 2;
 }
 
+sub get_max_smtpd {
+    # estimate optimal number of smtpd daemons
+
+    my $max_servers = 25;
+    my $servermem = 20;
+    my $memory = physical_memory();
+    my $add_servers = int(($memory - 512)/$servermem);
+    $max_servers += $add_servers if $add_servers > 0;
+    $max_servers = 100 if  $max_servers > 100;
+    return $max_servers;
+}
+
+
 sub properties {
     return {
+	relay => {
+	    description => "The default mail delivery transport (incoming mails).",
+	    type => 'string',
+	},
+	relayport => {
+	    description => "SMTP port number for relay host.",
+	    type => 'integer',
+	    minimum => 1,
+	    maximum => 65535,
+	    default => 25,
+	},
+	relaynomx => {
+	    description => "Disable MX lookups for default relay.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	smarthost => {
+	    description => "When set, all outgoing mails are deliverd to the specified smarthost.",
+	    type => 'string',
+	},
 	banner => {
 	    description => "ESMTP banner.",
 	    type => 'string',
@@ -337,26 +370,128 @@ sub properties {
 	    maximum => 40,
 	    default => get_max_filters(),
 	},
+	max_smtpd_in => {
+	    description => "Maximum number of SMTP daemon processes (in).",
+	    type => 'integer',
+	    minimum => 3,
+	    maximum => 100,
+	    default => get_max_smtpd(),
+	},
+	max_smtpd_out => {
+	    description => "Maximum number of SMTP daemon processes (out).",
+	    type => 'integer',
+	    minimum => 3,
+	    maximum => 100,
+	    default => get_max_smtpd(),
+	},
+	conn_count_limit => {
+	    description => "How many simultaneous connections any client is allowed to make to this service. To disable this feature, specify a limit of 0.",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 50,
+	},
+	conn_rate_limit => {
+	    description => "The maximal number of connection attempts any client is allowed to make to this service per minute. To disable this feature, specify a limit of 0.",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 0,
+	},
+	message_rate_limit => {
+	    description => "The maximal number of message delivery requests that any client is allowed to make to this service per minute.To disable this feature, specify a limit of 0.",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 0,
+	},
 	hide_received => {
 	    description => "Hide received header in outgoing mails.",
 	    type => 'boolean',
 	    default => 0,
 	},
-	max_size => {
+	maxsize => {
 	    description => "Maximum email size. Larger mails are rejected.",
 	    type => 'integer',
 	    minimum => 1024,
 	    default => 1024*1024*10,
+	},
+	dwarning => {
+	    description => "SMTP delay warning time (in hours).",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 4,
+	},
+	use_rbl => {
+	    descriptions => "Use Realtime Blacklists.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	tls => {
+	    descriptions => "Use TLS.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	spf => {
+	    descriptions => "Use Sender Policy Framework.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	greylist => {
+	    descriptions => "Use Greylisting.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	helotests => {
+	    descriptions => "Use SMTP HELO tests.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	rejectunknown => {
+	    descriptions => "Reject unknown clients.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	rejectunknownsender => {
+	    descriptions => "Reject unknown senders.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	verifyreceivers => {
+	    description => "Enable receiver verification. The value (if greater than 0) spefifies the numerical reply code when the Postfix SMTP server rejects a recipient address (450 or 550).",
+	    type => 'integer',
+	    minimum => 0,
+	    maximum => 599,
+	    default => 0,
+	},
+	dnsbl_sites => {
+	    description => "Optional list of DNS white/blacklist domains (see postscreen_dnsbl_sites parameter).",
+	    type => 'string',
 	},
     };
 }
 
 sub options {
     return {
-	max_size => { optional => 1 },
+	relay => { optional => 1 },
+	relayport => { optional => 1 },
+	relaynomx => { optional => 1 },
+	dwarning => { optional => 1 },
+	max_smtpd_in => { optional => 1 },
+	max_smtpd_out => { optional => 1 },
+	greylist => { optional => 1 },
+	helotests => { optional => 1 },
+	use_rbl => { optional => 1 },
+	tls => { optional => 1 },
+	spf => { optional => 1 },
+	maxsize => { optional => 1 },
 	banner => { optional => 1 },
 	max_filters => { optional => 1 },
 	hide_received => { optional => 1 },
+	rejectunknown => { optional => 1 },
+	rejectunknownsender => { optional => 1 },
+	conn_count_limit => { optional => 1 },
+	conn_rate_limit => { optional => 1 },
+	message_rate_limit => { optional => 1 },
+	verifyreceivers => { optional => 1 },
+	dnsbl_sites => { optional => 1 },
     };
 }
 package PMG::Config;
@@ -506,6 +641,40 @@ PVE::INotify::register_file('pmg.conf', "/etc/proxmox/pmg.conf",
 			    \&read_pmg_conf,
 			    \&write_pmg_conf);
 
+# parsers/writers for other files
+
+my $domainsfilename = "/etc/proxmox/domains";
+
+sub read_pmg_domains {
+    my ($filename, $fh) = @_;
+
+    my $domains = [];
+
+    if (defined($fh)) {
+	while (defined(my $line = <$fh>)) {
+	    if ($line =~ m/^\s*(\S+)\s*$/) {
+		my $domain = $1;
+		push @$domains, $domain;
+	    }
+	}
+    }
+
+    return $domains;
+}
+
+sub write_pmg_domains {
+    my ($filename, $fh, $domain) = @_;
+
+    foreach my $domain (sort @$domain) {
+	PVE::Tools::safe_print($filename, $fh, "$domain\n");
+    }
+}
+
+PVE::INotify::register_file('domains', $domainsfilename,
+			    \&read_pmg_domains,
+			    \&write_pmg_domains,
+			    undef, always_call_parser => 1);
+
 
 # config file generation using templates
 
@@ -548,6 +717,44 @@ sub rewrite_config_file {
     my $template = Template->new({});
 
     my $vars = { pmg => $self->get_config() };
+
+    my $nodename = PVE::INotify::nodename();
+    my $int_ip = PMG::Cluster::remote_node_ip($nodename);
+    my $int_net_cidr = PMG::Utils::find_local_network_for_ip($int_ip);
+
+    $vars->{ipconfig}->{int_ip} = $int_ip;
+    # $vars->{ipconfig}->{int_net_cidr} = $int_net_cidr;
+    $vars->{ipconfig}->{int_port} = 26;
+    $vars->{ipconfig}->{ext_port} = 25;
+
+    my $transportnets = []; # fixme
+    $vars->{postfix}->{transportnets} = join(' ', @$transportnets);
+
+    my $mynetworks = [ '127.0.0.0/8', '[::1]/128' ];
+    push @$mynetworks, @$transportnets;
+    push @$mynetworks, $int_net_cidr;
+
+    # add default relay to mynetworks
+    if (my $relay = $self->get('mail', 'relay')) {
+	if (Net::IP::ip_is_ipv4($relay)) {
+	    push @$mynetworks, "$relay/32";
+	} elsif (Net::IP::ip_is_ipv6($relay)) {
+	    push @$mynetworks, "[$relay]/128";
+	} else {
+	    warn "unable to detect IP version of relay '$relay'";
+	}
+    }
+
+    $vars->{postfix}->{mynetworks} = join(' ', @$mynetworks);
+
+    my $usepolicy = 0;
+    $usepolicy = 1 if $self->get('mail', 'greylist') ||
+	$self->get('mail', 'spf') ||  $self->get('mail', 'use_rbl');
+    $vars->{postfix}->{usepolicy} = $usepolicy;
+
+    my $resolv = PVE::INotify::read_file('resolvconf');
+    $vars->{dns}->{hostname} = $nodename;
+    $vars->{dns}->{domain} = $resolv->{search};
 
     $template->process($srcfd, $vars, $dstfd) ||
 	die $template->error();
@@ -635,13 +842,44 @@ sub rewrite_dot_forward {
     close (TMP);
 }
 
+# rewrite /etc/postfix/*
+sub rewrite_config_postfix {
+    my ($self) = @_;
+
+    # make sure we have a domains file (else postfix start fails)
+    IO::File->new($domainsfilename, 'a', 0644);
+
+    if ($self->get('mail', 'tls')) {
+	eval {
+	    my $resolv = PVE::INotify::read_file('resolvconf');
+	    my $domain = $resolv->{search};
+
+	    my $company = $domain; # what else ?
+	    my $cn = "*.$domain";
+	    PMG::Utils::gen_proxmox_tls_cert(0, $company, $cn);
+	};
+	syslog ('info', msgquote ("generating certificate failed: $@")) if $@;
+    }
+
+    $self->rewrite_config_file('main.cf.in', '/etc/postfix/main.cf');
+    $self->rewrite_config_file('master.cf.in', '/etc/postfix/master.cf');
+    #rewrite_config_transports ($class);
+    #rewrite_config_whitelist ($class);
+    #rewrite_config_tls_policy ($class);
+
+    # make sure aliases.db is up to date
+    system('/usr/bin/newaliases');
+}
+
 sub rewrite_config {
     my ($self) = @_;
 
+    $self->rewrite_config_postfix(); 
     $self->rewrite_dot_forward();
     $self->rewrite_config_postgres();
     $self->rewrite_config_spam();
     $self->rewrite_config_clam();
+    
 }
 
 1;

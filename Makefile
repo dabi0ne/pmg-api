@@ -19,6 +19,10 @@ CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS})
 
 TEMPLATES =				\
+	main.cf.in			\
+	main.cf.in.demo			\
+	master.cf.in			\
+	master.cf.in.demo		\
 	init.pre.in			\
 	local.cf.in			\
 	v310.pre.in			\
