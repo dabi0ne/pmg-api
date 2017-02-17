@@ -74,3 +74,21 @@ __PACKAGE__->register_method ({
 
 	return $data;
     }});
+
+__PACKAGE__->register_method ({
+    name => 'update_section',
+    path => '{section}',
+    method => 'PUT',
+    description => "Update configuration properties.",
+    parameters => PMG::Config::Base->updateSchema(),
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PMG::Config->new();
+	my $section = $param->{section};
+
+	die "implemet me";
+
+	return undef;
+    }});
