@@ -114,9 +114,14 @@ sub rest_handler {
 
 	if ($info->{proxyto}) {
 	    my $pn = $info->{proxyto};
-	    my $node = $uri_param->{$pn};
 
-	    raise_param_exc({$pn =>  "proxy parameter '$pn' does not exists"}) if !$node;
+	    my $node;
+	    if ($pn eq 'master') {
+		$node = $self->get_master_node();
+	    } else {
+		$node = $uri_param->{$pn};
+		raise_param_exc({$pn =>  "proxy parameter '$pn' does not exists"}) if !$node;
+	    }
 
 	    if ($node ne 'localhost' && $node ne PVE::INotify::nodename()) {
 		die "unable to proxy file uploads" if $auth->{isUpload};
@@ -185,6 +190,16 @@ sub remote_node_ip {
     die "unable to get remote IP address for node '$node'\n" if !$remip;
 
     return $remip;
+}
+
+sub get_master_node {
+    my ($self) = @_;
+
+    my $cinfo = PVE::INotify::read_file("cluster.conf");
+
+    return $cinfo->{master}->{name} if defined($cinfo->{master});
+
+    return 'localhost';
 }
 
 1;
