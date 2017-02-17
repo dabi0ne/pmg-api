@@ -13,7 +13,7 @@ use base qw(PVE::SectionConfig);
 my $defaultData = {
     propertyList => {
 	type => { description => "Section type." },
-	section_id => {
+	section => {
 	    description => "Secion ID.",
 	    type => 'string', format => 'pve-configid',
 	},
