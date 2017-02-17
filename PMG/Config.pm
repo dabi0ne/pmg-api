@@ -675,6 +675,73 @@ PVE::INotify::register_file('domains', $domainsfilename,
 			    \&write_pmg_domains,
 			    undef, always_call_parser => 1);
 
+my $transport_map_filename = "/etc/postfix/transport";
+
+sub read_transport_map {
+    my ($filename, $fh) = @_;
+
+    return [] if !defined($fh);
+
+    my $res = {};
+
+    while (defined(my $line = <$fh>)) {
+	chomp $line;
+	next if $line =~ m/^\s*$/;
+	next if $line =~ m/^\s*\#/;
+
+	if ($line =~ m/^(\S+)\s+smtp:([^\s:]+):(\d+)\s*$/) {
+	    my $domain = $1;
+	    my $host = $2;
+	    my $port =$3;
+	    my $nomx;
+
+	    if ($host =~ m/^\[(.*)\]$/) {
+		$host = $1;
+		$nomx = 1;
+	    }
+
+	    my $key = "$host:$port";
+
+	    $res->{$key}->{nomx} = $nomx;
+	    $res->{$key}->{host} = $host;
+	    $res->{$key}->{port} = $port;
+	    $res->{$key}->{transport} = $key;
+
+	    push @{$res->{$key}->{domains}}, $domain;
+	}
+    }
+
+    my $ta = [];
+
+    foreach my $t (sort keys %$res) {
+	push @$ta, $res->{$t};
+    }
+
+    return $ta;
+}
+
+sub write_ransport_map {
+    my ($filename, $fh, $tmap) = @_;
+
+    return if !$tmap;
+
+    foreach my $t (sort { $a->{transport} cmp $b->{transport} } @$tmap) {
+	my $domains = $t->{domains};
+
+	foreach my $d (sort @$domains) {
+	    if ($t->{nomx}) {
+		PVE::Tools::safe_print($filename, $fh, "$d smtp:[$t->{host}]:$t->{port}\n");
+	    } else {
+		PVE::Tools::safe_print($filename, $fh, "$d smtp:$t->{host}:$t->{port}\n");
+	    }
+	}
+    }
+}
+
+PVE::INotify::register_file('transport', $transport_map_filename,
+			    \&read_transport_map,
+			    \&write_ransport_map,
+			    undef, always_call_parser => 1);
 
 # config file generation using templates
 
@@ -846,8 +913,9 @@ sub rewrite_dot_forward {
 sub rewrite_config_postfix {
     my ($self) = @_;
 
-    # make sure we have a domains file (else postfix start fails)
+    # make sure we have required files (else postfix start fails)
     IO::File->new($domainsfilename, 'a', 0644);
+    IO::File->new($transport_map_filename, 'a', 0644);
 
     if ($self->get('mail', 'tls')) {
 	eval {
