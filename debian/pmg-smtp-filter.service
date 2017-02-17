@@ -1,0 +1,17 @@
+[Unit]
+Description=PMG SMTP Filter Daemon
+ConditionPathExists=/usr/bin/pmg-smtp-filter
+Wants=remote-fs.target
+After=remote-fs.target
+Before=postfix.service
+
+[Service]
+ExecStart=/usr/bin/pmg-smtp-filter
+KillMode=mixed
+TimeoutStopSec=40
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/var/run/pmg-smtp-filter.pid
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
