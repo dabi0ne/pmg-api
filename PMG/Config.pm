@@ -170,7 +170,7 @@ sub properties {
 	maxspamsize => {
 	    description => "Maximum size of spam messages in bytes.",
 	    type => 'integer',
-	    minimim => 64,
+	    minimum => 64,
 	    default => 200*1024,
 	},
     };
@@ -420,37 +420,37 @@ sub properties {
 	    default => 4,
 	},
 	use_rbl => {
-	    descriptions => "Use Realtime Blacklists.",
+	    description => "Use Realtime Blacklists.",
 	    type => 'boolean',
 	    default => 1,
 	},
 	tls => {
-	    descriptions => "Use TLS.",
+	    description => "Use TLS.",
 	    type => 'boolean',
 	    default => 0,
 	},
 	spf => {
-	    descriptions => "Use Sender Policy Framework.",
+	    description => "Use Sender Policy Framework.",
 	    type => 'boolean',
 	    default => 1,
 	},
 	greylist => {
-	    descriptions => "Use Greylisting.",
+	    description => "Use Greylisting.",
 	    type => 'boolean',
 	    default => 1,
 	},
 	helotests => {
-	    descriptions => "Use SMTP HELO tests.",
+	    description => "Use SMTP HELO tests.",
 	    type => 'boolean',
 	    default => 0,
 	},
 	rejectunknown => {
-	    descriptions => "Reject unknown clients.",
+	    description => "Reject unknown clients.",
 	    type => 'boolean',
 	    default => 0,
 	},
 	rejectunknownsender => {
-	    descriptions => "Reject unknown senders.",
+	    description => "Reject unknown senders.",
 	    type => 'boolean',
 	    default => 0,
 	},
