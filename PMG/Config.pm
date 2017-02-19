@@ -215,6 +215,7 @@ sub properties {
 	},
 	archivemaxrec => {
 	    description => "Nested archives are scanned recursively, e.g. if a ZIP archive contains a TAR  file,  all files within it will also be scanned. This options specifies how deeply the process should be continued. Warning: setting this limit too high may result in severe damage to the system.",
+	    type => 'integer',
 	    minimum => 1,
 	    default => 5,
 	},
