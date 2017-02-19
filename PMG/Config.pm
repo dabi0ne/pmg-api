@@ -529,6 +529,17 @@ sub new {
     return bless $cfg, $class;
 }
 
+my $lockfile = "/var/lock/pmgconfig.lck";
+
+sub lock_config {
+    my ($code, $errmsg) = @_;
+
+    my $p = PVE::Tools::lock_file($lockfile, undef, $code);
+    if (my $err = $@) {
+	$errmsg ? die "$errmsg: $err" : die $err;
+    }
+}
+
 # set section values
 # this does not work for ldap entries
 sub set {
