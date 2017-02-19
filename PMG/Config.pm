@@ -529,6 +529,12 @@ sub new {
     return bless $cfg, $class;
 }
 
+sub write {
+    my ($self) = @_;
+
+    PVE::INotify::write_file("pmg.conf", $self);
+}
+
 my $lockfile = "/var/lock/pmgconfig.lck";
 
 sub lock_config {
