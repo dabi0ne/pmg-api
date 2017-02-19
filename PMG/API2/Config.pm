@@ -97,6 +97,7 @@ foreach my $section (@$section_type_enum) {
 	name => "read_${section}_section",
 	path => $section,
 	method => 'GET',
+	proxyto => 'master',
 	description => "Read $section configuration properties.",
 	parameters => {
 	    additionalProperties => 0,
@@ -113,6 +114,7 @@ foreach my $section (@$section_type_enum) {
 	name => "update_${section}_section",
 	path => $section,
 	method => 'PUT',
+	proxyto => 'master',
 	description => "Update $section configuration properties.",
 	parameters => $plugin->updateSchema(1),
 	returns => { type => 'null' },
