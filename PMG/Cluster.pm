@@ -54,7 +54,7 @@ sub remote_node_ip {
 sub get_master_node {
     my ($cinfo) = @_;
 
-    my $cinfo //= PVE::INotify::read_file("cluster.conf");
+    $cinfo //= PVE::INotify::read_file("cluster.conf");
 
     return $cinfo->{master}->{name} if defined($cinfo->{master});
 
