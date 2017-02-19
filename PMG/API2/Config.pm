@@ -23,9 +23,7 @@ __PACKAGE__->register_method ({
     description => "Directory index.",
     parameters => {
     	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -53,7 +51,6 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    node => get_standard_option('pve-node'),
 	    section => {
 		description => "Section name.",
 		type => 'string',

@@ -8,9 +8,15 @@ use PVE::JSONSchema;
 
 use PMG::API2::AccessControl;
 use PMG::API2::Nodes;
+use PMG::API2::Config;
 use PMG::pmgcfg;
 
 use base qw(PVE::RESTHandler);
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Config",
+    path => 'config',
+});
 
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Nodes",
@@ -46,6 +52,7 @@ __PACKAGE__->register_method ({
 	my ($resp, $param) = @_;
 
 	my $res = [
+	    { subdir => 'config' },
 	    { subdir => 'nodes' },
 	    { subdir => 'version' },
 	    ];
