@@ -51,6 +51,16 @@ sub remote_node_ip {
     return lookup_node_ip($nodename, $noerr);
 }
 
+sub get_master_node {
+    my ($cinfo) = @_;
+
+    my $cinfo //= PVE::INotify::read_file("cluster.conf");
+
+    return $cinfo->{master}->{name} if defined($cinfo->{master});
+
+    return 'localhost';
+}
+
 # X509 Certificate cache helper
 
 my $cert_cache_nodes = {};
