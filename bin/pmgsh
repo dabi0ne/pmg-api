@@ -239,8 +239,13 @@ sub check_proxyto {
 
     if ($info->{proxyto}) {
 	my $pn = $info->{proxyto};
-	my $node = $uri_param->{$pn};
-	die "proxy parameter '$pn' does not exists" if !$node;
+	my $node;
+	if ($pn eq 'master') {
+	    $node = PMG::Cluster::get_master_node();
+	} else {
+	    $node = $uri_param->{$pn};
+	    die "proxy parameter '$pn' does not exists" if !$node;
+	}
 
 	if ($node ne 'localhost' && ($node ne PVE::INotify::nodename())) {
 	    die "proxy loop detected - aborting\n" if $disable_proxy;
