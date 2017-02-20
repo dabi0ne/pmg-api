@@ -11,6 +11,8 @@ use PVE::RESTHandler;
 use PVE::RESTEnvironment;
 use PVE::JSONSchema qw(get_standard_option);
 
+use PMG::Utils;
+
 use base qw(PVE::RESTHandler);
 
 my $service_name_list = [
@@ -66,25 +68,6 @@ my $service_prop_desc = {
     description => "Service ID",
     type => 'string',
     enum => $service_name_list,
-};
-
-my $service_cmd = sub {
-    my ($service, $cmd) = @_;
-
-    my $initd_cmd;
-
-    die "unknown service command '$cmd'\n"
-	if $cmd !~ m/^(start|stop|restart|reload)$/;
-
-    if ($service eq 'pmgdaemon' || $service eq 'pmgproxy') {
-	if ($cmd eq 'restart') {
-	    # OK
-	} else {
-	    die "invalid service cmd '$service $cmd': ERROR";
-	}
-    }
-
-    PVE::Tools::run_command(['systemctl', $cmd, $service]);
 };
 
 my $service_state = sub {
@@ -238,7 +221,7 @@ __PACKAGE__->register_method ({
 
 	    syslog('info', "starting service $param->{service}: $upid\n");
 
-	    &$service_cmd($param->{service}, 'start');
+	    PMG::Utils::service_cmd($param->{service}, 'start');
 
 	};
 
@@ -274,7 +257,7 @@ __PACKAGE__->register_method ({
 
 	    syslog('info', "stoping service $param->{service}: $upid\n");
 
-	    &$service_cmd($param->{service}, 'stop');
+	    PMG::Utils::service_cmd($param->{service}, 'stop');
 
 	};
 
@@ -310,7 +293,7 @@ __PACKAGE__->register_method ({
 
 	    syslog('info', "re-starting service $param->{service}: $upid\n");
 
-	    &$service_cmd($param->{service}, 'restart');
+	    PMG::Utils::service_cmd($param->{service}, 'restart');
 
 	};
 
@@ -346,7 +329,7 @@ __PACKAGE__->register_method ({
 
 	    syslog('info', "reloading service $param->{service}: $upid\n");
 
-	    &$service_cmd($param->{service}, 'reload');
+	    PMG::Utils::service_cmd($param->{service}, 'reload');
 
 	};
 
