@@ -82,6 +82,8 @@ my $api_update_config_section = sub {
        }
 
        $cfg->write();
+
+       $cfg->rewrite_config(1);
    };
 
    PMG::Config::lock_config($code, "update config section '$section' failed");
@@ -115,6 +117,7 @@ foreach my $section (@$section_type_enum) {
 	path => $section,
 	method => 'PUT',
 	proxyto => 'master',
+	protected => 1,
 	description => "Update $section configuration properties.",
 	parameters => $plugin->updateSchema(1),
 	returns => { type => 'null' },

@@ -822,7 +822,7 @@ sub rewrite_config_file {
 	$srcfn = $demosrc if -f $demosrc;
     }
 
-    my ($perm, $uid, $gui);
+    my ($perm, $uid, $gid);
 
     my $srcfd = IO::File->new ($srcfn, "r")
 	|| die "cant read template '$srcfn' - $!: ERROR";
@@ -842,7 +842,7 @@ sub rewrite_config_file {
 
     my $vars = $self->get_template_vars();
 
-    my $output = '':
+    my $output = '';
 
     $template->process($srcfd, $vars, \$output) ||
 	die $template->error();
@@ -953,18 +953,24 @@ sub rewrite_config_postgres {
 sub rewrite_dot_forward {
     my ($self) = @_;
 
-    my $fname = '/root/.forward';
+    my $dstfn = '/root/.forward';
 
     my $email = $self->get('administration', 'email');
-    open(TMP, ">$fname");
+
+    $output = "";
     if ($email && $email =~ m/\s*(\S+)\s*/) {
-	print (TMP "$1\n");
+	$output = "$1\n";
     } else {
 	# empty .forward does not forward mails (see man local)
     }
-    close (TMP);
 
-    return undef;
+    my $old = PVE::Tools::file_get_contents($dstfn, 128*1024) if -f $dstfn;
+
+    return 0 if defined($old) && ($old eq $output); # no change
+
+    PVE::Tools::file_set_contents($dstfn, $output);
+
+    return 1;
 }
 
 # rewrite /etc/postfix/*
@@ -1006,14 +1012,32 @@ sub rewrite_config_postfix {
 }
 
 sub rewrite_config {
-    my ($self) = @_;
+    my ($self, $restart_services) = @_;
 
-    $self->rewrite_config_postfix();
-    $self->rewrite_dot_forward();
-    $self->rewrite_config_postgres();
-    $self->rewrite_config_spam();
-    $self->rewrite_config_clam();
-    $self->rewrite_config_freshclam();
+    if ($self->rewrite_config_postfix() && $restart_services) {
+	PMG::Utils::service_cmd('postfix', 'restart');
+    }
+
+    if ($self->rewrite_dot_forward() && $restart_services) {
+	# no need to restart anything
+    }
+
+    if ($self->rewrite_config_postgres() && $restart_services) {
+	# do nothing (too many side effects)?
+	# does not happen anyways, because config does not change.
+    }
+
+    if ($self->rewrite_config_spam() && $restart_services) {
+	PMG::Utils::service_cmd('pmg-smtp-filter', 'restart');
+    }
+
+    if ($self->rewrite_config_clam() && $restart_services) {
+	PMG::Utils::service_cmd('clamd', 'restart');
+    }
+
+    if ($self->rewrite_config_freshclam() && $restart_services) {
+	PMG::Utils::service_cmd('freshclam', 'restart');
+    }
 
 }
 
