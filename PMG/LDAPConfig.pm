@@ -19,6 +19,11 @@ my $defaultData = {
 	    description => "Secion ID.",
 	    type => 'string', format => 'pve-configid',
 	},
+    },
+};
+
+sub properties {
+    return {
 	mode => {
 	    description => "LDAP protocol mode ('ldap' or 'ldaps').",
 	    type => 'string',
@@ -71,8 +76,8 @@ my $defaultData = {
 	    pattern => '[a-zA-Z0-9]+',
 	    default => "mail, userPrincipalName, proxyAddresses, othermailbox",
 	},
-    },
-};
+    };
+}
 
 sub options {
     return {

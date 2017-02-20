@@ -10,10 +10,13 @@ use HTTP::Status qw(:constants);
 use Storable qw(dclone);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
+use PVE::INotify;
 
 use PMG::LDAPConfig;
 
 use base qw(PVE::RESTHandler);
+
+my $ldapconfigfile = "pmg-ldap.conf";
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -41,12 +44,12 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
-	
+	my $ldap_cfg = PVE::INotify::read_file($ldapconfigfile);
+
 	my $res = [];
 
 	if (defined($ldap_cfg)) {
-	    foreach my $section (keys %{$ldap_cfg->{ids}}) {	    
+	    foreach my $section (keys %{$ldap_cfg->{ids}}) {
 		my $d = $ldap_cfg->{ids}->{$section};
 		push @$res, {
 		    section => $section,
@@ -55,8 +58,163 @@ __PACKAGE__->register_method ({
 		};
 	    }
 	}
-	
+
 	return $res;
+    }});
+
+
+__PACKAGE__->register_method ({
+    name => 'create',
+    path => '',
+    method => 'POST',
+    proxyto => 'master',
+    protected => 1,
+    description => "Add LDAP server.",
+    parameters => PMG::LDAPConfig->createSchema(1),
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+
+	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	    my $ids = $cfg->{ids};
+
+	    my $section = extract_param($param, 'section');
+	    my $type = $param->{type};
+
+	    die "LDAP entry '$section' already exists\n"
+		if $ids->{$section};
+
+	    my $config = PMG::LDAPConfig->check_config($section, $param, 1, 1);
+
+	    $ids->{$section} = $config;
+
+	    PVE::INotify::write_file($ldapconfigfile, $cfg);
+	};
+
+	PMG::LDAPConfig::lock_config($code, "add LDAP entry failed");
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'read',
+    path => '{section}',
+    method => 'GET',
+    description => "Get LDAP server configuration.",
+    proxyto => 'master',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    section => {
+		description => "Secion ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	},
+    },
+    returns => {},
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+
+	my $section = $param->{section};
+
+	my $data = $cfg->{ids}->{$section};
+	die "LDAP entry '$section' does not exist\n" if !$data;
+
+	$data->{digest} = $cfg->{digest};
+
+	return $data;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'update',
+    path => '{section}',
+    method => 'PUT',
+    description => "Update LDAP server settings.",
+    protected => 1,
+    proxyto => 'master',
+    parameters => PMG::LDAPConfig->updateSchema(),
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+
+	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	    my $ids = $cfg->{ids};
+
+	    my $digest = extract_param($param, 'digest');
+	    PVE::SectionConfig::assert_if_modified($cfg, $digest);
+
+	    my $section = extract_param($param, 'section');
+
+	    die "LDAP entry '$section' does not exist\n"
+		if !$ids->{$section};
+
+	    my $delete_str = extract_param($param, 'delete');
+	    die "no options specified\n"
+		if !$delete_str && !scalar(keys %$param);
+
+	    foreach my $opt (PVE::Tools::split_list($delete_str)) {
+		delete $ids->{$section}->{$opt};
+	    }
+
+	    my $config = PMG::LDAPConfig->check_config($section, $param, 0, 1);
+
+	    foreach my $p (keys %$config) {
+		$ids->{$section}->{$p} = $config->{$p};
+	    }
+
+	    PVE::INotify::write_file($ldapconfigfile, $cfg);
+	};
+
+	PMG::LDAPConfig::lock_config($code, "update LDAP entry failed");
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'delete',
+    path => '{section}',
+    method => 'DELETE',
+    description => "Delete an LDAP server entry.",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    section => {
+		description => "Secion ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	}
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+
+	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	    my $ids = $cfg->{ids};
+
+	    my $section = $param->{section};
+
+	    die "LDAP entry '$section' does not exist\n"
+		if !$ids->{$section};
+
+	    delete $ids->{$section};
+
+	    PVE::INotify::write_file($ldapconfigfile, $cfg);
+	};
+
+	PMG::LDAPConfig::lock_config($code, "delete LDAP entry failed");
+
+	return undef;
     }});
 
 1;
