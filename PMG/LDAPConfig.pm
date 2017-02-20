@@ -67,7 +67,7 @@ my $defaultData = {
 	},
 	mailattr => {
 	    description => "List of mail attribute names.",
-	    type => 'string-list',
+	    type => 'string', format => 'string-list',
 	    pattern => '[a-zA-Z0-9]+',
 	    default => "mail, userPrincipalName, proxyAddresses, othermailbox",
 	},
@@ -112,6 +112,17 @@ sub encode_value {
     $value = encode_base64($value, '') if $key eq 'bindpw';
 
     return $value;
+}
+
+my $lockfile = "/var/lock/pmgldapconfig.lck";
+
+sub lock_config {
+    my ($code, $errmsg) = @_;
+
+    my $p = PVE::Tools::lock_file($lockfile, undef, $code);
+    if (my $err = $@) {
+	$errmsg ? die "$errmsg: $err" : die $err;
+    }
 }
 
 
