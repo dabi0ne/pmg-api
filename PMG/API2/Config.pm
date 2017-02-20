@@ -12,10 +12,17 @@ use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 
 use PMG::Config;
+use PMG::API2::RuleDB;
 
 use base qw(PVE::RESTHandler);
 
 my $section_type_enum = PMG::Config::Base->lookup_types();
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::RuleDB",
+    path => 'ruledb',
+});
+
 
 __PACKAGE__->register_method ({
     name => 'index', 
@@ -40,7 +47,10 @@ __PACKAGE__->register_method ({
 	my $res = [];
 	foreach my $section (@$section_type_enum) {
 	    push @$res, { section => $section };
-	}   
+	}
+
+	push @$res, { section => 'ruledb' };
+
 	return $res;
     }});
 
@@ -129,5 +139,6 @@ foreach my $section (@$section_type_enum) {
 	    return undef;
 	}});
 }
+
 
 1;

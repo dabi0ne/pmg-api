@@ -22,9 +22,7 @@ __PACKAGE__->register_method ({
     description => "Directory index.",
     parameters => {
     	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -65,13 +63,11 @@ __PACKAGE__->register_method({
     path => 'rules',
     method => 'GET',
     description => "Get list of rules.",
-    proxyto => 'node',
+    proxyto => 'master',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -129,13 +125,11 @@ __PACKAGE__->register_method({
     path => 'actions',
     method => 'GET',
     description => "Get list of 'action' objects.",
-    proxyto => 'node',
+    proxyto => 'master',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -161,13 +155,11 @@ __PACKAGE__->register_method({
     path => 'what',
     method => 'GET',
     description => "Get list of 'what' objects.",
-    proxyto => 'node',
+    proxyto => 'master',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -193,13 +185,11 @@ __PACKAGE__->register_method({
     path => 'when',
     method => 'GET',
     description => "Get list of 'when' objects.",
-    proxyto => 'node',
+    proxyto => 'master',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -225,13 +215,11 @@ __PACKAGE__->register_method({
     path => 'who',
     method => 'GET',
     description => "Get list of 'who' objects.",
-    proxyto => 'node',
+    proxyto => 'master',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
