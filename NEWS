@@ -7,6 +7,8 @@ Proxmox Mail Gateway 5.0 News
 
 - new 'dnsbl_sites' setting
 
+- removed fuzzy OCR (does snot make much sense in recent years)
+
 
 Incompatible changes:
 ---------------------
