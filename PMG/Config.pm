@@ -957,7 +957,7 @@ sub rewrite_dot_forward {
 
     my $email = $self->get('administration', 'email');
 
-    $output = "";
+    my $output = '';
     if ($email && $email =~ m/\s*(\S+)\s*/) {
 	$output = "$1\n";
     } else {
