@@ -49,4 +49,78 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'create',
+    path => '',
+    method => 'POST',
+    proxyto => 'master',
+    protected => 1,
+    description => "Add relay domain.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    domain => {
+		description => "Domain name.",
+		type => 'string', format => 'dns-name',
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+
+	    my $domains = PVE::INotify::read_file('domains');
+
+	    die "Domain '$param->{domain}' already exists\n"
+		if grep { $_ eq $param->{domain} } @$domains;
+
+	    push @$domains, $param->{domain};
+
+	    PVE::INotify::write_file('domains', $domains);
+	};
+
+	PMG::Config::lock_config($code, "add relay domain failed");
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'delete',
+    path => '{domain}',
+    method => 'DELETE',
+    description => "Delete a relay domain",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    domain => {
+		description => "Domain name.",
+		type => 'string', format => 'dns-name',
+	    },
+	}
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+
+	    my $domains = PVE::INotify::read_file('domains');
+
+	    die "Domain '$param->{domain}' does not exist\n"
+		if !grep { $_ eq $param->{domain} } @$domains;
+
+	    my $res = [ grep { $_ ne $param->{domain} } @$domains ];
+
+	    PVE::INotify::write_file('domains', $res);
+	};
+
+	PMG::Config::lock_config($code, "delete relay domain failed");
+
+	return undef;
+    }});
+
 1;
