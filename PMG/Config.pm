@@ -862,13 +862,6 @@ sub rewrite_config_file {
     return 1;
 }
 
-sub rewrite_config_script {
-    my ($self, $tmplname, $dstfn) = @_;
-
-    $self->rewrite_config_file($tmplname, $dstfn);
-    system("chmod +x $dstfn");
-}
-
 # rewrite spam configuration
 sub rewrite_config_spam {
     my ($self) = @_;
