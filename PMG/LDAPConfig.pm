@@ -133,6 +133,8 @@ sub write_pmg_ldap_conf {
 
     my $raw = __PACKAGE__->write_config($filename, $cfg);
 
+    chmod(0600, $fh);
+
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
