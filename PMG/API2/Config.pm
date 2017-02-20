@@ -73,7 +73,7 @@ my $api_read_config_section = sub {
 
     my $cfg = PMG::Config->new();
 
-    my $data = dclone($cfg->{ids}->{"section_$section"});
+    my $data = dclone($cfg->{ids}->{$section});
     $data->{digest} = $cfg->{digest};
     delete $data->{type};
 
@@ -95,14 +95,14 @@ my $api_update_config_section = sub {
 	   if !$delete_str && !scalar(keys %$param);
 
        foreach my $opt (PVE::Tools::split_list($delete_str)) {
-	   delete $ids->{"section_$section"}->{$opt};
+	   delete $ids->{$section}->{$opt};
        }
 
        my $plugin = PMG::Config::Base->lookup($section);
        my $config = $plugin->check_config($section, $param, 0, 1);
 
        foreach my $p (keys %$config) {
-	   $ids->{"section_$section"}->{$p} = $config->{$p};
+	   $ids->{$section}->{$p} = $config->{$p};
        }
 
        $cfg->write();
@@ -114,8 +114,6 @@ my $api_update_config_section = sub {
 };
 
 foreach my $section (@$section_type_enum) {
-
-    next if $section eq 'ldap'; # fixme
 
     my $plugin = PMG::Config::Base->lookup($section);
 
