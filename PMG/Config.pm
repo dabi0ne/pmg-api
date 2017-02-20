@@ -507,8 +507,6 @@ use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
 
-use PMG::AtomicFile;
-
 PMG::Config::Admin->register();
 PMG::Config::Mail->register();
 PMG::Config::Spam->register();
@@ -763,43 +761,8 @@ PVE::INotify::register_file('transport', $transport_map_filename,
 
 # config file generation using templates
 
-sub rewrite_config_file {
-    my ($self, $tmplname, $dstfn) = @_;
-
-    my $demo = $self->get('admin', 'demo');
-
-    my $srcfn = ($tmplname =~ m|^.?/|) ?
-	$tmplname : "/var/lib/pmg/templates/$tmplname";
-
-    if ($demo) {
-	my $demosrc = "$srcfn.demo";
-	$srcfn = $demosrc if -f $demosrc;
-    }
-
-    my $srcfd = IO::File->new ($srcfn, "r")
-	|| die "cant read template '$srcfn' - $!: ERROR";
-    my $dstfd = PMG::AtomicFile->open ($dstfn, "w")
-	|| die "cant open config file '$dstfn' - $!: ERROR";
-
-    if ($dstfn eq '/etc/fetchmailrc') {
-	my ($login, $pass, $uid, $gid) = getpwnam('fetchmail');
-	if ($uid && $gid) {
-	    chown($uid, $gid, ${*$dstfd}{'io_atomicfile_temp'});
-	}
-	chmod (0600, ${*$dstfd}{'io_atomicfile_temp'});
-    } elsif ($dstfn eq '/etc/clamav/freshclam.conf') {
-	# needed if file contains a HTTPProxyPasswort
-
-	my $uid = getpwnam('clamav');
-	my $gid = getgrnam('adm');
-
-	if ($uid && $gid) {
-	    chown ($uid, $gid, ${*$dstfd}{'io_atomicfile_temp'});
-	}
-	chmod (0600, ${*$dstfd}{'io_atomicfile_temp'});
-    }
-
-    my $template = Template->new({});
+sub get_template_vars {
+    my ($self) = @_;
 
     my $vars = { pmg => $self->get_config() };
 
@@ -841,11 +804,62 @@ sub rewrite_config_file {
     $vars->{dns}->{hostname} = $nodename;
     $vars->{dns}->{domain} = $resolv->{search};
 
-    $template->process($srcfd, $vars, $dstfd) ||
+    return $vars;
+}
+
+# rewrite file from template
+# return true if file has changed
+sub rewrite_config_file {
+    my ($self, $tmplname, $dstfn) = @_;
+
+    my $demo = $self->get('admin', 'demo');
+
+    my $srcfn = ($tmplname =~ m|^.?/|) ?
+	$tmplname : "/var/lib/pmg/templates/$tmplname";
+
+    if ($demo) {
+	my $demosrc = "$srcfn.demo";
+	$srcfn = $demosrc if -f $demosrc;
+    }
+
+    my ($perm, $uid, $gui);
+
+    my $srcfd = IO::File->new ($srcfn, "r")
+	|| die "cant read template '$srcfn' - $!: ERROR";
+
+    if ($dstfn eq '/etc/fetchmailrc') {
+	(undef, undef, $uid, $gid) = getpwnam('fetchmail');
+	$perm = 0600;
+    } elsif ($dstfn eq '/etc/clamav/freshclam.conf') {
+	# needed if file contains a HTTPProxyPasswort
+
+	$uid = getpwnam('clamav');
+	$gid = getgrnam('adm');
+	$perm = 0600;
+    }
+
+    my $template = Template->new({});
+
+    my $vars = $self->get_template_vars();
+
+    my $output = '':
+
+    $template->process($srcfd, $vars, \$output) ||
 	die $template->error();
 
     $srcfd->close();
-    $dstfd->close (1);
+
+    my $old = PVE::Tools::file_get_contents($dstfn, 128*1024) if -f $dstfn;
+
+    return 0 if defined($old) && ($old eq $output); # no change
+
+    PVE::Tools::file_set_contents($dstfn, $output, $perm);
+
+    if (defined($uid) && defined($gid)) {
+	chown($uid, $gid, $dstfn);
+    }
+
+    return 1;
 }
 
 sub rewrite_config_script {
