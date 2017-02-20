@@ -14,6 +14,7 @@ use PVE::RESTHandler;
 use PMG::Config;
 use PMG::API2::RuleDB;
 use PMG::API2::LDAP;
+use PMG::API2::Domains;
 
 use base qw(PVE::RESTHandler);
 
@@ -28,6 +29,12 @@ __PACKAGE__->register_method ({
     subclass => "PMG::API2::LDAP",
     path => 'ldap',
 });
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Domains",
+    path => 'domains',
+});
+
 
 __PACKAGE__->register_method ({
     name => 'index', 
@@ -55,6 +62,7 @@ __PACKAGE__->register_method ({
 	}
 
 	push @$res, { section => 'ldap' };
+	push @$res, { section => 'domains' };
 	push @$res, { section => 'ruledb' };
 
 	return $res;
