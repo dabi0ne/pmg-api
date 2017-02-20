@@ -870,43 +870,67 @@ sub rewrite_config_spam {
     my $use_bayes = $self->get('spam', 'use_bayes');
     my $use_razor = $self->get('spam', 'use_razor');
 
+    my $changes = 0;
+
     # delete AW and bayes databases if those features are disabled
-    unlink '/root/.spamassassin/auto-whitelist' if !$use_awl;
+    if (!$use_awl) {
+	$changes = 1 if unlink '/root/.spamassassin/auto-whitelist';
+    }
+
     if (!$use_bayes) {
-	unlink '/root/.spamassassin/bayes_journal';
-	unlink '/root/.spamassassin/bayes_seen';
-	unlink '/root/.spamassassin/bayes_toks';
+	$changes = 1 if unlink '/root/.spamassassin/bayes_journal';
+	$changes = 1 if unlink '/root/.spamassassin/bayes_seen';
+	$changes = 1 if unlink '/root/.spamassassin/bayes_toks';
     }
 
     # make sure we have a custom.cf file (else cluster sync fails)
     IO::File->new('/etc/mail/spamassassin/custom.cf', 'a', 0644);
 
-    $self->rewrite_config_file('local.cf.in', '/etc/mail/spamassassin/local.cf');
-    $self->rewrite_config_file('init.pre.in', '/etc/mail/spamassassin/init.pre');
-    $self->rewrite_config_file('v310.pre.in', '/etc/mail/spamassassin/v310.pre');
-    $self->rewrite_config_file('v320.pre.in', '/etc/mail/spamassassin/v320.pre');
+    $changes = 1 if $self->rewrite_config_file(
+	'local.cf.in', '/etc/mail/spamassassin/local.cf');
+
+    $changes = 1 if $self->rewrite_config_file(
+	'init.pre.in', '/etc/mail/spamassassin/init.pre');
+
+    $changes = 1 if $self->rewrite_config_file(
+	'v310.pre.in', '/etc/mail/spamassassin/v310.pre');
+
+    $changes = 1 if $self->rewrite_config_file(
+	'v320.pre.in', '/etc/mail/spamassassin/v320.pre');
 
     if ($use_razor) {
 	mkdir "/root/.razor";
-	$self->rewrite_config_file('razor-agent.conf.in', '/root/.razor/razor-agent.conf');
+
+	$changes = 1 if $self->rewrite_config_file(
+	    'razor-agent.conf.in', '/root/.razor/razor-agent.conf');
+
 	if (! -e '/root/.razor/identity') {
 	    eval {
 		my $timeout = 30;
-		PVE::Tools::run_command (['razor-admin', '-discover'], timeout => $timeout);
-		PVE::Tools::run_command (['razor-admin', '-register'], timeout => $timeout);
+		PVE::Tools::run_command(['razor-admin', '-discover'], timeout => $timeout);
+		PVE::Tools::run_command(['razor-admin', '-register'], timeout => $timeout);
 	    };
 	    my $err = $@;
 	    syslog('info', msgquote ("registering razor failed: $err")) if $err;
 	}
     }
+
+    return $changes;
 }
 
 # rewrite ClamAV configuration
 sub rewrite_config_clam {
     my ($self) = @_;
 
-    $self->rewrite_config_file('clamd.conf.in', '/etc/clamav/clamd.conf');
-    $self->rewrite_config_file('freshclam.conf.in', '/etc/clamav/freshclam.conf');
+    return $self->rewrite_config_file(
+	'clamd.conf.in', '/etc/clamav/clamd.conf');
+}
+
+sub rewrite_config_freshclam {
+    my ($self) = @_;
+
+    return $self->rewrite_config_file(
+	'freshclam.conf.in', '/etc/clamav/freshclam.conf');
 }
 
 sub rewrite_config_postgres {
@@ -914,8 +938,15 @@ sub rewrite_config_postgres {
 
     my $pgconfdir = "/etc/postgresql/9.6/main";
 
-    $self->rewrite_config_file('pg_hba.conf.in', "$pgconfdir/pg_hba.conf");
-    $self->rewrite_config_file('postgresql.conf.in', "$pgconfdir/postgresql.conf");
+    my $changes = 0;
+
+    $changes = 1 if $self->rewrite_config_file(
+	'pg_hba.conf.in', "$pgconfdir/pg_hba.conf");
+
+    $changes = 1 if $self->rewrite_config_file(
+	'postgresql.conf.in', "$pgconfdir/postgresql.conf");
+
+    return $changes;
 }
 
 # rewrite /root/.forward
@@ -932,6 +963,8 @@ sub rewrite_dot_forward {
 	# empty .forward does not forward mails (see man local)
     }
     close (TMP);
+
+    return undef;
 }
 
 # rewrite /etc/postfix/*
@@ -941,6 +974,8 @@ sub rewrite_config_postfix {
     # make sure we have required files (else postfix start fails)
     IO::File->new($domainsfilename, 'a', 0644);
     IO::File->new($transport_map_filename, 'a', 0644);
+
+    my $changes = 0;
 
     if ($self->get('mail', 'tls')) {
 	eval {
@@ -954,25 +989,32 @@ sub rewrite_config_postfix {
 	syslog ('info', msgquote ("generating certificate failed: $@")) if $@;
     }
 
-    $self->rewrite_config_file('main.cf.in', '/etc/postfix/main.cf');
-    $self->rewrite_config_file('master.cf.in', '/etc/postfix/master.cf');
+    $changes = 1 if $self->rewrite_config_file(
+	'main.cf.in', '/etc/postfix/main.cf');
+
+    $changes = 1 if $self->rewrite_config_file(
+	'master.cf.in', '/etc/postfix/master.cf');
+
     #rewrite_config_transports ($class);
     #rewrite_config_whitelist ($class);
     #rewrite_config_tls_policy ($class);
 
     # make sure aliases.db is up to date
     system('/usr/bin/newaliases');
+
+    return $changes;
 }
 
 sub rewrite_config {
     my ($self) = @_;
 
-    $self->rewrite_config_postfix(); 
+    $self->rewrite_config_postfix();
     $self->rewrite_dot_forward();
     $self->rewrite_config_postgres();
     $self->rewrite_config_spam();
     $self->rewrite_config_clam();
-    
+    $self->rewrite_config_freshclam();
+
 }
 
 1;
