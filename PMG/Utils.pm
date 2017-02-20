@@ -397,6 +397,7 @@ sub service_cmd {
 	}
     }
 
+    $service = 'postfix@-' if $service eq 'postfix';
     PVE::Tools::run_command(['systemctl', $cmd, $service]);
 };
 

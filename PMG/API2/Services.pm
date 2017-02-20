@@ -38,6 +38,7 @@ my $get_full_service_state = sub {
 	}
     };
 
+    $service = 'postfix@-' if $service eq 'postfix';
     PVE::Tools::run_command(['systemctl', 'show', $service], outfunc => $parser);
 
     return $res;
