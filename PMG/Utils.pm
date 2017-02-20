@@ -383,4 +383,21 @@ sub find_local_network_for_ip {
     die "unable to detect local network for ip '$ip'\n";
 }
 
+sub service_cmd {
+    my ($service, $cmd) = @_;
+
+    die "unknown service command '$cmd'\n"
+	if $cmd !~ m/^(start|stop|restart|reload)$/;
+
+    if ($service eq 'pmgdaemon' || $service eq 'pmgproxy') {
+	if ($cmd eq 'restart') {
+	    # OK
+	} else {
+	    die "invalid service cmd '$service $cmd': ERROR";
+	}
+    }
+
+    PVE::Tools::run_command(['systemctl', $cmd, $service]);
+};
+
 1;
