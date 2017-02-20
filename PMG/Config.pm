@@ -27,27 +27,22 @@ sub private {
 sub format_section_header {
     my ($class, $type, $sectionId) = @_;
 
-    if ($type eq 'ldap') {
-	$sectionId =~ s/^ldap_//;
-	return "$type: $sectionId\n";
-    } else {
-	return "section: $type\n";
-    }
+    die "internal error ($type ne $sectionId)" if $type ne $sectionId;
+
+    return "section: $type\n";
 }
 
 
 sub parse_section_header {
     my ($class, $line) = @_;
 
-    if ($line =~ m/^(ldap|section):\s*(\S+)\s*$/) {
-	my ($raw_type, $raw_id) = (lc($1), $2);
-	my $type = $raw_type eq 'section' ? $raw_id : $raw_type;
-	my $section_id =  "${raw_type}_${raw_id}";
+    if ($line =~ m/^section:\s*(\S+)\s*$/) {
+	my $section = $1;
 	my $errmsg = undef; # set if you want to skip whole section
-	eval { PVE::JSONSchema::pve_verify_configid($raw_id); };
+	eval { PVE::JSONSchema::pve_verify_configid($section); };
 	$errmsg = $@ if $@;
 	my $config = {}; # to return additional attributes
-	return ($type, $section_id, $errmsg, $config);
+	return ($section, $section, $errmsg, $config);
     }
     return undef;
 }
@@ -255,34 +250,6 @@ sub options {
 	maxscansize  => { optional => 1 },
 	dbmirror => { optional => 1 },
 	maxcccount => { optional => 1 },
-    };
-}
-
-package PMG::Config::LDAP;
-
-use strict;
-use warnings;
-
-use base qw(PMG::Config::Base);
-
-sub type {
-    return 'ldap';
-}
-
-sub properties {
-    return {
-	mode => {
-	    description => "LDAP protocol mode ('ldap' or 'ldaps').",
-	    type => 'string',
-	    enum => ['ldap', 'ldaps'],
-	    default => 'ldap',
-	},
-    };
-}
-
-sub options {
-    return {
-	mode => { optional => 1 },
     };
 }
 
@@ -510,7 +477,6 @@ use PVE::INotify;
 PMG::Config::Admin->register();
 PMG::Config::Mail->register();
 PMG::Config::Spam->register();
-PMG::Config::LDAP->register();
 PMG::Config::ClamAV->register();
 
 # initialize all plugins
@@ -545,26 +511,21 @@ sub lock_config {
 }
 
 # set section values
-# this does not work for ldap entries
 sub set {
     my ($self, $section, $key, $value) = @_;
 
     my $pdata = PMG::Config::Base->private();
 
-    die "internal error" if $section eq 'ldap';
-
     my $plugin = $pdata->{plugins}->{$section};
     die "no such section '$section'" if !$plugin;
 
-    my $configid = "section_$section";
     if (defined($value)) {
 	my $tmp = PMG::Config::Base->check_value($section, $key, $value, $section, 0);
-	print Dumper($self->{ids});
-	$self->{ids}->{$configid} = { type => $section } if !defined($self->{ids}->{$configid});
-	$self->{ids}->{$configid}->{$key} = PMG::Config::Base->decode_value($section, $key, $tmp);
+	$self->{ids}->{$section} = { type => $section } if !defined($self->{ids}->{$section});
+	$self->{ids}->{$section}->{$key} = PMG::Config::Base->decode_value($section, $key, $tmp);
     } else {
-	if (defined($self->{ids}->{$configid})) {
-	    delete $self->{ids}->{$configid}->{$key};
+	if (defined($self->{ids}->{$section})) {
+	    delete $self->{ids}->{$section}->{$key};
 	}
     }
 
@@ -572,7 +533,6 @@ sub set {
 }
 
 # get section value or default
-# this does not work for ldap entries
 sub get {
     my ($self, $section, $key) = @_;
 
@@ -582,9 +542,8 @@ sub get {
     my $pdesc = $pdata->{propertyList}->{$key};
     return undef if !defined($pdesc);
 
-    my $configid = "section_$section";
-    if (defined($self->{ids}->{$configid}) &&
-	defined(my $value = $self->{ids}->{$configid}->{$key})) {
+    if (defined($self->{ids}->{$section}) &&
+	defined(my $value = $self->{ids}->{$section}->{$key})) {
 	return $value;
     }
 
@@ -592,7 +551,6 @@ sub get {
 }
 
 # get a whole section with default value
-# this does not work for ldap entries
 sub get_section {
     my ($self, $section) = @_;
 
@@ -605,9 +563,8 @@ sub get_section {
 
 	my $pdesc = $pdata->{propertyList}->{$key};
 
-	my $configid = "section_$section";
-	if (defined($self->{ids}->{$configid}) &&
-	    defined(my $value = $self->{ids}->{$configid}->{$key})) {
+	if (defined($self->{ids}->{$section}) &&
+	    defined(my $value = $self->{ids}->{$section}->{$key})) {
 	    $res->{$key} = $value;
 	    next;
 	}
@@ -618,7 +575,6 @@ sub get_section {
 }
 
 # get a whole config with default values
-# this does not work for ldap entries
 sub get_config {
     my ($self) = @_;
 
@@ -627,7 +583,6 @@ sub get_config {
     my $res = {};
 
     foreach my $type (keys %{$pdata->{plugins}}) {
-	next if $type eq 'ldap';
 	my $plugin = $pdata->{plugins}->{$type};
 	$res->{$type} = $self->get_section($type);
     }

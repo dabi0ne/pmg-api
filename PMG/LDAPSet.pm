@@ -7,10 +7,10 @@ use Carp;
 use PVE::SafeSyslog;
 
 use PMG::LDAPCache;
-use PMG::Config;
+use PMG::LDAPConfig;
 
-sub new_from_pmg_cfg {
-    my ($self, $pmg_cfg, $syncmode, $serverid) = @_;
+sub new_from_ldap_cfg {
+    my ($self, $ldap_cfg, $syncmode, $serverid) = @_;
     my $type = ref($self) || $self;
 
     my $ids = [];
@@ -18,9 +18,7 @@ sub new_from_pmg_cfg {
     if ($serverid) {
 	$ids = [ $serverid ];
     } else {
-	foreach my $k (keys %{$pmg_cfg->{ids}}) {
-	    push @$ids, $k if $k =~ m/^ldap_/;
-	}
+	$ids = [ keys %{$ldap_cfg->{ids}} ];
     }
 
     $self = bless {}, $type;
@@ -28,7 +26,7 @@ sub new_from_pmg_cfg {
     foreach my $id (@$ids) {
 
 	# fixme: does it work?
-	my $data = $pmg_cfg->{ids}->{$id};
+	my $data = $ldap_cfg->{ids}->{$id};
 	next if !ref($data);
 
 	$data->{syncmode} = $syncmode;
@@ -41,9 +39,9 @@ sub new_from_pmg_cfg {
 }
 
 sub ldap_resync {
-    my ($pmg_cfg, $tostderr) = @_;
+    my ($ldap_cfg, $tostderr) = @_;
 
-    my $ldap = __PACKAGE__->new_from_pmg_cfg($pmg_cfg, 1);
+    my $ldap = __PACKAGE__->new_from_ldap_cfg($ldap_cfg, 1);
 
     foreach my $p (@{$ldap->ids()}) {
 	my $server = $ldap->{$p}->{server1};

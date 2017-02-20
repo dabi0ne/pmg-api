@@ -11,6 +11,7 @@ use PVE::INotify;
 use PVE::CLIHandler;
 
 use PMG::Cluster;
+use PMG::LDAPConfig;
 use PMG::LDAPSet;
 use PMG::Config;
 
@@ -56,7 +57,8 @@ __PACKAGE__->register_method ({
 	}
 
 	if ($param->{ldapsync}) {
-	    PMG::LDAPSet::ldap_resync($cfg, 1);
+	    my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
+	    PMG::LDAPSet::ldap_resync($ldap_cfg, 1);
 	}
 
 	return undef;

@@ -43,7 +43,6 @@ sub new {
     die "undefined ldap id" if !$args{id};
 
     my $id = $args{id};
-    $id =~ s/^ldap_//;
 
     if ($ldapcache->{$id}) {
 	$self = $ldapcache->{$id};
@@ -107,8 +106,6 @@ sub lockdir {
 
 sub delete {
     my ($class, $id) = @_;
-
-    $id =~ s/^ldap_//;
 
     if (my $lock = lockdir($id)) {
 	delete $ldapcache->{$id};
