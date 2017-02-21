@@ -119,6 +119,20 @@ sub encode_value {
     return $value;
 }
 
+sub parse_section_header {
+    my ($class, $line) = @_;
+
+    if ($line =~ m/^(\S+):\s*(\S+)\s*$/) {
+	my ($type, $sectionId) = ($1, $2);
+	my $errmsg = undef; # set if you want to skip whole section
+	eval { PVE::JSONSchema::pve_verify_configid($sectionId); };
+	$errmsg = $@ if $@;
+	my $config = {}; # to return additional attributes
+	return ($type, $sectionId, $errmsg, $config);
+    }
+    return undef;
+}
+
 my $lockfile = "/var/lock/pmgldapconfig.lck";
 
 sub lock_config {
