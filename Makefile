@@ -43,6 +43,7 @@ LIBSOURCES =				\
 	PMG/NoVncIndex.pm		\
 	PMG/Config.pm			\
 	PMG/Cluster.pm			\
+	PMG/ClusterConfig.pm		\
 	PMG/HTTPServer.pm		\
 	PMG/Ticket.pm			\
 	PMG/AccessControl.pm		\

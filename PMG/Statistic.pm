@@ -9,6 +9,7 @@ use Time::Zone;
 
 use PVE::SafeSyslog;
 
+use PMG::ClusterConfig;
 use PMG::RuleDB;
 
 sub new {
@@ -129,8 +130,8 @@ sub update_stats_generic  {
 sub update_stats_dailystat  {
     my ($dbh, $cinfo) = @_;
 
-    my $role = $cinfo->{local}->{role};
-    return 0 if !(($role eq '-') || ($role eq 'M')); 
+    my $role = $cinfo->{local}->{type} // '-';
+    return 0 if !(($role eq '-') || ($role eq 'master'));
 
     my $select = "SELECT sub.*, dailystat.time IS NOT NULL as exists FROM " .
 	"(SELECT COUNT (CASE WHEN direction THEN 1 ELSE NULL END) as count_in, " .
@@ -202,8 +203,8 @@ sub update_stats_dailystat  {
 sub update_stats_domainstat_in  {
     my ($dbh, $cinfo) = @_;
 
-    my $role = $cinfo->{local}->{role};
-    return 0 if !(($role eq '-') || ($role eq 'M')); 
+    my $role = $cinfo->{local}->{type} // '-';
+    return 0 if !(($role eq '-') || ($role eq 'master'));
 
     my $sub1 = "select distinct cstatistic_cid, cstatistic_rid, " .
 	"lower(substring(receiver from position ('\@' in receiver) + 1)) as domain, " .
@@ -266,8 +267,8 @@ sub update_stats_domainstat_in  {
 sub update_stats_domainstat_out  {
     my ($dbh, $cinfo) = @_;
 
-    my $role = $cinfo->{local}->{role};
-    return 0 if !(($role eq '-') || ($role eq 'M')); 
+    my $role = $cinfo->{local}->{type} // '-';
+    return 0 if !(($role eq '-') || ($role eq 'master'));
 
     my $select = "SELECT sub.*, domainstat.time IS NOT NULL as exists FROM " .
 	"(SELECT COUNT (ID) as count_out, SUM (bytes) / (1024.0*1024) as bytes_out, " .
@@ -324,8 +325,8 @@ sub update_stats_domainstat_out  {
 sub update_stats_virusinfo  {
     my ($dbh, $cinfo) = @_;
 
-    my $role = $cinfo->{local}->{role};
-    return 0 if !(($role eq '-') || ($role eq 'M')); 
+    my $role = $cinfo->{local}->{type} // '-';
+    return 0 if !(($role eq '-') || ($role eq 'master'));
 
     my $select = "SELECT sub.*, virusinfo.time IS NOT NULL as exists FROM " .
 	"(SELECT ((cstatistic.time + __timezone__) / 86400) * 86400 as day, " .

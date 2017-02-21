@@ -28,6 +28,7 @@ use Mail::SpamAssassin::NetSet;
 use PMG::pmgcfg;
 use PMG::Utils;
 use PMG::Cluster;
+use PMG::ClusterConfig;
 
 use PMG::DBTools;
 use PMG::RuleDB;

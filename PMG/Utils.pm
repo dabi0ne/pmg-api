@@ -15,6 +15,7 @@ use Time::HiRes qw (gettimeofday);
 use Xdgmime;
 use Data::Dumper;
 use Net::IP;
+use Socket;
 
 use PVE::Network;
 use PVE::Tools;
@@ -400,5 +401,31 @@ sub service_cmd {
     $service = 'postfix@-' if $service eq 'postfix';
     PVE::Tools::run_command(['systemctl', $cmd, $service]);
 };
+
+# this is also used to get the IP of the local node
+sub lookup_node_ip {
+    my ($nodename, $noerr) = @_;
+
+    my ($family, $packed_ip);
+
+    eval {
+	my @res = PVE::Tools::getaddrinfo_all($nodename);
+	$family = $res[0]->{family};
+	$packed_ip = (PVE::Tools::unpack_sockaddr_in46($res[0]->{addr}))[2];
+    };
+
+    if ($@) {
+	die "hostname lookup failed:\n$@" if !$noerr;
+	return undef;
+    }
+
+    my $ip = Socket::inet_ntop($family, $packed_ip);
+    if ($ip =~ m/^127\.|^::1$/) {
+	die "hostname lookup failed - got local IP address ($nodename = $ip)\n" if !$noerr;
+	return undef;
+    }
+
+    return wantarray ? ($ip, $family) : $ip;
+}
 
 1;

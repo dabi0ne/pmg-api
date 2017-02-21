@@ -12,6 +12,7 @@ use PVE::CLIHandler;
 use PMG::DBTools;
 use PMG::RuleDB;
 use PMG::Cluster;
+use PMG::ClusterConfig;
 use PMG::Statistic;
 
 use base qw(PVE::CLIHandler);
