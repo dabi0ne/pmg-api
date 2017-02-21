@@ -278,9 +278,13 @@ sub load_config {
     }
 
     my $pmg_cfg = PMG::Config->new ();
-    $self->{use_rbl} = $pmg_cfg->get('mail', 'use_rbl');
     $self->{use_spf} = $pmg_cfg->get('mail', 'spf');
     $self->{use_greylist} = $pmg_cfg->get('mail', 'greylist');
+
+    if ($opt_testmode) {
+	$self->{use_spf} = 1;
+	$self->{use_greylist} = 1;
+    }
 
     my $nodename = PVE::INotify::nodename();
     my $resolv = PVE::INotify::read_file('resolvconf');
