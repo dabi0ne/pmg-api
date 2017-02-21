@@ -513,7 +513,7 @@ sub run_dequeue {
     my $err = $@;
 
     if ($err) {
-	$self->log (0, msgquote("ERROR: $err"));
+	$self->log (0, PMG::Utils::msgquote("ERROR: $err"));
 	return;
     }
 
@@ -526,7 +526,7 @@ sub run_dequeue {
     my $ptime = int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
 
     if ($err) {
-	$self->log (0, msgquote($err));
+	$self->log (0, PMG::Utils::msgquote($err));
     } else {
 	$self->log (2, "end database maintainance ($ptime ms)");
     }
