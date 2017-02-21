@@ -8,6 +8,6 @@ Homepage: http://www.proxmox.com
 
 Package: proxmox-mailgateway-api
 Architecture: all
-Depends: ${perl:Depends}, libpve-common-perl, libpve-http-server-perl, libauthen-pam-perl, proxmox-mailgateway-gui, libtemplate-perl, fonts-font-awesome, novnc-pve, libfile-readbackwards-perl, libnet-ip-perl, libdbi-perl, libdbd-pg-perl, postgresql-9.6, libmime-tools-perl, shared-mime-info, proxmox-spamassassin, libhtml-parser-perl, libnet-cidr-lite-perl, libnet-ldap-perl, liblockfile-simple-perl, libnet-server-perl, clamav-daemon, clamav-freshclam, libfile-sync-perl, libcompress-bzip2-perl, libarchive-zip-perl, libarchive-perl, p7zip-full, tnef, postfix (>= 2.5.5), libterm-readline-gnu-perl
+Depends: ${perl:Depends}, libpve-common-perl, libpve-http-server-perl, libauthen-pam-perl, proxmox-mailgateway-gui, libtemplate-perl, fonts-font-awesome, novnc-pve, libfile-readbackwards-perl, libnet-ip-perl, libdbi-perl, libdbd-pg-perl, postgresql-9.6, libmime-tools-perl, shared-mime-info, proxmox-spamassassin, libhtml-parser-perl, libnet-cidr-lite-perl, libnet-ldap-perl, liblockfile-simple-perl, libnet-server-perl, clamav-daemon, clamav-freshclam, libfile-sync-perl, libcompress-bzip2-perl, libarchive-zip-perl, libarchive-perl, p7zip-full, tnef, postfix (>= 2.5.5), libterm-readline-gnu-perl, libmail-spf-perl
 Description: Proxmox Mailgateway API Server Implementation
  This implements a REST API to configure Proxmox Mailgateway.
