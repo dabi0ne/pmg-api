@@ -254,7 +254,7 @@ sub pre_loop_hook {
 	# reloading server configuration
 	if (defined $prop->{children}) {
 	    foreach my $pid (keys %{$prop->{children}}) {
-		kill (10, $pid); # SIGUSR1 childs
+		kill(10, $pid); # SIGUSR1 childs
 	    }
 	}
     };
@@ -757,6 +757,24 @@ sub pre_server_close_hook {
     if (defined $prop->{_HUP}) {
 	undef $prop->{pid_file_unlink};
     }
+
+    if (defined $prop->{children}) {
+	foreach my $pid (keys %{$prop->{children}}) {
+	    kill(1, $pid); # HUP childs
+	}
+    }
+
+    # nicely shutdown childs (give them max 30 seconds to shut down)
+    my $previous_alarm = alarm(30);
+    eval {
+	local $SIG{ALRM} = sub { die "Timed Out!\n" };
+
+	my $pid;
+	1 while ((($pid = waitpid(-1, 0)) > 0) || ($! == EINTR));
+
+	alarm(0); # avoid race
+    };
+    alarm ($previous_alarm);
 }
 
 sub setup_fork_signal_mask {

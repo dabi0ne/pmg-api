@@ -885,12 +885,14 @@ sub pre_server_close_hook {
     }
 
     # nicely shutdown childs (give them max 30 seconds to shut down)
-    my $previous_alarm = alarm (30);
+    my $previous_alarm = alarm(30);
     eval {
 	local $SIG{ALRM} = sub { die "Timed Out!\n" };
 
 	my $pid;
 	1 while ((($pid = waitpid (-1, 0)) > 0) || ($! == EINTR));
+
+	alarm(0); # avoid race
     };
     alarm ($previous_alarm);
 }
