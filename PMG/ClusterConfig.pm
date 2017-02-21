@@ -209,7 +209,7 @@ sub read_cluster_conf {
 	    my $portid = $ind++;
 	    $cinfo->{configport}->{$cid} = 50000 + $portid;
 	    $cinfo->{dbport}->{$cid} = 50100 + $portid;
-	    push @{$cinfo->{remnodes}}, $cinfo->{ids}->{$cid};
+	    push @{$cinfo->{remnodes}}, $cid;
 	}
     }
 
