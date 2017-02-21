@@ -302,6 +302,13 @@ sub get_max_smtpd {
     return $max_servers;
 }
 
+sub get_max_policy {
+    # estimate optimal number of proxpolicy servers
+    my $max_servers = 2;
+    my $memory = physical_memory();
+    $max_servers = 5 if  $memory >= 500;
+    return $max_servers;
+}
 
 sub properties {
     return {
@@ -332,11 +339,18 @@ sub properties {
 	    default => 'ESMTP Proxmox',
 	},
 	max_filters => {
-	    description => "Maximum number of filter processes.",
+	    description => "Maximum number of pmg-smtp-filter processes.",
 	    type => 'integer',
 	    minimum => 3,
 	    maximum => 40,
 	    default => get_max_filters(),
+	},
+	max_policy => {
+	    description => "Maximum number of pmgpolicy processes.",
+	    type => 'integer',
+	    minimum => 2,
+	    maximum => 10,
+	    default => get_max_policy(),
 	},
 	max_smtpd_in => {
 	    description => "Maximum number of SMTP daemon processes (in).",
@@ -452,6 +466,7 @@ sub options {
 	maxsize => { optional => 1 },
 	banner => { optional => 1 },
 	max_filters => { optional => 1 },
+	max_policy => { optional => 1 },
 	hide_received => { optional => 1 },
 	rejectunknown => { optional => 1 },
 	rejectunknownsender => { optional => 1 },
