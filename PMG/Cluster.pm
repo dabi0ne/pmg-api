@@ -2,8 +2,9 @@ package PMG::Cluster;
 
 use strict;
 use warnings;
-
+use Data::Dumper;
 use Socket;
+
 use PVE::Tools;
 use PVE::INotify;
 
@@ -14,7 +15,7 @@ sub remote_node_ip {
 
     my $cinfo = PVE::INotify::read_file("cluster.conf");
 
-    foreach my $entry (@{$cinfo->{ids}}) {
+    foreach my $entry (values %{$cinfo->{ids}}) {
 	if ($entry->{name} eq $nodename) {
 	    my $ip = $entry->{ip};
 	    return $ip if !wantarray;
