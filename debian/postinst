@@ -12,6 +12,7 @@ case "$1" in
 	systemctl --quiet is-active pmgdaemon.service && deb-systemd-invoke reload-or-try-restart pmgdaemon.service
 	systemctl --quiet is-active pmgproxy.service && deb-systemd-invoke reload-or-try-restart pmgproxy.service
 	systemctl --quiet is-active pmg-smtp-filter.service && deb-systemd-invoke reload-or-try-restart pmg-smtp-filter.service
+	systemctl --quiet is-active pmgpolicy.service && deb-systemd-invoke reload-or-try-restart pmgpolicy.service
 
 	exit 0
     ;;

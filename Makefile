@@ -14,9 +14,10 @@ REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy
 CLITOOLS = pmgdb pmgconfig
+CLISCRIPTS= pmg-smtp-filter pmgsh pmgpolicy
 
 CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
-CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS}) bin/pmg-smtp-filter bin/pmgsh
+CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS})
 
 TEMPLATES =				\
 	main.cf.in			\
@@ -139,8 +140,7 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 	for i in ${CLITOOLS}; do install -D -m 0644 PMG/CLI/$$i.pm ${PERL5DIR}/PMG/CLI/$$i.pm; done
 	for i in ${CLITOOLS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/bin/$$i; done
 	for i in ${CLITOOLS}; do install -D -m 0644 $$i.bash-completion ${BASHCOMPLDIR}/$$i; done
-	install -m 0755 bin/pmg-smtp-filter ${DESTDIR}/usr/bin/
-	install -m 0755 bin/pmgsh ${DESTDIR}/usr/bin/
+	for i in ${CLISCRIPTS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/bin/$$i; done
 	for i in ${TEMPLATES}; do install -D -m 0644 templates/$$i ${DESTDIR}/var/lib/pmg/templates/$$i; done
 
 .PHONY: upload

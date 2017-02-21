@@ -11,6 +11,7 @@ override_dh_installinit:
 	dh_systemd_enable --name=pmgdaemon pmgdaemon.service
 	dh_systemd_enable --name=pmgproxy pmgproxy.service
 	dh_systemd_enable --name=pmg-smtp-filter pmg-smtp-filter.service
+	dh_systemd_enable --name=pmgpolicy pmgpolicy.service
 
 
 override_dh_fixperms:
