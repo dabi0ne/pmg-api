@@ -37,7 +37,6 @@ sub parse_section_header {
     return undef;
 }
 
-
 package PMG::ClusterConfig::Node;
 
 use strict;
@@ -52,7 +51,7 @@ sub properties {
     return {
 	ip => {
 	    description => "IP address.",
-	    type => 'string', format => 'address',
+	    type => 'string', format => 'ip',
 	},
 	name => {
 	    description => "Node name.",
