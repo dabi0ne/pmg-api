@@ -18,21 +18,48 @@ use PMG::Config;
 use base qw(PVE::CLIHandler);
 
 __PACKAGE__->register_method ({
-    name => 'pmgconfig',
-    path => 'pmgconfig',
+    name => 'dump',
+    path => 'dump',
     method => 'POST',
-    description => "Syncronize Proxmox Mail Gateway configurations with system configuration. Prints the configuration when no options specified.",
+    description => "Print configuration setting which can be used in templates.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PMG::Config->new();
+	my $vars = $cfg->get_template_vars();
+
+	foreach my $realm (sort keys %$vars) {
+	    foreach my $section (sort keys %{$vars->{$realm}}) {
+		my $secvalue = $vars->{$realm}->{$section} // '';
+		if (ref($secvalue)) {
+		    foreach my $key (sort keys %{$vars->{$realm}->{$section}}) {
+			my $value = $vars->{$realm}->{$section}->{$key} // '';
+			print "$realm.$section.$key = $value\n";
+		    }
+		} else {
+		    print "$realm.$section = $secvalue\n";
+		}
+	    }
+	}
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'sync',
+    path => 'sync',
+    method => 'POST',
+    description => "Syncronize Proxmox Mail Gateway configurations with system configuration.",
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    syncronize => {
-		description => "Re-generate all configuration files.",
-		type => 'boolean',
-		default => 0,
-		optional => 1,
-	    },
-	    ldapsync => {
-		description => "Re-generate ldap database.",
+	    restart => {
+		description => "Restart services if necessary.",
 		type => 'boolean',
 		default => 0,
 		optional => 1,
@@ -44,27 +71,35 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $cfg = PMG::Config->new();
-
-	if (!scalar(keys %$param)) {
-	    my $raw = PMG::Config::Base->write_config('pmg.conf', $cfg);
-	    print $raw;
-	    return undef;
-	}
-
-	if ($param->{syncronize}) {
-	    $cfg->rewrite_config();
-	    return undef;
-	}
-
-	if ($param->{ldapsync}) {
-	    my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
-	    PMG::LDAPSet::ldap_resync($ldap_cfg, 1);
-	}
+	$cfg->rewrite_config($param->{restart});
 
 	return undef;
     }});
 
-our $cmddef = [ __PACKAGE__, 'pmgconfig', []];
+__PACKAGE__->register_method ({
+    name => 'ldapsync',
+    path => 'ldapsync',
+    method => 'POST',
+    description => "Syncronize the LDAP database.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
+	PMG::LDAPSet::ldap_resync($ldap_cfg, 1);
+
+	return undef;
+    }});
+
+our $cmddef = {
+    'dump' => [ __PACKAGE__, 'dump', []],
+    sync => [ __PACKAGE__, 'sync', []],
+    ldapsync => [ __PACKAGE__, 'ldapsync', []],
+};
 
 
 1;
