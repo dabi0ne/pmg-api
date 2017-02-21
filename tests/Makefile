@@ -9,10 +9,10 @@ check:
 	./init_testdb.pl
 	./print_testdb.pl > testdb.txt.new
 	diff -u testdb.txt testdb.txt.new
+	test_greylist.pl
 
 #	test_config.pl		\
 #	test_mimetype.pl	\
-#	test_greylist.pl	\
 #	test_proxy.pl		\
 #	test_unpack.pl
 
