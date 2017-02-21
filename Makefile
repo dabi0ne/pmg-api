@@ -95,6 +95,7 @@ LIBSOURCES =				\
 	PMG/API2/LDAP.pm		\
 	PMG/API2/Domains.pm		\
 	PMG/API2/Config.pm		\
+	PMG/API2/ClusterConfig.pm	\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/AccessControl.pm	\
 	PMG/API2/RuleDB.pm		\
