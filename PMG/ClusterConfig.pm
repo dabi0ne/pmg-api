@@ -161,7 +161,6 @@ sub read_cluster_conf {
     my $raw = defined($fh) ? <$fh> : undef;
 
     my $cinfo = PMG::ClusterConfig::Base->parse_config($filename, $raw);
-    print Dumper($cinfo);
 
     my $localname = PVE::INotify::nodename();
     my $localip = PMG::Utils::lookup_node_ip($localname);
