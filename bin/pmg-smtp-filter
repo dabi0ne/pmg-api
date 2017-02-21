@@ -35,6 +35,7 @@ use PMG::RuleDB;
 use PMG::RuleCache;
 use PMG::ModGroup;
 use PMG::AtomicFile;
+use PMG::LDAPConfig;
 use PMG::LDAPSet;
 use PMG::Config;
 use PMG::MailQueue;
@@ -388,7 +389,8 @@ sub load_config {
     }
 
     # create LDAP object
-    $self->{ldap} = PMG::LDAPSet->new_from_pmg_cfg($self->{pmg_cfg}, 1);
+    my $ldapconf = PVE::INotify::read_file('pmg-ldap.conf');
+    $self->{ldap} = PMG::LDAPSet->new_from_ldap_cfg($ldapconf, 1);
 
     $self->{reload_config} = 0;
 }
