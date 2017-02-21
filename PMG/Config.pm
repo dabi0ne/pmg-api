@@ -452,6 +452,7 @@ sub properties {
 
 sub options {
     return {
+	smarthost => { optional => 1 },
 	relay => { optional => 1 },
 	relayport => { optional => 1 },
 	relaynomx => { optional => 1 },
@@ -552,10 +553,10 @@ sub get {
     my ($self, $section, $key) = @_;
 
     my $pdata = PMG::Config::Base->private();
-    return undef if !defined($pdata->{options}->{$section});
-    return undef if !defined($pdata->{options}->{$section}->{$key});
     my $pdesc = $pdata->{propertyList}->{$key};
-    return undef if !defined($pdesc);
+    die "no such property '$section/$key'\n"
+	if !(defined($pdesc) && defined($pdata->{options}->{$section}) &&
+	     defined($pdata->{options}->{$section}->{$key}));
 
     if (defined($self->{ids}->{$section}) &&
 	defined(my $value = $self->{ids}->{$section}->{$key})) {
