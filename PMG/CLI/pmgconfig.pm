@@ -105,7 +105,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    force => {
-		description => "Overwrite existing certificat.",
+		description => "Overwrite existing certificate.",
 		type => 'boolean',
 		optional => 1,
 		default => 0,
@@ -130,7 +130,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    force => {
-		description => "Overwrite existing certificat.",
+		description => "Overwrite existing certificate.",
 		type => 'boolean',
 		optional => 1,
 		default => 0,
