@@ -19,7 +19,7 @@ $DB_RECNO->{'cachesize'} = 10000;
 $DB_BTREE->{'cachesize'} = 10000;
 $DB_BTREE->{'flags'} = R_DUP ;
 
-my $cachedir = '/var/lib/proxmox-mailgateway';
+my $cachedir = '/var/lib/pmg';
 
 my $last_atime = {};
 my $ldapcache = {};

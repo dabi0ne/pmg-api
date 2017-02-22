@@ -13,7 +13,7 @@ use Crypt::OpenSSL::RSA;
 my $min_ticket_lifetime = -60*5; # allow 5 minutes time drift
 my $max_ticket_lifetime = 60*60*2; # 2 hours
 
-my $basedir = "/etc/proxmox";
+my $basedir = "/etc/pmg";
 
 my $pmg_api_cert_fn = "$basedir/pmg-api.pem";
 

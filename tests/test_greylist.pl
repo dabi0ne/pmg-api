@@ -23,9 +23,6 @@ my $pidfile = "/var/run/pmgpolicy.pid";
 
 system("kill `cat $pidfile`") if -f $pidfile;
 
-## enable spf and greylist
-#system ("sed -i -e 's/^greylist=.*\$/greylist=1/'  -e 's/^spf=.*\$/spf=1/' /etc/proxmox/system.cfg");
-
 system ("perl -I.. ../bin/pmgpolicy -d Proxmox_testdb -t");
 
 sub reset_gldb {

@@ -9,6 +9,8 @@ Proxmox Mail Gateway 5.0 News
 
 - removed fuzzy OCR (does snot make much sense in recent years)
 
+- config moved to /etc/pmg/
+
 
 Incompatible changes:
 ---------------------

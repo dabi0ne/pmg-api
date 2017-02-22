@@ -29,7 +29,7 @@ alias_database = hash:/etc/aliases
 mydestination = localhost, $myhostname
 mynetworks = [% postfix.mynetworks %]
 
-relay_domains = /etc/proxmox/domains
+relay_domains = /etc/pmg/domains
 
 transport_maps = texthash:/etc/postfix/transport
 

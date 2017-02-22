@@ -168,7 +168,7 @@ sub write_pmg_ldap_conf {
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
-PVE::INotify::register_file('pmg-ldap.conf', "/etc/proxmox/ldap.conf",
+PVE::INotify::register_file('pmg-ldap.conf', "/etc/pmg/ldap.conf",
 			    \&read_pmg_ldap_conf,
 			    \&write_pmg_ldap_conf);
 

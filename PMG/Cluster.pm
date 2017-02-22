@@ -74,7 +74,7 @@ sub update_cert_cache {
 	    next;
 	}
 
-	my $cert_path = "/etc/proxmox/pmg-api.pem";
+	my $cert_path = "/etc/pmg/pmg-api.pem";
 
 	my $cert;
 	eval {

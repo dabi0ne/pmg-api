@@ -29,7 +29,7 @@ alias_database = hash:/etc/aliases
 mydestination = localhost, $myhostname
 mynetworks = [% postfix.mynetworks %]
 
-relay_domains = /etc/proxmox/domains
+relay_domains = /etc/pmg/domains
 
 transport_maps = texthash:/etc/postfix/transport
 
@@ -101,7 +101,7 @@ smtp_tls_security_level = may
 smtp_tls_policy_maps = hash:/etc/postfix/tls_policy
 smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
 smtpd_tls_security_level = may
-smtpd_tls_cert_file = /etc/proxmox/proxmox-tls.pem
+smtpd_tls_cert_file = /etc/pmg/pmg-tls.pem
 smtpd_tls_key_file = $smtpd_tls_cert_file
 [% IF pmg.mail.tlslog %]
 smtpd_tls_loglevel = 1

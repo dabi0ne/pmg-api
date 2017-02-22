@@ -624,13 +624,13 @@ sub write_pmg_conf {
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
-PVE::INotify::register_file('pmg.conf', "/etc/proxmox/pmg.conf",
+PVE::INotify::register_file('pmg.conf', "/etc/pmg/pmg.conf",
 			    \&read_pmg_conf,
 			    \&write_pmg_conf);
 
 # parsers/writers for other files
 
-my $domainsfilename = "/etc/proxmox/domains";
+my $domainsfilename = "/etc/pmg/domains";
 
 sub read_pmg_domains {
     my ($filename, $fh) = @_;

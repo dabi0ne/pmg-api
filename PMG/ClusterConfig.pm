@@ -222,7 +222,7 @@ sub write_cluster_conf {
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
-PVE::INotify::register_file('cluster.conf', "/etc/proxmox/cluster.conf",
+PVE::INotify::register_file('cluster.conf', "/etc/pmg/cluster.conf",
 			    \&read_cluster_conf,
 			    \&write_cluster_conf,
 			    undef,

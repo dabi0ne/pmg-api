@@ -302,7 +302,7 @@ sub add_ct_marks {
 
 # x509 certificate utils
 
-my $proxmox_tls_cert_fn = "/etc/proxmox/proxmox-tls.pem";
+my $proxmox_tls_cert_fn = "/etc/pmg/pmg-tls.pem";
 
 sub gen_proxmox_tls_cert {
     my ($force, $company, $cn) = @_;
@@ -331,7 +331,7 @@ nsCertType = server
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 __EOD__
 
-    my $cfgfn = "/tmp/proxmoxtlsconf-$$.tmp";
+    my $cfgfn = "/tmp/pmgtlsconf-$$.tmp";
     my $fh = IO::File->new ($cfgfn, "w");
     print $fh $sslconf;
     close ($fh);

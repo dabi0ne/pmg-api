@@ -89,7 +89,7 @@ sub init {
 	    sslv2 => 0,
 	    sslv3 => 0,
 	    cipher_list => 'HIGH:MEDIUM:!aNULL:!MD5',
-	    cert_file => '/etc/proxmox/pmg-api.pem',
+	    cert_file => '/etc/pmg/pmg-api.pem',
 	    dh => 'skip2048',
 	},
 	# Note: there is no authentication for those pages and dirs!
