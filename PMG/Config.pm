@@ -611,7 +611,7 @@ sub read_pmg_conf {
 
     local $/ = undef; # slurp mode
 
-    my $raw = <$fh>;
+    my $raw = <$fh> if defined($fh);
 
     return  PMG::Config::Base->parse_config($filename, $raw);
 }
@@ -626,7 +626,8 @@ sub write_pmg_conf {
 
 PVE::INotify::register_file('pmg.conf', "/etc/pmg/pmg.conf",
 			    \&read_pmg_conf,
-			    \&write_pmg_conf);
+			    \&write_pmg_conf,
+			    undef, always_call_parser => 1);
 
 # parsers/writers for other files
 
