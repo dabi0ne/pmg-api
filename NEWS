@@ -11,6 +11,8 @@ Proxmox Mail Gateway 5.0 News
 
 - config moved to /etc/pmg/
 
+- templates moved to /var/lib/pmg/templates/
+
 
 Incompatible changes:
 ---------------------
