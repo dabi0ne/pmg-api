@@ -305,9 +305,15 @@ sub add_ct_marks {
 my $proxmox_tls_cert_fn = "/etc/pmg/pmg-tls.pem";
 
 sub gen_proxmox_tls_cert {
-    my ($force, $company, $cn) = @_;
+    my ($force) = @_;
 
-    return if !$force && -f $proxmox_tls_cert_fn;
+    my $resolv = PVE::INotify::read_file('resolvconf');
+    my $domain = $resolv->{search};
+
+    my $company = $domain; # what else ?
+    my $cn = "*.$domain";
+
+   return if !$force && -f $proxmox_tls_cert_fn;
 
     my $sslconf = <<__EOD__;
 RANDFILE = /root/.rnd

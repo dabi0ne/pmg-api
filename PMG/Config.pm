@@ -957,12 +957,7 @@ sub rewrite_config_postfix {
 
     if ($self->get('mail', 'tls')) {
 	eval {
-	    my $resolv = PVE::INotify::read_file('resolvconf');
-	    my $domain = $resolv->{search};
-
-	    my $company = $domain; # what else ?
-	    my $cn = "*.$domain";
-	    PMG::Utils::gen_proxmox_tls_cert(0, $company, $cn);
+	    PMG::Utils::gen_proxmox_tls_cert();
 	};
 	syslog ('info', msgquote ("generating certificate failed: $@")) if $@;
     }

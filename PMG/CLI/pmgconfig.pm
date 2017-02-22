@@ -14,6 +14,7 @@ use PMG::Cluster;
 use PMG::LDAPConfig;
 use PMG::LDAPSet;
 use PMG::Config;
+use PMG::Ticket;
 
 use base qw(PVE::CLIHandler);
 
@@ -95,10 +96,62 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'apicert',
+    path => 'apicert',
+    method => 'POST',
+    description => "Generate /etc/pmg/pmg-api.pem (self signed certificate for GUI and REST API).",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    force => {
+		description => "Overwrite existing certificat.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
+	    },
+	},
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Ticket::generate_api_cert($param->{force});
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'tlscert',
+    path => 'tlscert',
+    method => 'POST',
+    description => "Generate /etc/pmg/pmg-tls.pem (self signed certificate for encrypted SMTP traffic).",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    force => {
+		description => "Overwrite existing certificat.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
+	    },
+	},
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Utils::gen_proxmox_tls_cert($param->{force});
+
+	return undef;
+    }});
+
 our $cmddef = {
     'dump' => [ __PACKAGE__, 'dump', []],
     sync => [ __PACKAGE__, 'sync', []],
     ldapsync => [ __PACKAGE__, 'ldapsync', []],
+    apicert => [ __PACKAGE__, 'apicert', []],
+    tlscert => [ __PACKAGE__, 'tlscert', []],
 };
 
 

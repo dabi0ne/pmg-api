@@ -7,6 +7,7 @@ use Digest::SHA;
 
 use PVE::Tools;
 use PVE::Ticket;
+use PVE::INotify;
 
 use Crypt::OpenSSL::RSA;
 
@@ -49,7 +50,9 @@ sub run_silent_cmd {
 }
 
 sub generate_api_cert {
-    my ($nodename, $force) = @_;
+    my ($force) = @_;
+
+    my $nodename = PVE::INotify::nodename();
 
     if (-f $pmg_api_cert_fn) {
 	return $pmg_api_cert_fn if !$force;
