@@ -24,9 +24,8 @@ CLISCRIPTS= pmg-smtp-filter pmgsh pmgpolicy
 CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS})
-
-CONF_MANS=				\
-	pmg.conf.5
+SERVICE_MANS = $(addsuffix .8, ${SERVICES})
+CONF_MANS= pmg.conf.5
 
 TEMPLATES =				\
 	main.cf.in			\
@@ -111,10 +110,10 @@ LIBSOURCES =				\
 	PMG/API2/RuleDB.pm		\
 	PMG/API2.pm
 
-all: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS}
+all: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
 
 .PHONY: deb
-deb ${DEB}: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS}
+deb ${DEB}: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
 	rm -rf build
 	rsync -a * build
 	cd build; dpkg-buildpackage -b -us -uc
@@ -133,7 +132,7 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	perl -I. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
 	mv $@.tmp $@
 
-install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS}) ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS}
+install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS}) ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
 	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
 	perl -I. bin/pmgsh verifyapi
@@ -153,6 +152,7 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 	for i in ${TEMPLATES}; do install -D -m 0644 templates/$$i ${DESTDIR}/var/lib/pmg/templates/$$i; done
 	for i in ${CLI_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man1/$$i; done
 	for i in ${CONF_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man5/$$i; done
+	for i in ${SERVICE_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man8/$$i; done
 
 
 .PHONY: upload
