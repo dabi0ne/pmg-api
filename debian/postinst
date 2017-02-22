@@ -22,6 +22,9 @@ case "$1" in
 	test -e /proxmox_install_mode || pmgdb init
 	test -e /proxmox_install_mode || pmgdb update  >/dev/null 2>&1 &
 	test -e /proxmox_install_mode || pmgconfig apicert
+
+	update-mime-database /usr/share/mime
+
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
