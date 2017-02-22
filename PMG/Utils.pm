@@ -302,6 +302,29 @@ sub add_ct_marks {
 
 # x509 certificate utils
 
+# only write output if something fails
+sub run_silent_cmd {
+    my ($cmd) = @_;
+
+    my $outbuf = '';
+
+    my $record_output = sub {
+	$outbuf .= shift;
+	$outbuf .= "\n";
+    };
+
+    eval {
+	PVE::Tools::run_command($cmd, outfunc => $record_output,
+				errfunc => $record_output);
+    };
+    my $err = $@;
+
+    if ($err) {
+	print STDERR $outbuf;
+	die $err;
+    }
+}
+
 my $proxmox_tls_cert_fn = "/etc/pmg/pmg-tls.pem";
 
 sub gen_proxmox_tls_cert {
@@ -343,10 +366,11 @@ __EOD__
     close ($fh);
 
     eval {
-	PVE::Tools::run_command(['openssl', 'req', '-batch', '-x509', '-new', '-sha256',
-				 '-config', $cfgfn, '-days', 3650, '-nodes',
-				 '-out', $proxmox_tls_cert_fn,
-				 '-keyout', $proxmox_tls_cert_fn]);
+	my $cmd = ['openssl', 'req', '-batch', '-x509', '-new', '-sha256',
+		   '-config', $cfgfn, '-days', 3650, '-nodes',
+		   '-out', $proxmox_tls_cert_fn,
+		   '-keyout', $proxmox_tls_cert_fn];
+	run_silent_cmd($cmd);
     };
 
     if (my $err = $@) {

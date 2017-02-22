@@ -11,6 +11,8 @@ use PVE::INotify;
 
 use Crypt::OpenSSL::RSA;
 
+use PMG::Utils;
+
 my $min_ticket_lifetime = -60*5; # allow 5 minutes time drift
 my $max_ticket_lifetime = 60*60*2; # 2 hours
 
@@ -24,30 +26,6 @@ my $pmg_csrf_key_fn = "$basedir/pmg-csrf.key";
 
 my $authprivkeyfn = "$basedir/pmg-authkey.key";
 my $authpubkeyfn = "$basedir/pmg-authkey.pub";
-
-# only write output if something fails
-sub run_silent_cmd {
-    my ($cmd) = @_;
-
-    my $outbuf = '';
-
-    my $record_output = sub {
-	$outbuf .= shift;
-	$outbuf .= "\n";
-    };
-
-    eval {
-	PVE::Tools::run_command($cmd, outfunc => $record_output,
-				errfunc => $record_output);
-    };
-
-    my $err = $@;
-
-    if ($err) {
-	print STDERR $outbuf;
-	die $err;
-    }
-}
 
 sub generate_api_cert {
     my ($force) = @_;
@@ -70,7 +48,7 @@ sub generate_api_cert {
 	       '-days', '3650'];
 
     eval {
-	run_silent_cmd($cmd);
+	PMG::Utils::run_silent_cmd($cmd);
 	chown(0, $gid, $tmp_fn) || die "chown failed - $!\n";
 	chmod(0640, $tmp_fn) || die "chmod failed - $!\n";
 	rename($tmp_fn, $pmg_api_cert_fn) || die "rename failed - $!\n";
@@ -94,7 +72,7 @@ sub generate_csrf_key {
     my $cmd = ['openssl', 'genrsa', '-out', $tmp_fn, '2048'];
 
     eval {
-	run_silent_cmd($cmd);
+	PMG::Utils::run_silent_cmd($cmd);
 	chown(0, $gid, $tmp_fn) || die "chown failed - $!\n";
 	chmod(0640, $tmp_fn) || die "chmod failed - $!\n";
 	rename($tmp_fn, $pmg_csrf_key_fn) || die "rename failed - $!\n";
@@ -112,9 +90,12 @@ sub generate_auth_key {
     return if -f "$authprivkeyfn";
 
     eval {
-	run_silent_cmd(['openssl', 'genrsa', '-out', $authprivkeyfn, '2048']);
+	my $cmd = ['openssl', 'genrsa', '-out', $authprivkeyfn, '2048'];
+	PMG::Utils::run_silent_cmd($cmd);
 
-	run_silent_cmd(['openssl', 'rsa', '-in', $authprivkeyfn, '-pubout', '-out', $authpubkeyfn]);
+	$cmd = ['openssl', 'rsa', '-in', $authprivkeyfn, '-pubout',
+		'-out', $authpubkeyfn];
+	PMG::Utils::run_silent_cmd($cmd);
     };
 
     die "unable to generate pmg auth key:\n$@" if $@;
