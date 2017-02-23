@@ -927,7 +927,7 @@ sub rewrite_dot_forward {
 
     my $dstfn = '/root/.forward';
 
-    my $email = $self->get('administration', 'email');
+    my $email = $self->get('admin', 'email');
 
     my $output = '';
     if ($email && $email =~ m/\s*(\S+)\s*/) {
