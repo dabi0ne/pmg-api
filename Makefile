@@ -137,7 +137,7 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
 	perl -I. bin/pmgsh verifyapi
 	install -d -m 0755 ${DESTDIR}/usr/bin
-	install -d -m 0700 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
+	install -d -m 0755 -o www-data -g www-data ${DESTDIR}/var/log/pmgproxy
 	install -d -m 0755 ${DOCDIR}
 	# TODO: is there a better location ?
 	install -m 0644 favicon.ico ${DOCDIR}
