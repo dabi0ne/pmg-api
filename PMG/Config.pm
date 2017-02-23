@@ -100,6 +100,7 @@ sub options {
     return {
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },
+	email => { optional => 1 },
 	proxyport => { optional => 1 },
 	proxyserver => { optional => 1 },
 	proxyuser => { optional => 1 },
