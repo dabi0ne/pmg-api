@@ -79,7 +79,7 @@ my $api_read_config_section = sub {
 
     my $cfg = PMG::Config->new();
 
-    my $data = dclone($cfg->{ids}->{$section});
+    my $data = dclone($cfg->{ids}->{$section} // {});
     $data->{digest} = $cfg->{digest};
     delete $data->{type};
 
