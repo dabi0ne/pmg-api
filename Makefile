@@ -18,10 +18,10 @@ BASHCOMPLDIR=${DESTDIR}/usr/share/bash-completion/completions/
 REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy
-CLITOOLS = pmgdb pmgconfig
+CLITOOLS = pmgdb pmgconfig pmgperf
 CLISCRIPTS= pmg-smtp-filter pmgsh pmgpolicy
 
-CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
+CLI_CLASSES = $(addprefix, 'PMG/CLI/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
 SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8 pmgpolicy.8
@@ -96,7 +96,6 @@ LIBSOURCES =				\
 	PMG/RuleDB/Accept.pm		\
 	PMG/RuleDB/Block.pm		\
 	PMG/RuleDB.pm			\
-	PMG/CLI/pmgdb.pm		\
 	${CLI_CLASSES} 			\
 	PMG/API2/Network.pm             \
 	PMG/API2/Services.pm		\

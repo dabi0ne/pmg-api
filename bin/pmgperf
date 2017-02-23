@@ -1,0 +1,8 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use PMG::CLI::pmgperf;
+
+PMG::CLI::pmgperf->run_cli_handler();
