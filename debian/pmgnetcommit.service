@@ -1,0 +1,16 @@
+[Unit]
+Description=Commit Proxmox network changes
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+ExecStartPre=-/bin/mv /etc/network/interfaces.new /etc/network/interfaces
+ExecStart=/bin/true
+Type=oneshot
+RemainAfterExit=yes
+
+
+[Install]
+WantedBy=sysinit.target
+

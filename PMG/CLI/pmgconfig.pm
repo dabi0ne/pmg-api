@@ -146,12 +146,39 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'init',
+    path => 'init',
+    method => 'POST',
+    description => "Generate required files in /etc/pmg/",
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PMG::Config->new();
+
+	PMG::Ticket::generate_api_cert($param->{force});
+	PMG::Ticket::generate_csrf_key();
+	PMG::Ticket::generate_auth_key();
+	
+	if ($cfg->get('mail', 'tls')) {
+	    PMG::Utils::gen_proxmox_tls_cert($param->{force});
+	}
+	
+	return undef;
+    }});
+
 our $cmddef = {
     'dump' => [ __PACKAGE__, 'dump', []],
     sync => [ __PACKAGE__, 'sync', []],
     ldapsync => [ __PACKAGE__, 'ldapsync', []],
     apicert => [ __PACKAGE__, 'apicert', []],
     tlscert => [ __PACKAGE__, 'tlscert', []],
+    init => [ __PACKAGE__, 'init', []],
 };
 
 
