@@ -24,7 +24,7 @@ CLISCRIPTS= pmg-smtp-filter pmgsh pmgpolicy
 CLI_CLASSES = $(addprefix, 'PMG/API2/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS})
-SERVICE_MANS = $(addsuffix .8, ${SERVICES})
+SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8
 CONF_MANS= pmg.conf.5
 
 TEMPLATES =				\
