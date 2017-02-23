@@ -313,6 +313,20 @@ sub get_max_policy {
 
 sub properties {
     return {
+	int_port => {
+	    description => "SMTP port number for outgoing mail (trusted).",
+	    type => 'integer',
+	    minimum => 1,
+	    maximum => 65535,
+	    default => 25,
+	},
+	ext_port => {
+	    description => "SMTP port number for incoming mail (untrusted).",
+	    type => 'integer',
+	    minimum => 1,
+	    maximum => 65535,
+	    default => 26,
+	},
 	relay => {
 	    description => "The default mail delivery transport (incoming mails).",
 	    type => 'string',
@@ -453,6 +467,8 @@ sub properties {
 
 sub options {
     return {
+	int_port => { optional => 1 },
+	ext_port => { optional => 1 },
 	smarthost => { optional => 1 },
 	relay => { optional => 1 },
 	relayport => { optional => 1 },
@@ -742,11 +758,8 @@ sub get_template_vars {
     my $nodename = PVE::INotify::nodename();
     my $int_ip = PMG::Cluster::remote_node_ip($nodename);
     my $int_net_cidr = PMG::Utils::find_local_network_for_ip($int_ip);
-
     $vars->{ipconfig}->{int_ip} = $int_ip;
     # $vars->{ipconfig}->{int_net_cidr} = $int_net_cidr;
-    $vars->{ipconfig}->{int_port} = 26;
-    $vars->{ipconfig}->{ext_port} = 25;
 
     my $transportnets = []; # fixme
     $vars->{postfix}->{transportnets} = join(' ', @$transportnets);

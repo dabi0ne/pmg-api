@@ -77,7 +77,7 @@ scan      unix  -       -       n       -       [% pmg.mail.max_filters %]      
 	-o lmtp_connection_cache_on_demand=no
 	-o disable_dns_lookups=yes
 
-[% ipconfig.int_port %]       inet  n -       -       -       [% pmg.mail.max_smtpd_out %]      smtpd
+[% pmg.mail.int_port %]       inet  n -       -       -       [% pmg.mail.max_smtpd_out %]      smtpd
     -o content_filter=scan:127.0.0.1:10023
     -o smtpd_recipient_restrictions=permit_mynetworks,reject_unauth_destination
     -o smtpd_helo_restrictions=
@@ -85,7 +85,7 @@ scan      unix  -       -       n       -       [% pmg.mail.max_filters %]      
     -o smtpd_sender_restrictions=
     -o smtpd_tls_security_level=none
 
-[% ipconfig.ext_port %]       inet  n -       -       -       1 postscreen
+[% pmg.mail.ext_port %]       inet  n -       -       -       1 postscreen
 
 smtpd       pass  - -       -       -       [% pmg.mail.max_smtpd_in %]      smtpd
     -o content_filter=scan:127.0.0.1:10024
