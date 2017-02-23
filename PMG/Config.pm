@@ -1000,11 +1000,11 @@ sub rewrite_config {
     }
 
     if ($self->rewrite_config_clam() && $restart_services) {
-	PMG::Utils::service_cmd('clamd', 'restart');
+	PMG::Utils::service_cmd('clamav-daemon', 'restart');
     }
 
     if ($self->rewrite_config_freshclam() && $restart_services) {
-	PMG::Utils::service_cmd('freshclam', 'restart');
+	PMG::Utils::service_cmd('clamav-freshclam', 'restart');
     }
 
 }
