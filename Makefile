@@ -25,7 +25,7 @@ CLI_CLASSES = $(addprefix, 'PMG/CLI/', $(addsuffix '.pm', ${CLITOOLS}))
 CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
 SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8 pmgpolicy.8
-CONF_MANS= pmg.conf.5
+CONF_MANS= pmg.conf.5 cluster.conf.5
 
 TEMPLATES =				\
 	main.cf.in			\
