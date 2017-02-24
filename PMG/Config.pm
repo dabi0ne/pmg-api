@@ -329,7 +329,7 @@ sub properties {
 	},
 	relay => {
 	    description => "The default mail delivery transport (incoming mails).",
-	    type => 'string',
+	    type => 'string', format => 'ip',
 	},
 	relayport => {
 	    description => "SMTP port number for relay host.",
