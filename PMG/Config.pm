@@ -329,7 +329,7 @@ sub properties {
 	},
 	relay => {
 	    description => "The default mail delivery transport (incoming mails).",
-	    type => 'string', format => 'ip',
+	    type => 'string', format => 'address',
 	},
 	relayport => {
 	    description => "SMTP port number for relay host.",
@@ -775,7 +775,7 @@ sub get_template_vars {
 	} elsif (Net::IP::ip_is_ipv6($relay)) {
 	    push @$mynetworks, "[$relay]/128";
 	} else {
-	    warn "unable to detect IP version of relay '$relay'";
+	    # DNS name - do nothing ?
 	}
     }
 
