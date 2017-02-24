@@ -345,7 +345,7 @@ sub properties {
 	},
 	smarthost => {
 	    description => "When set, all outgoing mails are deliverd to the specified smarthost.",
-	    type => 'string',
+	    type => 'string', format => 'address',
 	},
 	banner => {
 	    description => "ESMTP banner.",
