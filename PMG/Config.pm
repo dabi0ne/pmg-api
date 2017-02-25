@@ -453,10 +453,8 @@ sub properties {
 	},
 	verifyreceivers => {
 	    description => "Enable receiver verification. The value (if greater than 0) spefifies the numerical reply code when the Postfix SMTP server rejects a recipient address (450 or 550).",
-	    type => 'integer',
-	    minimum => 0,
-	    maximum => 599,
-	    default => 0,
+	    type => 'string',
+	    enum => ['450', '550'],
 	},
 	dnsbl_sites => {
 	    description => "Optional list of DNS white/blacklist domains (see postscreen_dnsbl_sites parameter).",
