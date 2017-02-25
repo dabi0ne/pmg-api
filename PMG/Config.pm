@@ -648,6 +648,10 @@ PVE::INotify::register_file('pmg.conf', "/etc/pmg/pmg.conf",
 
 my $domainsfilename = "/etc/pmg/domains";
 
+sub postmap_pmg_domains {
+    PMG::Utils::run_postmap($domainsfilename);
+}
+
 sub read_pmg_domains {
     my ($filename, $fh) = @_;
 
@@ -992,6 +996,8 @@ sub rewrite_config_postfix {
 
 sub rewrite_config {
     my ($self, $restart_services) = @_;
+
+    postmap_pmg_domains();
 
     if ($self->rewrite_config_postfix() && $restart_services) {
 	PMG::Utils::service_cmd('postfix', 'restart');

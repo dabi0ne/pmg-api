@@ -79,6 +79,8 @@ __PACKAGE__->register_method ({
 	    push @$domains, $param->{domain};
 
 	    PVE::INotify::write_file('domains', $domains);
+
+	    PMG::Config::postmap_pmg_domains();
 	};
 
 	PMG::Config::lock_config($code, "add relay domain failed");
@@ -116,6 +118,8 @@ __PACKAGE__->register_method ({
 	    my $res = [ grep { $_ ne $param->{domain} } @$domains ];
 
 	    PVE::INotify::write_file('domains', $res);
+
+	    PMG::Config::postmap_pmg_domains();
 	};
 
 	PMG::Config::lock_config($code, "delete relay domain failed");
