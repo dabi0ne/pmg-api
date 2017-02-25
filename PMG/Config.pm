@@ -673,7 +673,7 @@ sub write_pmg_domains {
     my ($filename, $fh, $domain) = @_;
 
     foreach my $domain (sort @$domain) {
-	PVE::Tools::safe_print($filename, $fh, "$domain\n");
+	PVE::Tools::safe_print($filename, $fh, "$domain 1\n");
     }
 }
 
