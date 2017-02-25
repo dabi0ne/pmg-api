@@ -458,4 +458,20 @@ sub lookup_node_ip {
     return wantarray ? ($ip, $family) : $ip;
 }
 
+sub run_postmap {
+    my ($filename) = @_;
+
+    # make sure the file exists (else postmap fails)
+    IO::File->new($filename, 'a', 0644);
+
+    eval {
+	PVE::Tools::run_command(
+	    ['/usr/sbin/postmap', $filename],
+	    errmsg => "unable to update postfix table $filename");
+    };
+    my $err = $@;
+
+    warn $err if $err;
+}
+
 1;
