@@ -655,13 +655,21 @@ sub postmap_pmg_domains {
 sub read_pmg_domains {
     my ($filename, $fh) = @_;
 
-    my $domains = [];
+    my $domains = {};
 
+    my $comment = '';
     if (defined($fh)) {
 	while (defined(my $line = <$fh>)) {
-	    if ($line =~ m/^\s*(\S+)\s*$/) {
+	    if ($line =~ m/^#(.*)\s*$/) {
+		$comment = $1;
+		next;
+	    }
+	    if ($line =~ m/^(\S+)\s.*$/) {
 		my $domain = $1;
-		push @$domains, $domain;
+		$domains->{$domain} = {
+		    domain => $domain, comment => $comment };
+		$comment = '';
+		next;
 	    }
 	}
     }
@@ -670,9 +678,13 @@ sub read_pmg_domains {
 }
 
 sub write_pmg_domains {
-    my ($filename, $fh, $domain) = @_;
+    my ($filename, $fh, $domains) = @_;
 
-    foreach my $domain (sort @$domain) {
+    foreach my $domain (sort keys %$domains) {
+	my $comment = $domains->{$domain}->{comment};
+	PVE::Tools::safe_print($filename, $fh, "#$comment\n")
+	    if defined($comment) && $comment !~ m/^\s*$/;
+
 	PVE::Tools::safe_print($filename, $fh, "$domain 1\n");
     }
 }
@@ -966,7 +978,8 @@ sub rewrite_config_postfix {
     my ($self) = @_;
 
     # make sure we have required files (else postfix start fails)
-    IO::File->new($domainsfilename, 'a', 0644);
+    postmap_pmg_domains();
+
     IO::File->new($transport_map_filename, 'a', 0644);
 
     my $changes = 0;
@@ -996,8 +1009,6 @@ sub rewrite_config_postfix {
 
 sub rewrite_config {
     my ($self, $restart_services) = @_;
-
-    postmap_pmg_domains();
 
     if ($self->rewrite_config_postfix() && $restart_services) {
 	PMG::Utils::service_cmd('postfix', 'restart');

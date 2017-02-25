@@ -31,6 +31,7 @@ __PACKAGE__->register_method ({
 	    type => "object",
 	    properties => {
 		domain => { type => 'string'},
+		comment => { type => 'string'},
 	    },
 	},
 	links => [ { rel => 'child', href => "{domain}" } ],
@@ -42,8 +43,8 @@ __PACKAGE__->register_method ({
 
 	my $res = [];
 
-	foreach my $domain (@$domains) {
-	    push @$res, { domain => $domain };
+	foreach my $domain (sort keys %$domains) {
+	    push @$res, $domains->{$domain};
 	}
 
 	return $res;
@@ -63,6 +64,11 @@ __PACKAGE__->register_method ({
 		description => "Domain name.",
 		type => 'string', format => 'dns-name',
 	    },
+	    comment => {
+		description => "Comment.",
+		type => 'string',
+		optional => 1,
+	    },
 	},
     },
     returns => { type => 'null' },
@@ -74,9 +80,11 @@ __PACKAGE__->register_method ({
 	    my $domains = PVE::INotify::read_file('domains');
 
 	    die "Domain '$param->{domain}' already exists\n"
-		if grep { $_ eq $param->{domain} } @$domains;
+		if $domains->{$param->{domain}};
 
-	    push @$domains, $param->{domain};
+	    $domains->{$param->{domain}} = {
+		comment => $param->{comment} // '',
+	    };
 
 	    PVE::INotify::write_file('domains', $domains);
 
@@ -84,6 +92,84 @@ __PACKAGE__->register_method ({
 	};
 
 	PMG::Config::lock_config($code, "add relay domain failed");
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'read',
+    path => '{domain}',
+    method => 'GET',
+    description => "Read Domain data (comment).",
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    domain => {
+		description => "Domain name.",
+		type => 'string', format => 'dns-name',
+	    },
+	},
+    },
+    returns => {
+	type => "object",
+	properties => {
+	    domain => { type => 'string'},
+	    comment => { type => 'string'},
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $domains = PVE::INotify::read_file('domains');
+
+	die "Domain '$param->{domain}' does not exist\n"
+	    if !$domains->{$param->{domain}};
+
+	return $domains->{$param->{domain}};
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'write',
+    path => '{domain}',
+    method => 'PUT',
+    description => "Update relay domain data (comment).",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    domain => {
+		description => "Domain name.",
+		type => 'string', format => 'dns-name',
+	    },
+	    comment => {
+		description => "Comment.",
+		type => 'string',
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+
+	    my $domains = PVE::INotify::read_file('domains');
+
+	    die "Domain '$param->{domain}' does not exist\n"
+		if !$domains->{$param->{domain}};
+
+	    $domains->{$param->{domain}}->{comment} = $param->{comment};
+
+	    PVE::INotify::write_file('domains', $domains);
+
+	    PMG::Config::postmap_pmg_domains();
+	};
+
+	PMG::Config::lock_config($code, "update relay domain failed");
 
 	return undef;
     }});
@@ -113,11 +199,11 @@ __PACKAGE__->register_method ({
 	    my $domains = PVE::INotify::read_file('domains');
 
 	    die "Domain '$param->{domain}' does not exist\n"
-		if !grep { $_ eq $param->{domain} } @$domains;
+		if !$domains->{$param->{domain}};
 
-	    my $res = [ grep { $_ ne $param->{domain} } @$domains ];
+	    delete $domains->{$param->{domain}};
 
-	    PVE::INotify::write_file('domains', $res);
+	    PVE::INotify::write_file('domains', $domains);
 
 	    PMG::Config::postmap_pmg_domains();
 	};
