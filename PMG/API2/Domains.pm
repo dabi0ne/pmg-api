@@ -33,7 +33,7 @@ __PACKAGE__->register_method ({
 		domain => { type => 'string'},
 	    },
 	},
-	links => [ { rel => 'child', href => "{section}" } ],
+	links => [ { rel => 'child', href => "{domain}" } ],
     },
     code => sub {
 	my ($param) = @_;
