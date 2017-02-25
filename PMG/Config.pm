@@ -452,7 +452,7 @@ sub properties {
 	    default => 0,
 	},
 	verifyreceivers => {
-	    description => "Enable receiver verification. The value (if greater than 0) spefifies the numerical reply code when the Postfix SMTP server rejects a recipient address (450 or 550).",
+	    description => "Enable receiver verification. The value spefifies the numerical reply code when the Postfix SMTP server rejects a recipient address.",
 	    type => 'string',
 	    enum => ['450', '550'],
 	},
