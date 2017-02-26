@@ -727,6 +727,7 @@ sub read_transport_map {
     my $res = {};
 
     my $comment = '';
+
     while (defined(my $line = <$fh>)) {
 	chomp $line;
 	next if $line =~ m/^\s*$/;
@@ -735,13 +736,30 @@ sub read_transport_map {
 	    next;
 	}
 
+	my $parse_error = sub {
+	    my ($err) = @_;
+	    warn "parse error in '$filename': $line - $err";
+	    $comment = '';
+	};
+
 	if ($line =~ m/^(\S+)\s+smtp:(\S+):(\d+)\s*$/) {
 	    my ($domain, $host, $port) = ($1, $2, $3);
 
+	    eval { pmg_verify_transport_domain($domain); };
+	    if (my $err = $@) {
+		$parse_error->($err);
+		next;
+	    }
 	    my $use_mx = 1;
 	    if ($host =~ m/^\[(.*)\]$/) {
 		$host = $1;
 		$use_mx = 0;
+	    }
+
+	    eval { PVE::JSONSchema::pve_verify_address($host); };
+	    if (my $err = $@) {
+		$parse_error->($err);
+		next;
 	    }
 
 	    my $data = {
@@ -754,8 +772,7 @@ sub read_transport_map {
 	    $res->{$domain} = $data;
 	    $comment = '';
 	} else {
-	    warn "parse error in '$filename': $line\n";
-	    $comment = '';
+	    $parse_error->('wrong format');
 	}
     }
 
