@@ -502,7 +502,7 @@ use Data::Dumper;
 use Template;
 
 use PVE::SafeSyslog;
-use PVE::Tools;
+use PVE::Tools qw($IPV4RE $IPV6RE);
 use PVE::INotify;
 
 PMG::Config::Admin->register();
@@ -720,7 +720,7 @@ sub read_transport_map {
 	    next;
 	}
 
-	if ($line =~ m/^(\S+)\s+smtp:([^\s:]+):(\d+)\s*$/) {
+	if ($line =~ m/^(\S+)\s+smtp:(\S+):(\d+)\s*$/) {
 	    my ($domain, $host, $port) = ($1, $2, $3);
 
 	    my $use_mx = 1;
@@ -759,7 +759,10 @@ sub write_transport_map {
 	PVE::Tools::safe_print($filename, $fh, "#$comment\n")
 	    if defined($comment) && $comment !~ m/^\s*$/;
 
-	if ($data->{use_mx}) {
+	my $use_mx = $data->{use_mx};
+	$use_mx = 0 if $data->{host} =~ m/^(?:$IPV4RE|$IPV6RE)$/;
+
+	if ($use_mx) {
 	    PVE::Tools::safe_print(
 		$filename, $fh, "$data->{domain} smtp:$data->{host}:$data->{port}\n");
 	} else {
@@ -787,7 +790,19 @@ sub get_template_vars {
     $vars->{ipconfig}->{int_ip} = $int_ip;
     # $vars->{ipconfig}->{int_net_cidr} = $int_net_cidr;
 
-    my $transportnets = []; # fixme
+    my $transportnets = [];
+
+    my $tmap = PVE::INotify::read_file('transport');
+    foreach my $domain (sort keys %$tmap) {
+	my $data = $tmap->{$domain};
+	my $host = $data->{host};
+	if ($host =~ m/^$IPV4RE$/) {
+	    push @$transportnets, "$host/32";
+	} elsif ($host =~ m/^$IPV6RE$/) {
+	    push @$transportnets, "[$host]/128";
+	}
+    }
+
     $vars->{postfix}->{transportnets} = join(' ', @$transportnets);
 
     my $mynetworks = [ '127.0.0.0/8', '[::1]/128' ];
@@ -796,9 +811,9 @@ sub get_template_vars {
 
     # add default relay to mynetworks
     if (my $relay = $self->get('mail', 'relay')) {
-	if (Net::IP::ip_is_ipv4($relay)) {
+	if ($relay =~ m/^$IPV4RE$/) {
 	    push @$mynetworks, "$relay/32";
-	} elsif (Net::IP::ip_is_ipv6($relay)) {
+	} elsif ($relay =~ m/^$IPV6RE$/) {
 	    push @$mynetworks, "[$relay]/128";
 	} else {
 	    # DNS name - do nothing ?
@@ -991,6 +1006,7 @@ sub rewrite_config_postfix {
 
     # make sure we have required files (else postfix start fails)
     postmap_pmg_domains();
+    postmap_pmg_transport();
 
     IO::File->new($transport_map_filename, 'a', 0644);
 
