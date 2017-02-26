@@ -504,6 +504,7 @@ use Template;
 use PVE::SafeSyslog;
 use PVE::Tools qw($IPV4RE $IPV6RE);
 use PVE::INotify;
+use PVE::JSONSchema;
 
 PMG::Config::Admin->register();
 PMG::Config::Mail->register();
@@ -513,6 +514,20 @@ PMG::Config::ClamAV->register();
 # initialize all plugins
 PMG::Config::Base->init();
 
+PVE::JSONSchema::register_format(
+    'transport-domain', \&pmg_verify_transport_domain);
+sub pmg_verify_transport_domain {
+    my ($name, $noerr) = @_;
+
+    # like dns-name, but can contain leading dot
+    my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
+
+    if ($name !~ /^\.?(${namere}\.)*${namere}$/) {
+	   return undef if $noerr;
+	   die "value does not look like a valid transport domain\n";
+    }
+    return $name;
+}
 
 sub new {
     my ($type) = @_;

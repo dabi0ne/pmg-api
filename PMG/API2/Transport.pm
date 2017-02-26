@@ -65,7 +65,7 @@ __PACKAGE__->register_method ({
 	properties => {
 	    domain => {
 		description => "Domain name.",
-		type => 'string', format => 'dns-name',
+		type => 'string', format => 'transport-domain',
 	    },
 	    host => {
 		description => "Target host (name or IP address).",
@@ -132,7 +132,7 @@ __PACKAGE__->register_method ({
 	properties => {
 	    domain => {
 		description => "Domain name.",
-		type => 'string', format => 'dns-name',
+		type => 'string', format => 'transport-domain',
 	    },
 	},
     },
@@ -170,7 +170,7 @@ __PACKAGE__->register_method ({
 	properties => {
 	    domain => {
 		description => "Domain name.",
-		type => 'string', format => 'dns-name',
+		type => 'string', format => 'transport-domain',
 	    },
 	    host => {
 		description => "Target host (name or IP address).",
@@ -238,7 +238,7 @@ __PACKAGE__->register_method ({
 	properties => {
 	    domain => {
 		description => "Domain name.",
-		type => 'string', format => 'dns-name',
+		type => 'string', format => 'transport-domain',
 	    },
 	}
     },
