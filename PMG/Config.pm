@@ -694,7 +694,7 @@ PVE::INotify::register_file('domains', $domainsfilename,
 			    \&write_pmg_domains,
 			    undef, always_call_parser => 1);
 
-my $transport_map_filename = "/etc/postfix/transport";
+my $transport_map_filename = "/etc/pmg/transport";
 
 sub read_transport_map {
     my ($filename, $fh) = @_;
@@ -739,7 +739,7 @@ sub read_transport_map {
     return $ta;
 }
 
-sub write_ransport_map {
+sub write_transport_map {
     my ($filename, $fh, $tmap) = @_;
 
     return if !$tmap;
@@ -759,7 +759,7 @@ sub write_ransport_map {
 
 PVE::INotify::register_file('transport', $transport_map_filename,
 			    \&read_transport_map,
-			    \&write_ransport_map,
+			    \&write_transport_map,
 			    undef, always_call_parser => 1);
 
 # config file generation using templates
