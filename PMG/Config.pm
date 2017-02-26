@@ -660,6 +660,8 @@ sub read_pmg_domains {
     my $comment = '';
     if (defined($fh)) {
 	while (defined(my $line = <$fh>)) {
+	    chomp $line;
+	    next if $line =~ m/^\s*$/;
 	    if ($line =~ m/^#(.*)\s*$/) {
 		$comment = $1;
 		next;
@@ -669,7 +671,9 @@ sub read_pmg_domains {
 		$domains->{$domain} = {
 		    domain => $domain, comment => $comment };
 		$comment = '';
-		next;
+	    } else {
+		warn "parse error in '$filename': $line\n";
+		$comment = '';
 	    }
 	}
     }
@@ -696,6 +700,10 @@ PVE::INotify::register_file('domains', $domainsfilename,
 
 my $transport_map_filename = "/etc/pmg/transport";
 
+sub postmap_pmg_transport {
+    PMG::Utils::run_postmap($transport_map_filename);
+}
+
 sub read_transport_map {
     my ($filename, $fh) = @_;
 
@@ -703,40 +711,40 @@ sub read_transport_map {
 
     my $res = {};
 
+    my $comment = '';
     while (defined(my $line = <$fh>)) {
 	chomp $line;
 	next if $line =~ m/^\s*$/;
-	next if $line =~ m/^\s*\#/;
+	if ($line =~ m/^#(.*)\s*$/) {
+	    $comment = $1;
+	    next;
+	}
 
 	if ($line =~ m/^(\S+)\s+smtp:([^\s:]+):(\d+)\s*$/) {
-	    my $domain = $1;
-	    my $host = $2;
-	    my $port =$3;
-	    my $nomx;
+	    my ($domain, $host, $port) = ($1, $2, $3);
 
+	    my $nomx = 0;
 	    if ($host =~ m/^\[(.*)\]$/) {
 		$host = $1;
 		$nomx = 1;
 	    }
 
-	    my $key = "$host:$port";
-
-	    $res->{$key}->{nomx} = $nomx;
-	    $res->{$key}->{host} = $host;
-	    $res->{$key}->{port} = $port;
-	    $res->{$key}->{transport} = $key;
-
-	    push @{$res->{$key}->{domains}}, $domain;
+	    my $data = {
+		domain => $domain,
+		host => $host,
+		port => $port,
+		nomx => $nomx,
+		comment => $comment,
+	    };
+	    $res->{$domain} = $data;
+	    $comment = '';
+	} else {
+	    warn "parse error in '$filename': $line\n";
+	    $comment = '';
 	}
     }
 
-    my $ta = [];
-
-    foreach my $t (sort keys %$res) {
-	push @$ta, $res->{$t};
-    }
-
-    return $ta;
+    return $res;
 }
 
 sub write_transport_map {
@@ -744,15 +752,19 @@ sub write_transport_map {
 
     return if !$tmap;
 
-    foreach my $t (sort { $a->{transport} cmp $b->{transport} } @$tmap) {
-	my $domains = $t->{domains};
+    foreach my $domain (sort keys %$tmap) {
+	my $data = $tmap->{$domain};
 
-	foreach my $d (sort @$domains) {
-	    if ($t->{nomx}) {
-		PVE::Tools::safe_print($filename, $fh, "$d smtp:[$t->{host}]:$t->{port}\n");
-	    } else {
-		PVE::Tools::safe_print($filename, $fh, "$d smtp:$t->{host}:$t->{port}\n");
-	    }
+	my $comment = $data->{comment};
+	PVE::Tools::safe_print($filename, $fh, "#$comment\n")
+	    if defined($comment) && $comment !~ m/^\s*$/;
+
+	if ($data->{nomx}) {
+	    PVE::Tools::safe_print(
+		$filename, $fh, "$data->{domain} smtp:[$data->{host}]:$data->{port}\n");
+	} else {
+	    PVE::Tools::safe_print(
+		$filename, $fh, "$data->{domain} smtp:$data->{host}:$data->{port}\n");
 	}
     }
 }

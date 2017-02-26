@@ -15,6 +15,7 @@ use PMG::Config;
 use PMG::API2::RuleDB;
 use PMG::API2::LDAP;
 use PMG::API2::Domains;
+use PMG::API2::Transport;
 use PMG::API2::ClusterConfig;
 
 use base qw(PVE::RESTHandler);
@@ -34,6 +35,11 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Domains",
     path => 'domains',
+});
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Transport",
+    path => 'transport',
 });
 
 __PACKAGE__->register_method ({
@@ -70,6 +76,7 @@ __PACKAGE__->register_method ({
 	push @$res, { section => 'domains' };
 	push @$res, { section => 'cluster' };
 	push @$res, { section => 'ruledb' };
+	push @$res, { section => 'transport' };
 
 	return $res;
     }});
