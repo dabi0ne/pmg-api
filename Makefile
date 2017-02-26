@@ -102,6 +102,7 @@ LIBSOURCES =				\
 	PMG/API2/Tasks.pm		\
 	PMG/API2/LDAP.pm		\
 	PMG/API2/Domains.pm		\
+	PMG/API2/Transport.pm		\
 	PMG/API2/Config.pm		\
 	PMG/API2/ClusterConfig.pm	\
 	PMG/API2/Nodes.pm		\
