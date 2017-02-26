@@ -33,7 +33,7 @@ __PACKAGE__->register_method ({
 		domain => { type => 'string' },
 		host => { type => 'string' },
 		port => { type => 'integer' },
-		nomx => { type => 'boolean' },
+		use_mx => { type => 'boolean' },
 		comment => { type => 'string'},
 	    },
 	},
@@ -79,11 +79,11 @@ __PACKAGE__->register_method ({
 		optional => 1,
 		default => 25,
 	    },
-	    nomx => {
-		description => "Disable MX lookups.",
+	    use_mx => {
+		description => "Enable MX lookups.",
 		type => 'boolean',
 		optional => 1,
-		default => 0,
+		default => 1,
 	    },
 	    comment => {
 		description => "Comment.",
@@ -107,7 +107,7 @@ __PACKAGE__->register_method ({
 		domain => $param->{domain},
 		host => $param->{host},
 		port => $param->{port} // 25,
-		nomx => $param->{nomx} // 0,
+		use_mx => $param->{use_mx} // 1,
 		comment => $param->{comment} // '',
 	    };
 
@@ -142,7 +142,7 @@ __PACKAGE__->register_method ({
 	    domain => { type => 'string'},
 	    host => { type => 'string'},
 	    port => { type => 'integer'},
-	    nomx => { type => 'boolean'},
+	    use_mx => { type => 'boolean'},
 	    comment => { type => 'string'},
 	},
     },
@@ -184,8 +184,8 @@ __PACKAGE__->register_method ({
 		maximum => 65535,
 		optional => 1,
 	    },
-	    nomx => {
-		description => "Disable MX lookups.",
+	    use_mx => {
+		description => "Enable MX lookups.",
 		type => 'boolean',
 		optional => 1,
 	    },
@@ -212,7 +212,7 @@ __PACKAGE__->register_method ({
 
 	    die "no options specified\n" if !scalar(keys %$param);
 
-	    for my $prop (qw(host port nomx comment)) {
+	    for my $prop (qw(host port use_mx comment)) {
 		$data->{$prop} = $param->{$prop} if defined($param->{$prop});
 	    }
 

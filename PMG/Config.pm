@@ -723,17 +723,17 @@ sub read_transport_map {
 	if ($line =~ m/^(\S+)\s+smtp:([^\s:]+):(\d+)\s*$/) {
 	    my ($domain, $host, $port) = ($1, $2, $3);
 
-	    my $nomx = 0;
+	    my $use_mx = 1;
 	    if ($host =~ m/^\[(.*)\]$/) {
 		$host = $1;
-		$nomx = 1;
+		$use_mx = 0;
 	    }
 
 	    my $data = {
 		domain => $domain,
 		host => $host,
 		port => $port,
-		nomx => $nomx,
+		use_mx => $use_mx,
 		comment => $comment,
 	    };
 	    $res->{$domain} = $data;
@@ -759,12 +759,12 @@ sub write_transport_map {
 	PVE::Tools::safe_print($filename, $fh, "#$comment\n")
 	    if defined($comment) && $comment !~ m/^\s*$/;
 
-	if ($data->{nomx}) {
-	    PVE::Tools::safe_print(
-		$filename, $fh, "$data->{domain} smtp:[$data->{host}]:$data->{port}\n");
-	} else {
+	if ($data->{use_mx}) {
 	    PVE::Tools::safe_print(
 		$filename, $fh, "$data->{domain} smtp:$data->{host}:$data->{port}\n");
+	} else {
+	    PVE::Tools::safe_print(
+		$filename, $fh, "$data->{domain} smtp:[$data->{host}]:$data->{port}\n");
 	}
     }
 }
