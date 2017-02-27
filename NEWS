@@ -13,6 +13,7 @@ Proxmox Mail Gateway 5.0 News
 
 - templates moved to /var/lib/pmg/templates/
 
+- use extra file to store mail/networks /etc/pmg/mynetworks 
 
 Incompatible changes:
 ---------------------

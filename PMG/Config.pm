@@ -713,6 +713,55 @@ PVE::INotify::register_file('domains', $domainsfilename,
 			    \&write_pmg_domains,
 			    undef, always_call_parser => 1);
 
+my $mynetworks_filename = "/etc/pmg/mynetworks";
+
+sub postmap_pmg_mynetworks {
+    PMG::Utils::run_postmap($mynetworks_filename);
+}
+
+sub read_pmg_mynetworks {
+    my ($filename, $fh) = @_;
+
+    my $mynetworks = {};
+
+    my $comment = '';
+    if (defined($fh)) {
+	while (defined(my $line = <$fh>)) {
+	    chomp $line;
+	    next if $line =~ m/^\s*$/;
+	    if ($line =~ m!^((?:$IPV4RE|$IPV6RE))/(\d+)\s*(?:#(.*)\s*)?$!) {
+		my ($network, $prefix_size, $comment) = ($1, $2, $3);
+		my $cidr = "$network/${prefix_size}";
+		$mynetworks->{$cidr} = {
+		    cidr => $cidr,
+		    network_address => $network,
+		    prefix_size => $prefix_size,
+		    comment => $comment // '',
+		};
+	    } else {
+		warn "parse error in '$filename': $line\n";
+	    }
+	}
+    }
+
+    return $mynetworks;
+}
+
+sub write_pmg_mynetworks {
+    my ($filename, $fh, $mynetworks) = @_;
+
+    foreach my $cidr (sort keys %$mynetworks) {
+	my $data = $mynetworks->{$cidr};
+	my $comment = $data->{comment} // '*';
+	PVE::Tools::safe_print($filename, $fh, "$cidr #$comment\n");
+    }
+}
+
+PVE::INotify::register_file('mynetworks', $mynetworks_filename,
+			    \&read_pmg_mynetworks,
+			    \&write_pmg_mynetworks,
+			    undef, always_call_parser => 1);
+
 my $transport_map_filename = "/etc/pmg/transport";
 
 sub postmap_pmg_transport {
@@ -840,7 +889,9 @@ sub get_template_vars {
     my $mynetworks = [ '127.0.0.0/8', '[::1]/128' ];
     push @$mynetworks, @$transportnets;
     push @$mynetworks, $int_net_cidr;
+    push @$mynetworks, 'hash:/etc/pmg/mynetworks';
 
+    my $netlist = PVE::INotify::read_file('mynetworks');
     # add default relay to mynetworks
     if (my $relay = $self->get('mail', 'relay')) {
 	if ($relay =~ m/^$IPV4RE$/) {
@@ -1039,6 +1090,7 @@ sub rewrite_config_postfix {
     # make sure we have required files (else postfix start fails)
     postmap_pmg_domains();
     postmap_pmg_transport();
+    postmap_pmg_mynetworks();
 
     IO::File->new($transport_map_filename, 'a', 0644);
 

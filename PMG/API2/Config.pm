@@ -17,6 +17,7 @@ use PMG::API2::LDAP;
 use PMG::API2::Domains;
 use PMG::API2::Transport;
 use PMG::API2::ClusterConfig;
+use PMG::API2::MyNetworks;
 
 use base qw(PVE::RESTHandler);
 
@@ -40,6 +41,14 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Transport",
     path => 'transport',
+});
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::MyNetworks",
+    # set fragment delimiter (no subdirs) - we need that, because CIDRs
+    # contain a slash '/'
+    fragmentDelimiter => '',
+    path => 'mynetworks',
 });
 
 __PACKAGE__->register_method ({
@@ -73,6 +82,7 @@ __PACKAGE__->register_method ({
 	}
 
 	push @$res, { section => 'ldap' };
+	push @$res, { section => 'mynetworks' };
 	push @$res, { section => 'domains' };
 	push @$res, { section => 'cluster' };
 	push @$res, { section => 'ruledb' };
