@@ -47,6 +47,23 @@ sub short_desc {
     return $desc;
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	email => {
+	    description => "Email address.",
+	    type => 'string', format => 'email',
+	},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{address} = $param->{email};
+}
+
 1;
 
 __END__

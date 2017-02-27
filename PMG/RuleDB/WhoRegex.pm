@@ -113,6 +113,24 @@ sub short_desc {
     return $desc;
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	regex => {
+	    description => "Email address regular expression.",
+	    type => 'string',
+	    maxLength => 1024,
+	},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{address} = $param->{regex};
+}
+
 1;
 
 __END__

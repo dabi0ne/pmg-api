@@ -28,9 +28,9 @@ sub oconfigsite {
 
 sub new {
     my ($type, $address, $ogroup) = @_;
-    
+
     my $class = ref($type) || $type;
- 
+
     $address //= 'domain.tld';
 
     my $self = $class->SUPER::new($address, $ogroup);
@@ -41,20 +41,35 @@ sub new {
 sub who_match {
     my ($self, $addr) = @_;
 
-    $addr =~ m/^.+@(.+)$/; 
+    $addr =~ m/^.+@(.+)$/;
 
     return (lc ($1) eq lc ($self->address));
 }
 
 sub short_desc {
     my $self = shift;
-    
+
     my $desc = $self->{address};
-    
+
     return $desc;
 }
 
+sub properties {
+    my ($class) = @_;
 
+    return {
+	domain => {
+	    description => "DNS domain name (Sender).",
+	    type => 'string', format => 'dns-name',
+	},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{address} = $param->{domain};
+}
 
 1;
 __END__
@@ -72,4 +87,3 @@ An Email domain. We use case insensitive compares.
 =head2 Examples
 
     $obj = PMG::RuleDB::Domain->new ('yourdomain.com');
-

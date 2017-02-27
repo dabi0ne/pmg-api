@@ -12,6 +12,15 @@ use PVE::RESTHandler;
 use PVE::INotify;
 
 use PMG::Config;
+
+use PMG::RuleDB::WhoRegex;
+use PMG::RuleDB::ReceiverRegex;
+use PMG::RuleDB::EMail;
+use PMG::RuleDB::Receiver;
+use PMG::RuleDB::IPAddress;
+use PMG::RuleDB::IPNet;
+use PMG::RuleDB::Domain;
+use PMG::RuleDB::ReceiverDomain;
 use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
@@ -40,8 +49,14 @@ __PACKAGE__->register_method ({
 
 	return [
 	    { subdir => 'objects' },
+	    { subdir => 'sender' },
+	    { subdir => 'receiver' },
 	    { subdir => 'sender_domain' },
 	    { subdir => 'receiver_domain' },
+	    { subdir => 'sender_regex' },
+	    { subdir => 'receiver_regex' },
+	    { subdir => 'ip' },
+	    { subdir => 'network' },
 	];
 
     }});
@@ -78,144 +93,16 @@ __PACKAGE__->register_method ({
 	my $res = [];
 
 	foreach my $obj (@$og) {
-	    push @$res, {
-		id => $obj->{id},
-		otype => $obj->{otype},
-		receivertest => $obj->receivertest(),
-		descr => $obj->short_desc(),
-	    };
+	    push @$res, $obj->get_data();
 	}
 
 	return $res;
     }});
 
+
 # fixme:
 # $conn->reload_greylistdb () if $_class eq 'greylist';
 # $conn->reload_ruledb ();
-
-my $load_object = sub {
-    my ($rdb, $id, $gid, $exp_otype) = @_;
-
-    my $obj = $rdb->load_object($id);
-    die "object '$id' does not exists\n" if !defined($obj);
-
-    my $otype = $obj->otype();
-    die "wrong object type ($otype != $exp_otype)\n"
-	if $otype != $exp_otype;
-
-    die "wrong object group ($obj->{ogroup} != $gid)\n"
-	if $obj->{ogroup} != $gid;
-
-    return $obj;
-};
-
-
-__PACKAGE__->register_method ({
-    name => 'sender_domain',
-    path => 'sender_domain',
-    method => 'POST',
-    description => "Add a sender domain to the SMTP whitelist.",
-    proxyto => 'master',
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    domain => {
-		description => "DNS domain name.",
-		type => 'string', format => 'dns-name',
-	    },
-	},
-    },
-    returns => {
-	description => "The object ID.",
-	type => 'integer',
-    },
-    code => sub {
-	my ($param) = @_;
-
-	my $rdb = PMG::RuleDB->new();
-
-	my $gid = $rdb->greylistexclusion_groupid();
-
-	my $obj = PMG::RuleDB::Domain->new($param->{domain});
-	$obj->{ogroup} = $gid;
-
-	my $id = $obj->save($rdb);
-
-	return $id;
-    }});
-
-__PACKAGE__->register_method ({
-    name => 'update_sender_domain',
-    path => 'sender_domain/{id}',
-    method => 'PUT',
-    description => "Modify sender domain SMTP whitelist entryp.",
-    proxyto => 'master',
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    id => {
-		description => "Object ID.",
-		type => 'integer',
-	    },
-	    domain => {
-		description => "DNS domain name.",
-		type => 'string', format => 'dns-name',
-	    },
-	},
-    },
-    returns => { type => 'null' },
-    code => sub {
-	my ($param) = @_;
-
-	my $rdb = PMG::RuleDB->new();
-
-	my $gid = $rdb->greylistexclusion_groupid();
-	my $exp_otype = PMG::RuleDB::Domain->otype();
-
-	my $obj = $load_object->($rdb, $param->{id}, $gid, $exp_otype);
-
-	$obj->{address} = $param->{domain};
-
-	$obj->save($rdb);
-
-	return undef;
-    }});
-
-
-__PACKAGE__->register_method ({
-    name => 'receiver_domain',
-    path => 'receiver_domain',
-    method => 'POST',
-    description => "Add a receiver domain to the SMTP whitelist.",
-    proxyto => 'master',
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    domain => {
-		description => "DNS domain name.",
-		type => 'string', format => 'dns-name',
-	    },
-	},
-    },
-    returns => {
-	description => "The object ID.",
-	type => 'integer',
-    },
-    code => sub {
-	my ($param) = @_;
-
-	my $rdb = PMG::RuleDB->new();
-
-	my $gid = $rdb->greylistexclusion_groupid();
-
-	my $obj = PMG::RuleDB::ReceiverDomain->new($param->{domain});
-	$obj->{ogroup} = $gid;
-
-	my $id = $obj->save($rdb);
-
-	return $id;
-    }});
-
 
 __PACKAGE__->register_method ({
     name => 'delete_object',
@@ -246,5 +133,18 @@ __PACKAGE__->register_method ({
 
 	return undef;
     }});
+
+
+PMG::RuleDB::EMail->register_api(__PACKAGE__, 'sender', 1);
+PMG::RuleDB::Receiver->register_api(__PACKAGE__, 'receiver', 1);
+
+PMG::RuleDB::Domain->register_api(__PACKAGE__, 'sender_domain', 1);
+PMG::RuleDB::ReceiverDomain->register_api(__PACKAGE__, 'receiver_domain', 1);
+
+PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'sender_regex', 1);
+PMG::RuleDB::ReceiverRegex->register_api(__PACKAGE__, 'receiver_regex', 1);
+
+PMG::RuleDB::IPAddress->register_api(__PACKAGE__, 'ip', 1);
+PMG::RuleDB::IPNet->register_api(__PACKAGE__, 'network', 1);
 
 1;

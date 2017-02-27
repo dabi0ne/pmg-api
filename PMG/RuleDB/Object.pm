@@ -26,6 +26,12 @@ sub save {
     croak "never call this method: ERROR"; 
 }
 
+sub update {
+    my ($self, $param) = @_;
+
+    croak "never call this method: ERROR";
+}
+
 sub load_attr { 
     croak "never call this method: ERROR"; 
 }
@@ -111,6 +117,161 @@ sub id {
 
 sub short_desc {
     return "basic object";
+}
+
+sub get_data {
+    my ($self) = @_;
+
+    return {
+	id => $self->{id},
+	ogroup => $self->{ogroup},
+	otype => $self->{otype},
+	otype_text => $self->otype_text(),
+	receivertest => $self->receivertest(),
+	descr => $self->short_desc(),
+    };
+}
+
+my $load_object = sub {
+    my ($rdb, $id, $gid, $exp_otype) = @_;
+
+    my $obj = $rdb->load_object($id);
+    die "object '$id' does not exists\n" if !defined($obj);
+
+    my $otype = $obj->otype();
+    die "wrong object type ($otype != $exp_otype)\n"
+	if $otype != $exp_otype;
+
+    die "wrong object group ($obj->{ogroup} != $gid)\n"
+	if $obj->{ogroup} != $gid;
+
+    return $obj;
+};
+
+sub register_api {
+    my ($class, $apiclass, $name, $use_greylist_gid) = @_;
+
+    my $otype = $class->otype();
+
+    my $otype_text = $class->otype_text();
+
+    my $properties = $class->properties();
+
+    my $create_properties = {};
+    my $update_properties = {
+	id => {
+	    description => "Object ID.",
+	    type => 'integer',
+	},
+    };
+    my $read_properties = {
+	id => {
+	    description => "Object ID.",
+	    type => 'integer',
+	},
+    };
+
+    if (!$use_greylist_gid) {
+	$read_properties = $create_properties->{ogroup} = $update_properties->{ogroup} = {
+	    description => "Object Groups ID.",
+	    type => 'integer',
+	};
+    };
+
+    foreach my $key (keys %$properties) {
+	$create_properties->{$key} = $properties->{$key};
+	$update_properties->{$key} = $properties->{$key};
+    }
+
+    $apiclass->register_method ({
+	name => $name,
+	path => $name,
+	method => 'POST',
+	description => "Add '$otype_text' object.",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => $create_properties,
+	},
+	returns => {
+	    description => "The object ID.",
+	    type => 'integer',
+	},
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $gid = $use_greylist_gid ?
+		$rdb->greylistexclusion_groupid() : $param->{ogroup};
+
+	    my $obj = $rdb->get_opject($otype);
+	    $obj->{ogroup} = $gid;
+
+	    $obj->update($param);
+
+	    my $id = $obj->save($rdb);
+
+	    return $id;
+	}});
+
+    $apiclass->register_method ({
+	name => "read_$name",
+	path => "$name/{id}",
+	method => 'GET',
+	description => "Read '$otype_text' object settings.",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => $read_properties,
+	},
+	returns => {
+	    type => "object",
+	    properties => {
+		id => { type => 'integer'},
+	    },
+	},
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $gid = $use_greylist_gid ?
+		$rdb->greylistexclusion_groupid() : $param->{ogroup};
+
+	    my $obj = $load_object->($rdb, $param->{id}, $gid, $otype);
+
+	    return $obj->get_data();
+	}});
+
+    $apiclass->register_method ({
+	name => "update_$name",
+	path => "$name/{id}",
+	method => 'PUT',
+	description => "Update '$otype_text' object.",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => $update_properties,
+	},
+	returns => { type => 'null' },
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $gid = $use_greylist_gid ?
+		$rdb->greylistexclusion_groupid() : $param->{ogroup};
+
+	    my $obj = $load_object->($rdb, $param->{id}, $gid, $otype);
+
+	    $obj->update($param);
+
+	    $obj->save($rdb);
+
+	    return undef;
+	}});
+
 }
 
 1;
