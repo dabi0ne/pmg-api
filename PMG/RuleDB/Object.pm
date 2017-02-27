@@ -149,7 +149,9 @@ my $load_object = sub {
 };
 
 sub register_api {
-    my ($class, $apiclass, $name, $use_greylist_gid) = @_;
+    my ($class, $apiclass, $name, $path, $use_greylist_gid) = @_;
+
+    $path //= $name;
 
     my $otype = $class->otype();
 
@@ -172,7 +174,7 @@ sub register_api {
     };
 
     if (!$use_greylist_gid) {
-	$read_properties = $create_properties->{ogroup} = $update_properties->{ogroup} = {
+	$read_properties->{ogroup} = $create_properties->{ogroup} = $update_properties->{ogroup} = {
 	    description => "Object Groups ID.",
 	    type => 'integer',
 	};
@@ -185,7 +187,7 @@ sub register_api {
 
     $apiclass->register_method ({
 	name => $name,
-	path => $name,
+	path => $path,
 	method => 'POST',
 	description => "Add '$otype_text' object.",
 	proxyto => 'master',
@@ -205,7 +207,7 @@ sub register_api {
 	    my $gid = $use_greylist_gid ?
 		$rdb->greylistexclusion_groupid() : $param->{ogroup};
 
-	    my $obj = $rdb->get_opject($otype);
+	    my $obj = $rdb->get_object($otype);
 	    $obj->{ogroup} = $gid;
 
 	    $obj->update($param);
@@ -217,7 +219,7 @@ sub register_api {
 
     $apiclass->register_method ({
 	name => "read_$name",
-	path => "$name/{id}",
+	path => "$path/{id}",
 	method => 'GET',
 	description => "Read '$otype_text' object settings.",
 	proxyto => 'master',
@@ -246,7 +248,7 @@ sub register_api {
 
     $apiclass->register_method ({
 	name => "update_$name",
-	path => "$name/{id}",
+	path => "$path/{id}",
 	method => 'PUT',
 	description => "Update '$otype_text' object.",
 	proxyto => 'master',

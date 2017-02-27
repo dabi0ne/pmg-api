@@ -13,6 +13,8 @@ use PVE::Tools qw(extract_param);
 use PMG::DBTools;
 use PMG::RuleDB;
 
+use PMG::API2::Who;
+
 use base qw(PVE::RESTHandler);
 
 __PACKAGE__->register_method ({
@@ -151,7 +153,7 @@ __PACKAGE__->register_method({
     }});
 
 __PACKAGE__->register_method({
-    name => 'list_what_object',
+    name => 'list_what_objects',
     path => 'what',
     method => 'GET',
     description => "Get list of 'what' objects.",
@@ -181,7 +183,7 @@ __PACKAGE__->register_method({
     }});
 
 __PACKAGE__->register_method({
-    name => 'list_when_object',
+    name => 'list_when_objects',
     path => 'when',
     method => 'GET',
     description => "Get list of 'when' objects.",
@@ -211,7 +213,7 @@ __PACKAGE__->register_method({
     }});
 
 __PACKAGE__->register_method({
-    name => 'list_who_object',
+    name => 'list_who_objects',
     path => 'who',
     method => 'GET',
     description => "Get list of 'who' objects.",
@@ -239,5 +241,10 @@ __PACKAGE__->register_method({
 
 	return $format_object_group->($ogroups);
     }});
+
+__PACKAGE__->register_method ({
+    subclass => 'PMG::API2::Who',
+    path => 'who/{ogroup}',
+});
 
 1;

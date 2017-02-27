@@ -1,4 +1,4 @@
-package PMG::API2::SMTPWhitelist;
+package PMG::API2::Who;
 
 use strict;
 use warnings;
@@ -14,13 +14,10 @@ use PVE::INotify;
 use PMG::Config;
 
 use PMG::RuleDB::WhoRegex;
-use PMG::RuleDB::ReceiverRegex;
 use PMG::RuleDB::EMail;
-use PMG::RuleDB::Receiver;
 use PMG::RuleDB::IPAddress;
 use PMG::RuleDB::IPNet;
 use PMG::RuleDB::Domain;
-use PMG::RuleDB::ReceiverDomain;
 use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
@@ -32,7 +29,12 @@ __PACKAGE__->register_method ({
     description => "Directory index.",
     parameters => {
 	additionalProperties => 0,
-	properties => {},
+	properties => {
+	    ogroup => {
+		description => "Object Group ID.",
+		type => 'integer',
+	    },
+	},
     },
     returns => {
 	type => 'array',
@@ -49,14 +51,12 @@ __PACKAGE__->register_method ({
 
 	return [
 	    { subdir => 'objects' },
-	    { subdir => 'sender' },
-	    { subdir => 'receiver' },
-	    { subdir => 'sender_domain' },
-	    { subdir => 'receiver_domain' },
-	    { subdir => 'sender_regex' },
-	    { subdir => 'receiver_regex' },
+	    { subdir => 'email' },
+	    { subdir => 'domain' },
+	    { subdir => 'regex' },
 	    { subdir => 'ip' },
 	    { subdir => 'network' },
+	    # fixme: ldap
 	];
 
     }});
@@ -65,11 +65,16 @@ __PACKAGE__->register_method ({
     name => 'objects',
     path => 'objects',
     method => 'GET',
-    description => "Get list of all SMTP whitelist entries.",
+    description => "List group objects.",
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
-	properties => {},
+	properties => {
+	    ogroup => {
+		description => "Object Group ID.",
+		type => 'integer',
+	    },
+	},
     },
     returns => {
 	type => 'array',
@@ -86,9 +91,7 @@ __PACKAGE__->register_method ({
 
 	my $rdb = PMG::RuleDB->new();
 
-	my $gid = $rdb->greylistexclusion_groupid();
-
-	my $og = $rdb->load_group_objects($gid);
+	my $og = $rdb->load_group_objects($param->{ogroup});
 
 	my $res = [];
 
@@ -101,18 +104,21 @@ __PACKAGE__->register_method ({
 
 
 # fixme:
-# $conn->reload_greylistdb () if $_class eq 'greylist';
 # $conn->reload_ruledb ();
 
 __PACKAGE__->register_method ({
     name => 'delete_object',
     path => 'objects/{id}',
     method => 'DELETE',
-    description => "Remove an object from the SMTP whitelist.",
+    description => "Remove an object from the group.",
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
 	properties => {
+	    ogroup => {
+		description => "Object Group ID.",
+		type => 'integer',
+	    },
 	    id => {
 		description => "Object ID.",
 		type => 'integer',
@@ -134,17 +140,10 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
-
-PMG::RuleDB::EMail->register_api(__PACKAGE__, 'sender', undef, 1);
-PMG::RuleDB::Receiver->register_api(__PACKAGE__, 'receiver', undef, 1);
-
-PMG::RuleDB::Domain->register_api(__PACKAGE__, 'sender_domain', undef, 1);
-PMG::RuleDB::ReceiverDomain->register_api(__PACKAGE__, 'receiver_domain', undef, 1);
-
-PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'sender_regex', undef, 1);
-PMG::RuleDB::ReceiverRegex->register_api(__PACKAGE__, 'receiver_regex', undef, 1);
-
-PMG::RuleDB::IPAddress->register_api(__PACKAGE__, 'ip', undef, 1);
-PMG::RuleDB::IPNet->register_api(__PACKAGE__, 'network', undef, 1);
+PMG::RuleDB::EMail->register_api(__PACKAGE__, 'email');
+PMG::RuleDB::Domain->register_api(__PACKAGE__, 'domain');
+PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'regex');
+PMG::RuleDB::IPAddress->register_api(__PACKAGE__, 'ip');
+PMG::RuleDB::IPNet->register_api(__PACKAGE__, 'network');
 
 1;

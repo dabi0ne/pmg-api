@@ -50,17 +50,21 @@ sub who_match {
     return $cidr->find($ip);
 }
 
+sub properties {
+    my ($class) = @_;
 
-my @subnets = map { join(".", unpack("C*", pack("B*", substr("1" x $_ . "0" x 32, 0, 32))))} 0..32;
+    return {
+	cidr => {
+	    description => "Network address in CIDR notation.",
+	    type => 'string', format => 'CIDR',
+	},
+    };
+}
 
-sub short_desc {
-    my $self 	= shift;
+sub update {
+    my ($self, $param) = @_;
 
-    my ($address, $mask) = split('/', $self->{address});
-
-    my $desc = $address . "/" . $subnets[$mask];
-    
-    return $desc;
+    $self->{address} = $param->{cidr};
 }
 
 1;

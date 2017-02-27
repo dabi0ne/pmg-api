@@ -46,12 +46,21 @@ sub who_match {
     return $self->{address} eq $ip;
 }
 
-sub short_desc {
-    my $self = shift;
-    
-    my $desc = $self->{address};
-    
-    return $desc;
+sub properties {
+    my ($class) = @_;
+
+    return {
+	ip => {
+	    description => "IP address",
+	    type => 'string', format => 'ip',
+	},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{address} = $param->{ip};
 }
 
 1;
