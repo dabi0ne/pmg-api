@@ -422,7 +422,17 @@ sub properties {
 	    default => 1,
 	},
 	tls => {
-	    description => "Use TLS.",
+	    description => "Enable TLS.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	tlslog => {
+	    description => "Enable TLS Logging.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	tlsheader => {
+	    description => "Add TLS received header.",
 	    type => 'boolean',
 	    default => 0,
 	},
@@ -478,6 +488,8 @@ sub options {
 	helotests => { optional => 1 },
 	use_rbl => { optional => 1 },
 	tls => { optional => 1 },
+	tlslog => { optional => 1 },
+	tlsheader => { optional => 1 },
 	spf => { optional => 1 },
 	maxsize => { optional => 1 },
 	banner => { optional => 1 },
