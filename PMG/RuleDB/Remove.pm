@@ -56,7 +56,7 @@ sub new {
 
     $all = 0 if !defined ($all);
 
-    my $self = $class->SUPER::new(otype(), $ogroup);
+    my $self = $class->SUPER::new($class->otype(), $ogroup);
 
     $self->{all} = $all;
     $self->{text} = $text;

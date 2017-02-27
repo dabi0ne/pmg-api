@@ -47,7 +47,7 @@ sub new {
     
     my $class = ref($type) || $type;
  
-    my $self = $class->SUPER::new (otype(), $ogroup);
+    my $self = $class->SUPER::new($class->otype(), $ogroup);
    
     return $self;
 }

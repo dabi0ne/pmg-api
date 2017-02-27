@@ -66,7 +66,7 @@ sub new {
 
     $value //= $std_discl;
     
-    my $self = $class->SUPER::new(otype(), $ogroup);
+    my $self = $class->SUPER::new($class->otype(), $ogroup);
    
     $self->{value} = $value;
 

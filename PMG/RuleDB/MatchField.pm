@@ -36,7 +36,7 @@ sub new {
    
     my $class = ref($type) || $type;
 
-    my $self = $class->SUPER::new(otype(), $ogroup);
+    my $self = $class->SUPER::new($class->otype(), $ogroup);
 
     $self->{field} = $field;
     $self->{field_value} = $field_value;
