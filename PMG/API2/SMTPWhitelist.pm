@@ -41,6 +41,7 @@ __PACKAGE__->register_method ({
 	return [
 	    { subdir => 'objects' },
 	    { subdir => 'sender_domain' },
+	    { subdir => 'receiver_domain' },
 	];
 
     }});
@@ -117,6 +118,42 @@ __PACKAGE__->register_method ({
 	my $og = $rdb->load_group_objects($gid);
 
 	my $obj = PMG::RuleDB::Domain->new($param->{domain});
+	$obj->{ogroup} = $gid;
+
+	my $id = $obj->save($rdb);
+
+	return $id;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'receiver_domain',
+    path => 'receiver_domain',
+    method => 'POST',
+    description => "Add a receiver domain to the SMTP whitelist.",
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    domain => {
+		description => "DNS domain name.",
+		type => 'string', format => 'dns-name',
+	    },
+	},
+    },
+    returns => {
+	description => "The object ID.",
+	type => 'integer',
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rdb = PMG::RuleDB->new();
+
+	my $gid = $rdb->greylistexclusion_groupid();
+
+	my $og = $rdb->load_group_objects($gid);
+
+	my $obj = PMG::RuleDB::ReceiverDomain->new($param->{domain});
 	$obj->{ogroup} = $gid;
 
 	my $id = $obj->save($rdb);
