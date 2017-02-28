@@ -17,6 +17,7 @@ Proxmox Mail Gateway 5.0 News
 
 - removed option spam/use_ocr
 
+- no HTTP access (only HTTPS, also for user Quarantine)
 
 Incompatible changes:
 ---------------------
