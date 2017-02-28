@@ -49,11 +49,11 @@ __PACKAGE__->register_method ({
 
 	return [
 	    { subdir => 'objects' },
-	    { subdir => 'sender' },
+	    { subdir => 'email' },
 	    { subdir => 'receiver' },
-	    { subdir => 'sender_domain' },
+	    { subdir => 'domain' },
 	    { subdir => 'receiver_domain' },
-	    { subdir => 'sender_regex' },
+	    { subdir => 'regex' },
 	    { subdir => 'receiver_regex' },
 	    { subdir => 'ip' },
 	    { subdir => 'network' },
@@ -135,13 +135,13 @@ __PACKAGE__->register_method ({
     }});
 
 
-PMG::RuleDB::EMail->register_api(__PACKAGE__, 'sender', undef, 1);
+PMG::RuleDB::EMail->register_api(__PACKAGE__, 'email', undef, 1);
 PMG::RuleDB::Receiver->register_api(__PACKAGE__, 'receiver', undef, 1);
 
-PMG::RuleDB::Domain->register_api(__PACKAGE__, 'sender_domain', undef, 1);
+PMG::RuleDB::Domain->register_api(__PACKAGE__, 'domain', undef, 1);
 PMG::RuleDB::ReceiverDomain->register_api(__PACKAGE__, 'receiver_domain', undef, 1);
 
-PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'sender_regex', undef, 1);
+PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'regex', undef, 1);
 PMG::RuleDB::ReceiverRegex->register_api(__PACKAGE__, 'receiver_regex', undef, 1);
 
 PMG::RuleDB::IPAddress->register_api(__PACKAGE__, 'ip', undef, 1);
