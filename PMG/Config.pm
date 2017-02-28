@@ -142,11 +142,6 @@ sub properties {
 	    type => 'boolean',
 	    default => 1,
 	},
-	use_ocr => {
-	    description => "Enable OCR to scan pictures.",
-	    type => 'boolean',
-	    default => 0,
-	},
 	wl_bounce_relays => {
 	    description => "Whitelist legitimate bounce relays.",
 	    type => 'string',
@@ -176,7 +171,6 @@ sub options {
     return {
 	use_awl => { optional => 1 },
 	use_razor => { optional => 1 },
-	use_ocr => { optional => 1 },
 	wl_bounce_relays => { optional => 1 },
 	languages => { optional => 1 },
 	use_bayes => { optional => 1 },

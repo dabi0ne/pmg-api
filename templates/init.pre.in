@@ -26,9 +26,5 @@ loadplugin Mail::SpamAssassin::Plugin::Hashcash
 loadplugin Mail::SpamAssassin::Plugin::SPF
 [% END %]
 
-[% IF pmg.spam.use_ocr %]
-loadplugin FuzzyOcr /usr/share/perl5/Mail/SpamAssassin/Plugin/FuzzyOcr.pm
-[% END %]
-
 # we do not load dkim currently
 #loadplugin Mail::SpamAssassin::Plugin::DKIM 
