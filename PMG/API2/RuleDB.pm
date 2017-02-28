@@ -38,7 +38,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
-	    { name => 'actions' },
+	    { name => 'action' },
 	    { name => 'rules' },
 	    { name => 'what' },
 	    { name => 'when' },
@@ -76,16 +76,17 @@ __PACKAGE__->register_method({
 	items => {
 	    type => "object",
 	    properties => {
-	    }
-	}
+		id => { type => 'integer' },
+	    },
+	},
+	links => [ { rel => 'child', href => "{id}" } ],
     },
     code => sub {
 	my ($param) = @_;
 
-	my $dbh = PMG::DBTools::open_ruledb();
-	my $ruledb = PMG::RuleDB->new($dbh);
+	my $rdb = PMG::RuleDB->new();
 
-	my $rules = $ruledb->load_rules();
+	my $rules = $rdb->load_rules();
 
 	my $res = [];
 
@@ -99,7 +100,7 @@ __PACKAGE__->register_method({
 
 	foreach my $rule (@$rules) {
 	    my ($from, $to, $when, $what, $action) =
-		$ruledb->load_groups($rule);
+		$rdb->load_groups($rule);
 
 	    my $data = {
 		id =>  $rule->{id},
@@ -117,134 +118,91 @@ __PACKAGE__->register_method({
 	    push @$res, $data;
 	}
 
-	$ruledb->close();
+	$rdb->close();
 
 	return $res;
     }});
 
-__PACKAGE__->register_method({
-    name => 'list_actions',
-    path => 'actions',
-    method => 'GET',
-    description => "Get list of 'action' objects.",
-    proxyto => 'master',
-    protected => 1,
-    parameters => {
-	additionalProperties => 0,
-	properties => {},
-    },
-    returns => {
-	type => 'array',
-	items => {
-	    type => "object",
+
+
+sub register_object_group_api {
+    my ($oclass) = @_;
+
+    __PACKAGE__->register_method({
+	name => "list_${oclass}_groups",
+	path => $oclass,
+	method => 'GET',
+	description => "Get list of '$oclass' groups.",
+	proxyto => 'master',
+	protected => 1,
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {},
+	},
+	returns => {
+	    type => 'array',
+	    items => {
+		type => "object",
+		properties => {
+		    id => { type => 'integer' },
+		},
+	    },
+	},
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $ogroups = $rdb->load_objectgroups($oclass);
+
+	    return $format_object_group->($ogroups);
+	}});
+
+    __PACKAGE__->register_method({
+	name => "create_${oclass}_group",
+	path => $oclass,
+	method => 'POST',
+	description => "Create a new '$oclass' group.",
+	proxyto => 'master',
+	protected => 1,
+	parameters => {
+	    additionalProperties => 0,
 	    properties => {
-	    }
-	}
-    },
-    code => sub {
-	my ($param) = @_;
+		name => {
+		    description => "Group name.",
+		    type => 'string',
+		    maxLength => 255,
+		},
+		info => {
+		    description => "Informational comment.",
+		    type => 'string',
+		    maxLength => 255,
+		    optional => 1,
+		},
+	    },
+	},
+	returns => { type => 'integer' },
+	code => sub {
+	    my ($param) = @_;
 
-	my $dbh = PMG::DBTools::open_ruledb();
-	my $ruledb = PMG::RuleDB->new($dbh);
+	    my $rdb = PMG::RuleDB->new();
 
-	my $ogroups = $ruledb->load_objectgroups('action');
+	    my $og = PMG::RuleDB::Group->new(
+		$param->{name}, $param->{info} // '', $oclass);
 
-	return $format_object_group->($ogroups);
-    }});
+	    return $rdb->save_group($og);
+	}});
+}
 
-__PACKAGE__->register_method({
-    name => 'list_what_objects',
-    path => 'what',
-    method => 'GET',
-    description => "Get list of 'what' objects.",
-    proxyto => 'master',
-    protected => 1,
-    parameters => {
-	additionalProperties => 0,
-	properties => {},
-    },
-    returns => {
-	type => 'array',
-	items => {
-	    type => "object",
-	    properties => {
-	    }
-	}
-    },
-    code => sub {
-	my ($param) = @_;
-
-	my $dbh = PMG::DBTools::open_ruledb();
-	my $ruledb = PMG::RuleDB->new($dbh);
-
-	my $ogroups = $ruledb->load_objectgroups('what');
-
-	return $format_object_group->($ogroups);
-    }});
-
-__PACKAGE__->register_method({
-    name => 'list_when_objects',
-    path => 'when',
-    method => 'GET',
-    description => "Get list of 'when' objects.",
-    proxyto => 'master',
-    protected => 1,
-    parameters => {
-	additionalProperties => 0,
-	properties => {},
-    },
-    returns => {
-	type => 'array',
-	items => {
-	    type => "object",
-	    properties => {
-	    }
-	}
-    },
-    code => sub {
-	my ($param) = @_;
-
-	my $dbh = PMG::DBTools::open_ruledb();
-	my $ruledb = PMG::RuleDB->new($dbh);
-
-	my $ogroups = $ruledb->load_objectgroups('when');
-
-	return $format_object_group->($ogroups);
-    }});
-
-__PACKAGE__->register_method({
-    name => 'list_who_objects',
-    path => 'who',
-    method => 'GET',
-    description => "Get list of 'who' objects.",
-    proxyto => 'master',
-    protected => 1,
-    parameters => {
-	additionalProperties => 0,
-	properties => {},
-    },
-    returns => {
-	type => 'array',
-	items => {
-	    type => "object",
-	    properties => {
-	    }
-	}
-    },
-    code => sub {
-	my ($param) = @_;
-
-	my $dbh = PMG::DBTools::open_ruledb();
-	my $ruledb = PMG::RuleDB->new($dbh);
-
-	my $ogroups = $ruledb->load_objectgroups('who');
-
-	return $format_object_group->($ogroups);
-    }});
+register_object_group_api('action');
+register_object_group_api('what');
+register_object_group_api('when');
+register_object_group_api('who');
 
 __PACKAGE__->register_method ({
     subclass => 'PMG::API2::Who',
     path => 'who/{ogroup}',
 });
+
 
 1;
