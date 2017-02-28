@@ -60,6 +60,12 @@ sub properties {
     };
 }
 
+sub get {
+    my ($self) = @_;
+
+    return { cidr => $self->{address} };
+}
+
 sub update {
     my ($self, $param) = @_;
 

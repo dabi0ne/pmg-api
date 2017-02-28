@@ -124,6 +124,12 @@ sub properties {
     };
 }
 
+sub get {
+    my ($self) = @_;
+
+    return { regex => $self->{address} };
+}
+
 sub update {
     my ($self, $param) = @_;
 

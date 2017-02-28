@@ -57,6 +57,12 @@ sub properties {
     };
 }
 
+sub get {
+    my ($self) = @_;
+
+    return { email => $self->{address} };
+}
+
 sub update {
     my ($self, $param) = @_;
 

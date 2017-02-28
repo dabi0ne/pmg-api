@@ -56,6 +56,12 @@ sub properties {
     };
 }
 
+sub get {
+    my ($self) = @_;
+
+    return { ip => $self->{address} };
+}
+
 sub update {
     my ($self, $param) = @_;
 
