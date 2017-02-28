@@ -118,17 +118,25 @@ sub short_desc {
     return "basic object";
 }
 
+sub get {
+    my ($self) = @_;
+
+    return undef;
+}
+
 sub get_data {
     my ($self) = @_;
 
-    return {
-	id => $self->{id},
-	ogroup => $self->{ogroup},
-	otype => $self->{otype},
-	otype_text => $self->otype_text(),
-	receivertest => $self->receivertest(),
-	descr => $self->short_desc(),
-    };
+    my $data = $self->get() // {};
+
+    $data->{id} = $self->{id};
+    $data->{ogroup} = $self->{ogroup};
+    $data->{otype} = $self->{otype};
+    $data->{otype_text} = $self->otype_text();
+    $data->{receivertest} = $self->receivertest();
+    $data->{descr} = $self->short_desc();
+
+    return $data;
 }
 
 my $load_object = sub {

@@ -64,6 +64,12 @@ sub properties {
     };
 }
 
+sub get {
+    my ($self) = @_;
+
+    return { domain => $self->{address} };
+}
+
 sub update {
     my ($self, $param) = @_;
 
