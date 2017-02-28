@@ -2,7 +2,6 @@ package PMG::MailQueue;
 
 use strict;
 use warnings;
-use Carp;
 
 use PVE::SafeSyslog;
 use MIME::Parser;
@@ -47,7 +46,7 @@ sub new_fileid {
     my $subsubdir = '';
 
     if (!($fh = IO::File->new ($path, 'w+', 0600))) {
-	croak "unable to create file '$path': $! : ERROR";
+	die "unable to create file '$path': $! : ERROR";
     }
 
     if (my $st = stat ($fh)) {
@@ -57,7 +56,7 @@ sub new_fileid {
 	}
     } else {
 	unlink $path;
-	croak "unable to stat file: $! : ERROR";
+	die "unable to stat file: $! : ERROR";
     }
 
     mkdir "$dir/$subdir/$subsubdir";
@@ -66,7 +65,7 @@ sub new_fileid {
 
     if (!rename ($path, "$dir/$subpath")) {
 	unlink $path;
-	croak "unable to rename file: ERROR";
+	die "unable to rename file: ERROR";
     }
 
     return ($fh, $uid, $subpath);
@@ -350,9 +349,9 @@ sub _new_mime_parser {
 
     # Create and set the output directory:
     (-d $self->{dumpdir} || mkdir ($self->{dumpdir} ,0755)) ||
-	croak "can't create $self->{dumpdir}: $! : ERROR";
+	die "can't create $self->{dumpdir}: $! : ERROR";
     (-w $self->{dumpdir}) ||
-	croak "can't write to directory $self->{dumpdir}: $! : ERROR";
+	die "can't write to directory $self->{dumpdir}: $! : ERROR";
 
     $parser->output_dir($self->{dumpdir});
 
@@ -371,7 +370,7 @@ sub parse_mail {
 
     eval {
 	if (!($entity = $parser->read($self->{fh}))) {
-	    croak "$self->{logid}: unable to parse message: ERROR";
+	    die "$self->{logid}: unable to parse message: ERROR";
 	}
     };
 

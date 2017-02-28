@@ -2,7 +2,6 @@ package PMG::RuleDB::MatchField;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 use MIME::Words;
@@ -49,12 +48,12 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined value: ERROR";;
+    defined($value) || die "undefined value: ERROR";;
 
     my ($field, $field_value) = $value =~ m/^([^:]*)\:(.*)$/;
 
-    defined($field) || croak "undefined object attribute: ERROR";
-    defined($field_value) || croak "undefined object attribute: ERROR";
+    defined($field) || die "undefined object attribute: ERROR";
+    defined($field_value) || die "undefined object attribute: ERROR";
 
     # use known constructor, bless afterwards (because sub class can have constructor
     # with other parameter signature).
@@ -71,7 +70,7 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined ogroup: ERROR";
+    defined($self->{ogroup}) || die "undefined ogroup: ERROR";
 
     my $new_value = "$self->{field}:$self->{field_value}";
     $new_value =~ s/\\/\\\\/g;

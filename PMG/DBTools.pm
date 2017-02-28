@@ -324,7 +324,7 @@ sub cond_create_dbtable {
     };
     if (my $err = $@) {
 	$dbh->rollback;
-       	croak $err;
+       	die $err;
     }
 }
 

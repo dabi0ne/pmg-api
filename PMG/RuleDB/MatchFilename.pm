@@ -2,7 +2,6 @@ package PMG::RuleDB::MatchFilename;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 use MIME::Words;
@@ -49,7 +48,7 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined value: ERROR";;
+    defined($value) || die "undefined value: ERROR";;
 
     my $obj = $class->new($value, $ogroup);
     $obj->{id} = $id;
@@ -62,7 +61,7 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined ogroup: ERROR";
+    defined($self->{ogroup}) || die "undefined ogroup: ERROR";
 
     my $new_value = $self->{fname};
     $new_value =~ s/\\/\\\\/g;

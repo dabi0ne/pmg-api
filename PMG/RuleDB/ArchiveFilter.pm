@@ -2,7 +2,6 @@ package PMG::RuleDB::ArchiveFilter;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use MIME::Words;
 

@@ -2,7 +2,6 @@ package PMG::RuleDB::Domain;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PMG::RuleDB::WhoRegex;

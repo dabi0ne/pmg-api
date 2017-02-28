@@ -2,7 +2,6 @@ package PMG::RuleDB::Spam;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 use Time::HiRes qw (gettimeofday);
@@ -55,7 +54,7 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined value: ERROR";
+    defined($value) || die "undefined value: ERROR";
 
     my $obj = $class->new($value, $ogroup);
     $obj->{id} = $id;
@@ -68,8 +67,8 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined ogroup: ERROR";
-    defined($self->{level}) || croak "undefined spam level: ERROR";
+    defined($self->{ogroup}) || die "undefined ogroup: ERROR";
+    defined($self->{level}) || die "undefined spam level: ERROR";
 
     if (defined ($self->{id})) {
 	# update

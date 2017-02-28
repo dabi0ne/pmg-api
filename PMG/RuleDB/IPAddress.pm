@@ -2,7 +2,6 @@ package PMG::RuleDB::IPAddress;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PMG::Utils;

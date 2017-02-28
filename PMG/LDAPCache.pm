@@ -2,7 +2,6 @@ package PMG::LDAPCache;
 
 use strict;
 use warnings;
-use Carp;
 use File::Path;
 use LockFile::Simple;
 use Net::LDAP;

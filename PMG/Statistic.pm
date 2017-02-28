@@ -2,7 +2,6 @@ package PMG::Statistic;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Time::Local;
 use Time::Zone;

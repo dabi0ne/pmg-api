@@ -2,7 +2,6 @@ package PMG::RuleDB::Quarantine;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 

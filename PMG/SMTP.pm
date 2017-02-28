@@ -2,7 +2,6 @@ package PMG::SMTP;
 
 use strict;
 use warnings;
-use Carp;
 use IO::Socket;
 
 use PVE::SafeSyslog;
@@ -14,7 +13,7 @@ sub new {
 
     my $class = ref($this) || $this;
 
-    croak("undefined socket: ERROR") if !defined($sock);
+    die("undefined socket: ERROR") if !defined($sock);
 
     my $self = {};
     $self->{sock} = $sock;

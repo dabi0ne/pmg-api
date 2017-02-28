@@ -2,7 +2,6 @@ package PMG::RuleDB::BCC;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PVE::SafeSyslog;
@@ -83,9 +82,9 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined object attribute: ERROR";
-    defined($self->{target}) || croak "undefined object attribute: ERROR";
-    defined($self->{original}) || croak "undefined object attribute: ERROR";
+    defined($self->{ogroup}) || die "undefined object attribute: ERROR";
+    defined($self->{target}) || die "undefined object attribute: ERROR";
+    defined($self->{original}) || die "undefined object attribute: ERROR";
 
     if ($self->{original}) {
 	$self->{original} = 1;

@@ -2,7 +2,6 @@ package PMG::RuleDB::Notify;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use MIME::Body;
 use MIME::Head;
@@ -87,7 +86,7 @@ sub load_attr {
    
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined object attribute: ERROR";
+    defined($value) || die "undefined object attribute: ERROR";
     
     my ($subject, $body, $attach);
 
@@ -116,10 +115,10 @@ sub load_attr {
 sub save {
     my ($self, $ruledb, $no_trans) = @_;
 
-    defined($self->{ogroup}) || croak "undefined object attribute: ERROR";
-    defined($self->{to}) || croak "undefined object attribute: ERROR";
-    defined($self->{subject}) || croak "undefined object attribute: ERROR";
-    defined($self->{body}) || croak "undefined object attribute: ERROR";
+    defined($self->{ogroup}) || die "undefined object attribute: ERROR";
+    defined($self->{to}) || die "undefined object attribute: ERROR";
+    defined($self->{subject}) || die "undefined object attribute: ERROR";
+    defined($self->{body}) || die "undefined object attribute: ERROR";
 
     if (defined ($self->{id})) {
 	# update

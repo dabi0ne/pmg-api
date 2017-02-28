@@ -2,7 +2,6 @@ package PMG::ModGroup;
 
 use strict;
 use warnings;
-use Carp;
 
 sub new {
     my ($type, $entity, $targets) = @_;

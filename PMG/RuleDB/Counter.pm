@@ -2,7 +2,6 @@ package PMG::RuleDB::Counter;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 
@@ -56,7 +55,7 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak ("undefined value: ERROR");
+    defined($value) || die "undefined value: ERROR";
 
     my $obj = $class->new($value, $ogroup);
     $obj->{id} = $id;
@@ -71,8 +70,8 @@ sub save {
     
     my $adr;
     
-    defined($self->{ogroup}) ||  croak ("undefined ogroup: ERROR");
-    defined($self->{count}) ||  croak ("undefined count: ERROR");
+    defined($self->{ogroup}) ||  die "undefined ogroup: ERROR";
+    defined($self->{count}) ||  die "undefined count: ERROR";
 
     if (defined ($self->{id})) {
 	# update
@@ -113,7 +112,7 @@ sub execute {
 
 	$sth->finish();
 
-	defined($ref->{'value'}) || croak ("undefined value: ERROR");
+	defined($ref->{'value'}) || die "undefined value: ERROR";
 
 	my $value = int($ref->{'value'}); 
 	

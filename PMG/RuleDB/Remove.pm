@@ -2,7 +2,6 @@ package PMG::RuleDB::Remove;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 use MIME::Words;
@@ -69,7 +68,7 @@ sub load_attr {
 
     my $class = ref($type) || $type;
 
-    defined ($value) || croak "undefined value: ERROR";
+    defined ($value) || die "undefined value: ERROR";
 
     my $obj;
 
@@ -89,7 +88,7 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined ogroup: ERROR";
+    defined($self->{ogroup}) || die "undefined ogroup: ERROR";
 
     my $value = $self->{all} ? '1' : '0';
 

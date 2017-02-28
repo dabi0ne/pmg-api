@@ -2,7 +2,6 @@ package PMG::RuleDB::WhoRegex;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 
@@ -46,7 +45,7 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined value: ERROR";
+    defined($value) || die "undefined value: ERROR";
 
     my $obj = $class->new ($value, $ogroup);
     $obj->{id} = $id;
@@ -59,8 +58,8 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined ogroup: ERROR";
-    defined($self->{address}) || croak "undefined address: ERROR";
+    defined($self->{ogroup}) || die "undefined ogroup: ERROR";
+    defined($self->{address}) || die "undefined address: ERROR";
 
     my $adr = $self->{address};
     $adr =~ s/\\/\\\\/g;

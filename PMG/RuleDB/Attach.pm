@@ -2,7 +2,6 @@ package PMG::RuleDB::Attach;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 
@@ -75,7 +74,7 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined object attribute: ERROR";
+    defined($self->{ogroup}) || die "undefined object attribute: ERROR";
 
     if (defined ($self->{id})) {
 	# update not needed

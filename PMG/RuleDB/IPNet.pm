@@ -2,7 +2,6 @@ package PMG::RuleDB::IPNet;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Net::CIDR::Lite;
 

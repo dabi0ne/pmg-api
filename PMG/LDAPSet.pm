@@ -2,7 +2,6 @@ package PMG::LDAPSet;
 
 use strict;
 use warnings;
-use Carp;
 
 use PVE::SafeSyslog;
 

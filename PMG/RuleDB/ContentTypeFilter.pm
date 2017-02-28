@@ -2,7 +2,6 @@ package PMG::RuleDB::ContentTypeFilter;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PVE::SafeSyslog;
@@ -36,7 +35,7 @@ my $oldtypemap = {
 
 sub load_mime_types {
     open(DAT, "/usr/share/mime/globs") || 
-	croak ("Could not open file $!: ERROR");
+	die ("Could not open file $!: ERROR");
 
     while (my $row = <DAT>) {
         next if $row =~ m/^\#/;

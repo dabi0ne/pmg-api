@@ -2,7 +2,6 @@ package PMG::RuleDB::Disclaimer;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 use Digest::SHA;
 use HTML::Parser;
@@ -78,7 +77,7 @@ sub load_attr {
     
     my $class = ref($type) || $type;
 
-    defined($value) || croak "undefined object attribute: ERROR";
+    defined($value) || die "undefined object attribute: ERROR";
   
     my $obj = $class->new($value, $ogroup);
 
@@ -92,8 +91,8 @@ sub load_attr {
 sub save {
     my ($self, $ruledb) = @_;
 
-    defined($self->{ogroup}) || croak "undefined object attribute: ERROR";
-    defined($self->{value}) || croak "undefined object attribute: ERROR";
+    defined($self->{ogroup}) || die "undefined object attribute: ERROR";
+    defined($self->{value}) || die "undefined object attribute: ERROR";
 
     if (defined ($self->{id})) {
 	# update

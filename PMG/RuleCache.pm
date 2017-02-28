@@ -3,7 +3,6 @@ package PMG::RuleCache;
 use strict;
 use warnings;
 use DBI;
-use Carp;
 
 use PVE::SafeSyslog;
 
@@ -168,7 +167,7 @@ sub new {
 sub final {
     my ($self, $ruleid) = @_;
 
-    defined($ruleid) || croak ("undefined rule id: ERROR");
+    defined($ruleid) || die "undefined rule id: ERROR";
 
     return $self->{"$ruleid:final"};
 }
@@ -191,7 +190,7 @@ sub _get_object {
 	$self->{ocache}[$cid] = $obj;
     }
 
-    $obj || croak "unable to get object $objid: ERROR";
+    $obj || die "unable to get object $objid: ERROR";
 
     return $obj;
 }
@@ -199,7 +198,7 @@ sub _get_object {
 sub get_actions {
     my ($self, $ruleid) = @_;
 
-    defined($ruleid) || croak ("undefined rule id: ERROR");
+    defined($ruleid) || die "undefined rule id: ERROR";
 
     return $self->{"$ruleid:action"};
 }

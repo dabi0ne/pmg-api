@@ -2,7 +2,6 @@ package PMG::RuleDB::Accept;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PVE::SafeSyslog;

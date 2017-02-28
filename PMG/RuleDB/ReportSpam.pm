@@ -2,7 +2,6 @@ package PMG::RuleDB::ReportSpam;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PVE::SafeSyslog;

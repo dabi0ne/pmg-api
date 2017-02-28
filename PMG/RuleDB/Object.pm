@@ -2,7 +2,6 @@ package PMG::RuleDB::Object;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
 
 use PMG::Utils;
@@ -23,33 +22,33 @@ sub new {
 }
 
 sub save { 
-    croak "never call this method: ERROR"; 
+    die "never call this method: ERROR"; 
 }
 
 sub update {
     my ($self, $param) = @_;
 
-    croak "never call this method: ERROR";
+    die "never call this method: ERROR";
 }
 
 sub load_attr { 
-    croak "never call this method: ERROR"; 
+    die "never call this method: ERROR"; 
 }
 
 sub who_match {
-    croak "never call this method: ERROR";
+    die "never call this method: ERROR";
 }
 
 sub when_match {
-    croak "never call this method: ERROR";
+    die "never call this method: ERROR";
 }
 
 sub what_match {
-    croak "never call this method: ERROR";
+    die "never call this method: ERROR";
 }
 
 sub execute {
-    croak "never call this method: ERROR";
+    die "never call this method: ERROR";
 }
 
 sub final {
@@ -106,7 +105,7 @@ sub receivertest {
 }
 
 sub oclass { 
-    croak "never call this method: ERROR"; 
+    die "never call this method: ERROR"; 
 }
 
 sub id { 
