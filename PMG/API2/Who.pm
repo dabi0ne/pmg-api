@@ -61,6 +61,33 @@ __PACKAGE__->register_method ({
 
     }});
 
+__PACKAGE__->register_method({
+    name => 'delete_who_group',
+    path => '',
+    method => 'DELETE',
+    description => "Delete a 'who' group.",
+    proxyto => 'master',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    ogroup => {
+		description => "Object Group ID.",
+		type => 'integer',
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $rdb = PMG::RuleDB->new();
+
+	$rdb->delete_group($param->{ogroup});
+
+	return undef;
+    }});
+
 __PACKAGE__->register_method ({
     name => 'objects',
     path => 'objects',
