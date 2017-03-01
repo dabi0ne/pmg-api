@@ -180,6 +180,83 @@ sub options {
     };
 }
 
+package PMG::Config::SpamQuarantine;
+
+use strict;
+use warnings;
+
+use base qw(PMG::Config::Base);
+
+sub type {
+    return 'spamquar';
+}
+
+sub properties {
+    return {
+	lifetime => {
+	    description => "Quarantine life time (days)",
+	    type => 'integer',
+	    minimum => 1,
+	    default => 7,
+	},
+	authmode => {
+	    description => "Authentication mode to access the quarantine interface. Mode 'ticket' allows login using tickets sent with the daily spam report. Mode 'ldap' requires to login using an LDAP account. Finally, mode 'ldapticket' allows both ways.",
+	    type => 'string',
+	    enum => [qw(ticket ldap ldapticket)],
+	    default => 'ticket',
+	},
+	reportstyle => {
+	    description => "Spam report style.",
+	    type => 'string',
+	    enum => [qw(none short verbose outlook custom)],
+	    default => 'verbose',
+	},
+	viewimages => {
+	    description => "Allow to view images.",
+	    type => 'boolean',
+	    default => 1,
+	},
+	allowhrefs => {
+	    description => "Allow to view hyperlinks.",
+	    type => 'boolean',
+	    default => 1,
+	}
+    };
+}
+
+sub options {
+    return {
+	lifetime => { optional => 1 },
+	authmode => { optional => 1 },
+	reportstyle => { optional => 1 },
+	viewimages => { optional => 1 },
+	allowhrefs => { optional => 1 },
+    };
+}
+
+package PMG::Config::VirusQuarantine;
+
+use strict;
+use warnings;
+
+use base qw(PMG::Config::Base);
+
+sub type {
+    return 'virusquar';
+}
+
+sub properties {
+    return {};
+}
+
+sub options {
+    return {
+	lifetime => { optional => 1 },
+	viewimages => { optional => 1 },
+	allowhrefs => { optional => 1 },
+    };
+}
+
 package PMG::Config::ClamAV;
 
 use strict;
@@ -514,6 +591,8 @@ use PVE::JSONSchema;
 
 PMG::Config::Admin->register();
 PMG::Config::Mail->register();
+PMG::Config::SpamQuarantine->register();
+PMG::Config::VirusQuarantine->register();
 PMG::Config::Spam->register();
 PMG::Config::ClamAV->register();
 
