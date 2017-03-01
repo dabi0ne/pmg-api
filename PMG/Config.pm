@@ -220,12 +220,22 @@ sub properties {
 	    description => "Allow to view hyperlinks.",
 	    type => 'boolean',
 	    default => 1,
-	}
+	},
+	hostname => {
+	    description => "Quarantine Host. Usefule if you run a Cluster and want users to connect to a specific host.",
+	    type => 'string', format => 'address',
+	},
+	mailfrom => {
+	    description => "Text for 'From' header in daily spam report mails.",
+	    type => 'string',
+	},
     };
 }
 
 sub options {
     return {
+	mailfrom => { optional => 1 },
+	hostname => { optional => 1 },
 	lifetime => { optional => 1 },
 	authmode => { optional => 1 },
 	reportstyle => { optional => 1 },
