@@ -141,6 +141,38 @@ sub short_desc {
     return "$v";
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	start => {
+	    description => "Start time im minutes since 00:00.",
+	    type => 'integer',
+	    minimum => 0,
+	    maximum => 60*24,
+	},
+	end => {
+	    description => "End time im minutes since 00:00.",
+	    type => 'integer',
+	    minimum => 1,
+	    maximum => 60*24,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return { start => $self->{start}, end => $self->{end} };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{start} = $param->{start};
+    $self->{end} = $param->{end};
+}
+
 
 1;
 

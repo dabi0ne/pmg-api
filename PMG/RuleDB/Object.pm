@@ -104,6 +104,10 @@ sub short_desc {
     return "basic object";
 }
 
+sub properties {
+    die "never call this method: ERROR";
+}
+
 sub get {
     my ($self) = @_;
 
