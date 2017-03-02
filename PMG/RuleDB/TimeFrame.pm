@@ -22,6 +22,25 @@ sub otype_text {
     return 'TimeFrame';
 }
 
+my $hm_to_minutes = sub {
+    my ($hm) = @_;
+
+    if ($hm =~ m/^(\d+):(\d+)$/) {
+        my @tmp = split(/:/, $hm);
+	return $tmp[0]*60+$tmp[1];
+    }
+    return 0;
+};
+
+my $minutes_to_hm = sub {
+    my ($minutes) = @_;
+
+    my $hour = int($minutes/60);
+    my $rest = int($minutes%60);
+
+    return sprintf("%02d:%02d", $hour, $rest);
+};
+
 sub new {
     my ($type, $start, $end, $ogroup) = @_;
 
@@ -32,14 +51,12 @@ sub new {
     $start //= "00:00";
     $end //= "24:00";
 
+    # Note: allow H:i or integer format
     if ($start =~ m/:/) {
-        my @tmp = split(/:/, $start);
-        $start = $tmp[0]*60+$tmp[1];
+	$start = $hm_to_minutes->($start);
     }
-
     if ($end =~ m/:/) {
-        my @tmp = split(/:/, $end);
-        $end = $tmp[0]*60+$tmp[1];
+	$end = $hm_to_minutes->($end);
     }
 
     $self->{start} = $start;
@@ -75,8 +92,10 @@ sub save {
     defined($self->{start}) || return undef;
     defined($self->{end}) || return undef;
 
-    my $v = sprintf ("%d:%d-%d:%d", int ($self->{start} / 60), int ($self->{start} % 60),
-		     int ($self->{end} / 60), int ($self->{end} % 60));
+    my $start = $minutes_to_hm->($self->{start});
+    my $end = $minutes_to_hm->($self->{end});
+
+    my $v = "$start-$end";
 
     if (defined ($self->{id})) {
 	# update
@@ -120,12 +139,10 @@ sub when_match {
 sub short_desc {
     my $self = shift;
 
-    my $v = sprintf ("%d:%02d-%d:%02d",
-    int ($self->{start} / 60),
-    int ($self->{start} % 60 ),
-    int ($self->{end} / 60),
-    int ($self->{end} % 60));
-    return "$v";
+    my $start = $minutes_to_hm->($self->{start});
+    my $end = $minutes_to_hm->($self->{end});
+
+    return "$start-$end";
 }
 
 sub properties {
@@ -133,16 +150,14 @@ sub properties {
 
     return {
 	start => {
-	    description => "Start time im minutes since 00:00.",
-	    type => 'integer',
-	    minimum => 0,
-	    maximum => 60*24,
+	    description => "Start time in `H:i` format (00:00).",
+	    type => 'string',
+	    pattern => '\d?\d:\d?\d',
 	},
 	end => {
-	    description => "End time im minutes since 00:00.",
-	    type => 'integer',
-	    minimum => 1,
-	    maximum => 60*24,
+	    description => "End time in `H:i` format (00:00).",
+	    type => 'string',
+	    pattern => '\d?\d:\d?\d',
 	},
     };
 }
@@ -150,14 +165,17 @@ sub properties {
 sub get {
     my ($self) = @_;
 
-    return { start => $self->{start}, end => $self->{end} };
+    return {
+	start => $minutes_to_hm->($self->{start}),
+	end => $minutes_to_hm->($self->{end}),
+    };
 }
 
 sub update {
     my ($self, $param) = @_;
 
-    $self->{start} = $param->{start};
-    $self->{end} = $param->{end};
+    $self->{start} = $hm_to_minutes->($param->{start});
+    $self->{end} = $hm_to_minutes->($param->{end});
 }
 
 
