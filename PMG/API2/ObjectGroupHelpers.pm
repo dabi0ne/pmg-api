@@ -160,7 +160,12 @@ sub register_object_group_config_api {
 	    my $og = shift @$list ||
 		die "$oclass group '$param->{ogroup}' not found\n";
 
-	    return format_object_group($og);
+	    return {
+		id => $og->{id},
+		name => $og->{name},
+		info => $og->{info},
+	    };
+
 	}});
 
     $apiclass->register_method({
