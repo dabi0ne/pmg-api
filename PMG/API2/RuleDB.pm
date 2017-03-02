@@ -125,7 +125,7 @@ __PACKAGE__->register_method({
 
 
 
-sub register_object_group_api {
+sub register_group_list_api {
     my ($oclass) = @_;
 
     __PACKAGE__->register_method({
@@ -194,10 +194,10 @@ sub register_object_group_api {
 	}});
 }
 
-register_object_group_api('action');
-register_object_group_api('what');
-register_object_group_api('when');
-register_object_group_api('who');
+register_group_list_api('action');
+register_group_list_api('what');
+register_group_list_api('when');
+register_group_list_api('who');
 
 __PACKAGE__->register_method ({
     subclass => 'PMG::API2::Who',
