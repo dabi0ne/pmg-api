@@ -107,27 +107,14 @@ sub when_match {
 
     my $amin = $hour*60 + $min;
 
-    return $amin >= $self->{start} && $amin <= $self->{end}
-}
+    if ($self->{end} >= $self->{start}) {
 
-sub start {
-    my ($self, $v) = @_;
+	return $amin >= $self->{start} && $amin <= $self->{end};
 
-    if (defined ($v)) {
-	$self->{start} = $v;
+    } else {
+
+	return  ($amin <= $self->{end}) || ($amin >= $self->{start});
     }
-
-    $self->{start};
-}
-
-sub end {
-    my ($self, $v) = @_;
-
-    if (defined ($v)) {
-	$self->{end} = $v;
-    }
-
-    $self->{end};
 }
 
 sub short_desc {
@@ -197,3 +184,5 @@ End time im minutes since 00:00.
     $obj = PMG::RuleDB::TimeFrame->new(8*60+15, 16*60+30);
 
 Represent: 8:15 to 16:30
+
+Note: End time is allowed to be smaller that start time.
