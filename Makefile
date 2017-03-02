@@ -113,6 +113,7 @@ LIBSOURCES =				\
 	PMG/API2/SMTPWhitelist.pm	\
 	PMG/API2/Who.pm			\
 	PMG/API2/When.pm		\
+	PMG/API2/Action.pm		\
 	PMG/API2.pm
 
 all: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}

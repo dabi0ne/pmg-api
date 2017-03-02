@@ -166,7 +166,43 @@ sub execute {
 sub short_desc {
     my $self = shift;
 
-    return "send bcc to: $self->{target}";
+    my $descr = "send bcc to: $self->{target}";
+
+    $descr .= " (original)" if $self->{original};
+
+    return $descr;
+}
+
+sub properties {
+    my ($class) = @_;
+
+    return {
+	target => {
+	    description => "Send a Blind Carbon Copy to this email address.",
+	    type => 'string', format => 'email',
+	},
+	original =>{
+	    description => "Send the original, unmodified mail.",
+	    type => 'boolean',
+	    default => 1,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return { 
+	target => $self->{target}, 
+	original => $self->{original},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{target} = $param->{target};
+    $self->{original} = $param->{original} ? 1 : 0;
 }
 
 1;

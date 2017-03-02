@@ -16,6 +16,7 @@ use PMG::RuleDB;
 use PMG::API2::ObjectGroupHelpers;
 use PMG::API2::Who;
 use PMG::API2::When;
+use PMG::API2::Action;
 
 use base qw(PVE::RESTHandler);
 
@@ -120,9 +121,15 @@ PMG::API2::ObjectGroupHelpers::register_group_list_api(__PACKAGE__, 'when');
 PMG::API2::ObjectGroupHelpers::register_group_list_api(__PACKAGE__, 'who');
 
 __PACKAGE__->register_method ({
+    subclass => 'PMG::API2::Action',
+    path => 'action/{ogroup}',
+});
+
+__PACKAGE__->register_method ({
     subclass => 'PMG::API2::Who',
     path => 'who/{ogroup}',
 });
+
 __PACKAGE__->register_method ({
     subclass => 'PMG::API2::When',
     path => 'when/{ogroup}',
