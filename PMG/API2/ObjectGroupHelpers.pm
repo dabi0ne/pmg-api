@@ -94,4 +94,207 @@ sub register_group_list_api {
 	}});
 }
 
+sub register_delete_object_group_api {
+    my ($apiclass, $oclass, $path) = @_;
+
+    $apiclass->register_method({
+	name => 'delete_{$oclass}_group',
+	path => $path,
+	method => 'DELETE',
+	description => "Delete a '$oclass' group.",
+	proxyto => 'master',
+	protected => 1,
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		ogroup => {
+		    description => "Object Group ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => { type => 'null' },
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    $rdb->delete_group($param->{ogroup});
+
+	    return undef;
+	}});
+}
+
+sub register_object_group_config_api {
+    my ($apiclass, $oclass, $path) = @_;
+
+    $apiclass->register_method({
+	name => 'get_config',
+	path => $path,
+	method => 'GET',
+	description => "Get '$oclass' group properties",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		ogroup => {
+		    description => "Object Group ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => {
+	    type => "object",
+	    properties => {
+		id => { type => 'integer'},
+		name => { type => 'string' },
+		info => { type => 'string' },
+	    },
+	},
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $list = $rdb->load_objectgroups($oclass, $param->{ogroup});
+	    my $og = shift @$list ||
+		die "$oclass group '$param->{ogroup}' not found\n";
+
+	    return format_object_group($og);
+	}});
+
+    $apiclass->register_method({
+	name => 'set_config',
+	path => $path,
+	method => 'PUT',
+	description => "Modify who group properties",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		ogroup => {
+		    description => "Object Group ID.",
+		    type => 'integer',
+		},
+		name => {
+		    description => "Group name.",
+		    type => 'string',
+		    maxLength => 255,
+		    optional => 1,
+		},
+		info => {
+		    description => "Informational comment.",
+		    type => 'string',
+		    maxLength => 255,
+		    optional => 1,
+		},
+	    },
+	},
+	returns => { type => "null" },
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $ogroup = extract_param($param, 'ogroup');
+
+	    die "no options specified\n"
+		if !scalar(keys %$param);
+
+	    my $list = $rdb->load_objectgroups($oclass, $ogroup);
+	    my $og = shift @$list ||
+		die "$oclass group '$ogroup' not found\n";
+
+	    $og->{name} = $param->{name} if defined($param->{name});
+	    $og->{info} = $param->{info} if defined($param->{info});
+
+	    $rdb->save_group($og);
+
+	    return undef;
+	}});
+}
+
+sub register_objects_api {
+    my ($apiclass, $oclass, $path) = @_;
+
+
+    # fixme:
+    # $conn->reload_ruledb ();
+
+    $apiclass->register_method({
+	name => 'objects',
+	path => $path,
+	method => 'GET',
+	description => "List '$oclass' group objects.",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		ogroup => {
+		    description => "Object Group ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => {
+	    type => 'array',
+	    items => {
+		type => "object",
+		properties => {
+		    id => { type => 'integer'},
+		},
+	    },
+	    links => [ { rel => 'child', href => "{id}" } ],
+	},
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $og = $rdb->load_group_objects($param->{ogroup});
+
+	    my $res = [];
+
+	    foreach my $obj (@$og) {
+		push @$res, $obj->get_data();
+	    }
+
+	    return $res;
+	}});
+
+    $apiclass->register_method({
+	name => 'delete_object',
+	path => 'objects/{id}',
+	method => 'DELETE',
+	description => "Remove an object from the '$oclass' group.",
+	proxyto => 'master',
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		ogroup => {
+		    description => "Object Group ID.",
+		    type => 'integer',
+		},
+		id => {
+		    description => "Object ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => { type => 'null' },
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $obj = $rdb->load_object($param->{id});
+
+	    die "object '$param->{id}' does not exists\n" if !defined($obj);
+
+	    $rdb->delete_object($obj);
+
+	    return undef;
+	}});
+}
+
 1;
