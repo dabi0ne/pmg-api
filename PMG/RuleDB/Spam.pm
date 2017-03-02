@@ -26,15 +26,6 @@ sub otype_text {
     return 'Spam Filter';
 }
 
-sub oicon {
-    return 'spam.gif';
-}
-
-
-sub oinfo {
-    return 'Mark all Spam-Emails.';
-}
-
 sub new {
     my ($type, $level, $ogroup) = @_;
     

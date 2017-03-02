@@ -16,15 +16,6 @@ sub otype_text {
     return 'Domain';
 }
 
-sub oicon {
-    return 'domain.gif';
-}
-
-sub oconfigsite {
-    # fixme: ???
-    return 'item_domain.epl';
-}
-
 sub new {
     my ($type, $address, $ogroup) = @_;
 

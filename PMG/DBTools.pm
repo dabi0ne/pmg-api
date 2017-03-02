@@ -429,7 +429,7 @@ sub cond_create_action_quarantine {
 	    my $obj = PMG::RuleDB::Quarantine->new ();
 	    my $txt = decode_entities(PMG::RuleDB::Quarantine->otype_text);
 	    my $quarantine = $ruledb->create_group_with_obj
-		($obj, $txt, PMG::RuleDB::Quarantine->oinfo);
+		($obj, $txt, 'Move to quarantine.');
 	}
     };
 }

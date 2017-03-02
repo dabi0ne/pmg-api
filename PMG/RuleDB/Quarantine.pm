@@ -25,15 +25,6 @@ sub otype_text {
     return 'Quarantine';
 }
 
-sub oinfo {
-    return 'Move to quarantine.';
-}
-
-sub oicon {
-    # fixme:
-    return 'accept.gif';
-}
-
 sub oisedit {
     return 0;   
 }
@@ -131,7 +122,7 @@ sub execute {
 sub short_desc {
     my $self = shift;
 
-    return oinfo();
+    return 'Move to quarantine.';
 }
 
 1;

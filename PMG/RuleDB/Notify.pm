@@ -32,10 +32,6 @@ sub oicon {
     return 'notify.gif';
 }
 
-sub oinfo {
-    return 'Send a notification Mail';
-}
-
 sub final {
     return 0;
 }

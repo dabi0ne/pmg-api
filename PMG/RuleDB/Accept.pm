@@ -25,14 +25,6 @@ sub otype_text {
     return 'Accept';
 }
 
-sub oicon {
-    return 'accept.gif';
-}
-
-sub oinfo {
-    return 'Accept mail for delivery.';
-}
-
 sub oisedit {
     return 0;   
 }

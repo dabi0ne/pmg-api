@@ -23,14 +23,6 @@ sub otype_text {
     return 'Match Filename';
 }
 
-sub oicon {
-    return 'matchfile.gif';
-}
-
-sub oinfo {
-    return 'Filter attachments based on filenames or extensions';
-}
-
 sub new {
     my ($type, $fname, $ogroup) = @_;
     

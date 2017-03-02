@@ -28,10 +28,6 @@ sub oicon {
     return 'bcc.gif';
 }
 
-sub oinfo {
-    return 'Blind carbon copy.';
-}
-
 sub oisedit {
     return 1;
 }

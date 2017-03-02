@@ -24,18 +24,6 @@ sub otype_text {
     return 'Counter';
 }
 
-sub oicon {
-    return 'counter.gif';
-}
-
-sub oconfigsite {
-    return 'item_counter.epl';
-}
-
-sub oinfo {
-    return 'Counter to gather statisical data.';
-}
-
 sub new {
     my ($type, $count, $ogroup) = @_;
     

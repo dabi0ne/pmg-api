@@ -85,20 +85,6 @@ sub otype_text {
     return "object"; 
 }
 
-sub oicon { 
-    my $self = shift;  
-
-    return "def_icon.gif"; 
-}
-
-sub oconfigsite { 
-    return undef; 
-}
-
-sub oinfo { 
-    return 'object'; 
-}
-
 # some who object only matches 'receivers'
 sub receivertest {
     return 0;

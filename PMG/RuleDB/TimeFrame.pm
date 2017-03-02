@@ -22,20 +22,6 @@ sub otype_text {
     return 'TimeFrame';
 }
 
-sub oicon {
-    return 'timeframe.gif';
-}
-
-sub oconfigsite {
-    # fixme:
-    return 'item_timeframe.epl';
-}
-
-sub oinfo {
-    # fixme:
-    return 'e.g. 12:00 - 13:00';
-}
-
 sub new {
     my ($type, $start, $end, $ogroup) = @_;
 

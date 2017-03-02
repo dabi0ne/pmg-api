@@ -28,18 +28,6 @@ sub otype_text {
     return 'Disclaimer';
 }
 
-sub oicon {
-    return 'attach.gif';
-}
-
-sub oconfigsite {
-    return '';
-}
-
-sub oinfo {
-    return 'Add a Disclaimer';
-}
-
 sub oisedit {
     return 1;   
 }

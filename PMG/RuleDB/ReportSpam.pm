@@ -24,14 +24,6 @@ sub otype_text {
     return 'Report Spam';
 }
 
-sub oicon {
-    return 'accept.gif';
-}
-
-sub oinfo {
-    return 'Report Mail as Spam.';
-}
-
 sub oisedit {
     return 0;   
 }

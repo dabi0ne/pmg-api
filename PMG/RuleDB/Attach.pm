@@ -24,18 +24,6 @@ sub otype_text {
     return 'Attach';
 }
 
-sub oicon {
-    return 'attach.gif';
-}
-
-sub oconfigsite {
-    return '';
-}
-
-sub oinfo {
-    return 'Attach Data to Mail';
-}
-
 sub oisedit {
     return 0;
 }

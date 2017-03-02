@@ -138,42 +138,6 @@ sub save_group {
     return undef;
 }
 
-sub new_action {
-    my ($self, $obj) = @_;
-
-    my $og;
-
-    defined($obj) || die "proxmox: undefined object";
-
-    eval {
-
-	$self->{dbh}->begin_work;
-
-        $self->{dbh}->do("INSERT INTO Objectgroup " .
-			  "(Name, Info, Class) " .
-			  "VALUES (?, ?, ?)", undef,
-			  decode_entities($obj->otype_text()),
-			  $obj->oinfo(),
-			  $obj->oclass());
-
-	my $lid = PMG::Utils::lastid($self->{dbh}, 'objectgroup_id_seq');
-
-	$og = PMG::RuleDB::Group->new();
-	$og->{id} = $lid;
-
-	$obj->{ogroup} = $lid;
-	$obj->save($self, 1);
-
-        $self->{dbh}->commit;
-    };
-    if (my $err = $@) {
-	$self->{dbh}->rollback;
-	die $err;
-    }
-
-    return $og;
-}
-
 sub delete_group {
     my ($self, $groupid) = @_;
 

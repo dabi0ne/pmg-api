@@ -28,14 +28,6 @@ sub oclass {
     return 'action';
 }
 
-sub oicon {
-    return 'remove.gif';
-}
-
-sub oinfo {
-    return 'Remove attachments';
-}
-
 sub oisedit {
     return 1;
 }
