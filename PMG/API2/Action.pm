@@ -18,6 +18,8 @@ use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
 
+# fixme: $conn->reload_ruledb ();
+
 my $id_property = {
     description => "Action Object ID.",
     type => 'string',
@@ -131,6 +133,9 @@ __PACKAGE__->register_method ({
 	my $rdb = PMG::RuleDB->new();
 	# test if object exists
 	my ($og, $action) = $load_action_with_og->($rdb, $param->{id});
+
+	die "unable to delete standard actions" if !$action->oisedit();
+
 	$rdb->delete_group($og->{id});
 
 	return undef;
