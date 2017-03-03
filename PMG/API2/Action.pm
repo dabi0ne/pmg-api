@@ -200,7 +200,7 @@ my $register_action_api = sub {
 	    my $obj = $rdb->get_object($otype);
 	    $obj->update($param);
 
-	    my $og = $rdb->new_action($obj, $param->{name}, $param->{info});
+	    my $og = $rdb->create_group_with_obj($obj, $param->{name}, $param->{info});
 
 	    return "$og->{id}_$obj->{id}";
 	}});

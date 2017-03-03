@@ -61,7 +61,7 @@ sub close {
     $self->{dbh}->disconnect();
 }
 
-sub new_action {
+sub create_group_with_obj {
     my ($self, $obj, $name, $info) = @_;
 
     my $og;
@@ -643,16 +643,6 @@ sub delete_testrules {
     }
 
     return 1;
-}
-
-sub create_group_with_obj {
-    my ($self, $obj, $name, $desc) = @_;
-
-    my $og = PMG::RuleDB::Group->new($name, $desc, $obj->oclass());
-    $self->save_group($og);
-    $self->group_add_object($og, $obj);
-
-    return $og;
 }
 
 sub rule_add_group {
