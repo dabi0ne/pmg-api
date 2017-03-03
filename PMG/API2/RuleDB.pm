@@ -116,15 +116,14 @@ __PACKAGE__->register_method({
     }});
 
 
-PMG::API2::ObjectGroupHelpers::register_group_list_api(__PACKAGE__, 'action');
+__PACKAGE__->register_method ({
+    subclass => 'PMG::API2::Action',
+    path => 'action',
+});
+
 PMG::API2::ObjectGroupHelpers::register_group_list_api(__PACKAGE__, 'what');
 PMG::API2::ObjectGroupHelpers::register_group_list_api(__PACKAGE__, 'when');
 PMG::API2::ObjectGroupHelpers::register_group_list_api(__PACKAGE__, 'who');
-
-__PACKAGE__->register_method ({
-    subclass => 'PMG::API2::Action',
-    path => 'action/{ogroup}',
-});
 
 __PACKAGE__->register_method ({
     subclass => 'PMG::API2::Who',

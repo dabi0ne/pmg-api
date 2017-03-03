@@ -129,22 +129,6 @@ sub get_data {
     return $data;
 }
 
-my $load_object = sub {
-    my ($rdb, $id, $gid, $exp_otype) = @_;
-
-    my $obj = $rdb->load_object($id);
-    die "object '$id' does not exists\n" if !defined($obj);
-
-    my $otype = $obj->otype();
-    die "wrong object type ($otype != $exp_otype)\n"
-	if $otype != $exp_otype;
-
-    die "wrong object group ($obj->{ogroup} != $gid)\n"
-	if $obj->{ogroup} != $gid;
-
-    return $obj;
-};
-
 sub register_api {
     my ($class, $apiclass, $name, $path, $use_greylist_gid) = @_;
 
@@ -238,7 +222,7 @@ sub register_api {
 	    my $gid = $use_greylist_gid ?
 		$rdb->greylistexclusion_groupid() : $param->{ogroup};
 
-	    my $obj = $load_object->($rdb, $param->{id}, $gid, $otype);
+	    my $obj = $rdb->load_object_full($param->{id}, $gid, $otype);
 
 	    return $obj->get_data();
 	}});
@@ -262,7 +246,7 @@ sub register_api {
 	    my $gid = $use_greylist_gid ?
 		$rdb->greylistexclusion_groupid() : $param->{ogroup};
 
-	    my $obj = $load_object->($rdb, $param->{id}, $gid, $otype);
+	    my $obj = $rdb->load_object_full($param->{id}, $gid, $otype);
 
 	    $obj->update($param);
 

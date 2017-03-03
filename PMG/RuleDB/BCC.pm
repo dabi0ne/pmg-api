@@ -184,6 +184,7 @@ sub properties {
 	original =>{
 	    description => "Send the original, unmodified mail.",
 	    type => 'boolean',
+	    optional => 1,
 	    default => 1,
 	},
     };
