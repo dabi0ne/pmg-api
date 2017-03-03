@@ -18,6 +18,38 @@ use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
 
+my $id_property = {
+    description => "Action Object ID.",
+    type => 'string',
+    pattern => '\d+_\d+',
+};
+
+my $format_action_object = sub {
+    my ($og, $action) = @_;
+
+    my $data = $action->get_data();
+    $data->{id} = "$data->{ogroup}_$data->{id}";
+    $data->{name} = $og->{name};
+    $data->{info} = $og->{info};
+    delete $data->{ogroup};
+
+    return $data;
+};
+
+my $load_action_with_og = sub {
+    my ($rdb, $id, $exp_otype) = @_;
+
+    die "internal error" if $id !~ m/^(\d+)_(\d+)$/;
+    my ($ogroup, $objid) = ($1, $2);
+
+    my $list = $rdb->load_objectgroups('action', $ogroup);
+    my $og = shift @$list ||
+	die "action group '$ogroup' not found\n";
+
+    my $action = $rdb->load_object_full($objid, $ogroup, $exp_otype);
+
+    return ($og, $action);
+};
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -48,22 +80,6 @@ __PACKAGE__->register_method ({
 
     }});
 
-my $id_property = {
-    description => "Action Object ID.",
-    type => 'string',
-    pattern => '\d+_\d+',
-};
-
-my $format_action_object = sub {
-    my ($action) = @_;
-
-    my $data = $action->get_data();
-    $data->{id} = "$data->{ogroup}_$data->{id}";
-    delete $data->{ogroup};
-
-    return $data;
-};
-
 __PACKAGE__->register_method ({
     name => 'list_actions',
     path => 'objects',
@@ -93,7 +109,7 @@ __PACKAGE__->register_method ({
 	foreach my $og (@$ogroups) {
 	    my $action = $og->{action};
 	    next if !$action;
-	    push @$res, $format_action_object->($action);
+	    push @$res, $format_action_object->($og, $action);
 	}
 
 	return $res;
@@ -113,14 +129,9 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $rdb = PMG::RuleDB->new();
-
-	die "internal error" if $param->{id} !~ m/^(\d+)_(\d+)$/;
-	my ($ogroup, $objid) = ($1, $2);
-
 	# test if object exists
-	$rdb->load_object_full($objid, $ogroup);
-
-	$rdb->delete_group($ogroup);
+	my ($og, $action) = $load_action_with_og->($rdb, $param->{id});
+	$rdb->delete_group($og->{id});
 
 	return undef;
     }});
@@ -132,8 +143,34 @@ my $register_action_api = sub {
     my $otype_text = $class->otype_text();
     my $properties = $class->properties();
 
-    my $create_properties = {};
-    my $update_properties = { id => $id_property };
+    my $create_properties = {
+	name => {
+	    description => "Action name.",
+	    type => 'string',
+	    maxLength => 255,
+	},
+	info => {
+	    description => "Informational comment.",
+	    type => 'string',
+	    maxLength => 255,
+	    optional => 1,
+	},
+    };
+    my $update_properties = {
+	id => $id_property,
+	name => {
+	    description => "Action name.",
+	    type => 'string',
+	    maxLength => 255,
+	    optional => 1,
+	},
+	info => {
+	    description => "Informational comment.",
+	    type => 'string',
+	    maxLength => 255,
+	    optional => 1,
+	},
+    };
     my $read_properties = { id => $id_property };
 
     foreach my $key (keys %$properties) {
@@ -163,7 +200,7 @@ my $register_action_api = sub {
 	    my $obj = $rdb->get_object($otype);
 	    $obj->update($param);
 
-	    my $og = $rdb->new_action($obj);
+	    my $og = $rdb->new_action($obj, $param->{name}, $param->{info});
 
 	    return "$og->{id}_$obj->{id}";
 	}});
@@ -189,12 +226,9 @@ my $register_action_api = sub {
 
 	    my $rdb = PMG::RuleDB->new();
 
-	    die "internal error" if $param->{id} !~ m/^(\d+)_(\d+)$/;
-	    my ($ogroup, $objid) = ($1, $2);
+	    my ($og, $action) = $load_action_with_og->($rdb, $param->{id}, $otype);
 
-	    my $action = $rdb->load_object_full($objid, $ogroup, $otype);
-
-	    return $format_action_object->($action);
+	    return $format_action_object->($og, $action);
 	}});
 
     __PACKAGE__->register_method ({
@@ -213,10 +247,21 @@ my $register_action_api = sub {
 
 	    my $rdb = PMG::RuleDB->new();
 
-	    die "internal error" if $param->{id} !~ m/^(\d+)_(\d+)$/;
-	    my ($ogroup, $objid) = ($1, $2);
+	    my ($og, $action) = $load_action_with_og->($rdb, $param->{id}, $otype);
 
-	    my $action = $rdb->load_object_full($objid, $ogroup, $otype);
+	    my $name = extract_param($param, 'name');
+	    my $info = extract_param($param, 'info');
+
+	    if (defined($name) || defined($info)) {
+		$og->{name} = $name if defined($name);
+		$og->{info} = $info if defined($info);
+		$rdb->save_group($og);
+
+		return undef if !scalar(keys %$param); # we are done
+	    }
+
+	    die "no options specified\n"
+		if !scalar(keys %$param);
 
 	    $action->update($param);
 

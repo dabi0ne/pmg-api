@@ -62,24 +62,27 @@ sub close {
 }
 
 sub new_action {
-    my ($self, $obj) = @_;
+    my ($self, $obj, $name, $info) = @_;
 
     my $og;
     my $id;
 
     defined($obj) || die "proxmox: undefined object";
 
+    $name //= '';
+    $info //= '';
+
     eval {
 
 	$self->{dbh}->begin_work;
 
-        $self->{dbh}->do ("INSERT INTO Objectgroup (Name, Info, Class) " .
-			  "VALUES (?, ?, ?)", undef,
-			  decode_entities($obj->otype_text()), '', $obj->oclass());
+        $self->{dbh}->do("INSERT INTO Objectgroup (Name, Info, Class) " .
+			 "VALUES (?, ?, ?)", undef,
+			 $name, $info, $obj->oclass());
 
 	my $lid = PMG::Utils::lastid($self->{dbh}, 'objectgroup_id_seq');
 
-	$og = PMG::RuleDB::Group->new();
+	my $og = PMG::RuleDB::Group->new($name, $info, $obj->oclass());
 	$og->{id} = $lid;
 
 	$obj->{ogroup} = $lid;
