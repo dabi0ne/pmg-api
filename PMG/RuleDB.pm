@@ -61,6 +61,40 @@ sub close {
     $self->{dbh}->disconnect();
 }
 
+sub new_action {
+    my ($self, $obj) = @_;
+
+    my $og;
+    my $id;
+
+    defined($obj) || die "proxmox: undefined object";
+
+    eval {
+
+	$self->{dbh}->begin_work;
+
+        $self->{dbh}->do ("INSERT INTO Objectgroup (Name, Info, Class) " .
+			  "VALUES (?, ?, ?)", undef,
+			  decode_entities($obj->otype_text()), '', $obj->oclass());
+
+	my $lid = PMG::Utils::lastid($self->{dbh}, 'objectgroup_id_seq');
+
+	$og = PMG::RuleDB::Group->new();
+	$og->{id} = $lid;
+
+	$obj->{ogroup} = $lid;
+	$id = $obj->save($self, 1);
+	$obj->{id} = $id; # just to be sure
+
+        $self->{dbh}->commit;
+    };
+    if (my $err = $@) {
+	$self->{dbh}->rollback;
+	die $err;
+    }
+    return $og;
+}
+
 sub load_groups {
     my ($self, $rule) = @_;
 
@@ -386,6 +420,22 @@ sub load_object {
     my $obj = $self->get_object($otype);
 
     $obj->load_attr($self, $objid, $ogroup, $value);
+}
+
+sub load_object_full {
+    my ($self, $id, $gid, $exp_otype) = @_;
+
+    my $obj = $self->load_object($id);
+    die "object '$id' does not exists\n" if !defined($obj);
+
+    my $otype = $obj->otype();
+    die "wrong object type ($otype != $exp_otype)\n"
+	if defined($exp_otype) && $otype != $exp_otype;
+
+    die "wrong object group ($obj->{ogroup} != $gid)\n"
+	if $obj->{ogroup} != $gid;
+
+    return $obj;
 }
 
 sub load_group_by_name {
