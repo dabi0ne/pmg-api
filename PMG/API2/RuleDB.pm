@@ -99,6 +99,7 @@ __PACKAGE__->register_method({
 		name => $rule->{name},
 		priority => $rule->{priority},
 		active => $rule->{active},
+		direction => $rule->{direction},
 	    };
 
 	    $cond_create_group->($data, 'from', $from);
