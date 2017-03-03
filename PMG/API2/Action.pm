@@ -134,7 +134,7 @@ __PACKAGE__->register_method ({
 	# test if object exists
 	my ($og, $action) = $load_action_with_og->($rdb, $param->{id});
 
-	die "unable to delete standard actions" if !$action->oisedit();
+	die "unable to delete standard actions\n" if !$action->oisedit();
 
 	$rdb->delete_group($og->{id});
 
