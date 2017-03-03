@@ -82,7 +82,7 @@ sub create_group_with_obj {
 
 	my $lid = PMG::Utils::lastid($self->{dbh}, 'objectgroup_id_seq');
 
-	my $og = PMG::RuleDB::Group->new($name, $info, $obj->oclass());
+	$og = PMG::RuleDB::Group->new($name, $info, $obj->oclass());
 	$og->{id} = $lid;
 
 	$obj->{ogroup} = $lid;
