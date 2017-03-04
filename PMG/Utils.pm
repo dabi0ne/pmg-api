@@ -522,10 +522,20 @@ sub clamav_dbstat {
     $filename = "/var/lib/clamav/bytecode.cvd";
     $read_cvd_info->('bytecode', $filename) if -f $filename;
 
+    my $ss_dbs_fn = "/var/lib/clamav-unofficial-sigs/configs/ss-include-dbs.txt";
+    my $ss_dbs_files = {};
+    if (my $ssfh = IO::File->new("<${ss_dbs_fn}")) {
+	while (defined(my $line = <$ssfh>)) {
+	    chomp $line;
+	    $ss_dbs_files->{$line} = 1;
+	}
+    }
     my $last = 0;
     my $nsigs = 0;
     foreach $filename (</var/lib/clamav/*>) {
-	next if $filename !~ m/\.(ndb|hdb)$/;
+	my $fn = basename($filename);
+	next if !$ss_dbs_files->{$fn};
+
 	my $fh = IO::File->new("<$filename");
 	next if !defined($fh);
 	my $st = stat($fh);
