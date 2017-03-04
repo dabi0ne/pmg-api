@@ -7,6 +7,8 @@ use Net::Cmd;
 use Net::SMTP;
 use IO::File;
 use File::stat;
+use POSIX qw(strftime);
+use File::stat;
 use File::Basename;
 use MIME::Words;
 use MIME::Parser;
@@ -471,6 +473,78 @@ sub run_postmap {
     my $err = $@;
 
     warn $err if $err;
+}
+
+sub clamav_dbstat {
+
+    my $res = [];
+
+    my $read_cvd_info = sub {
+	my ($dbname, $dbfile) = @_;
+
+        my $header;
+	my $fh = IO::File->new("<$dbfile");
+	if (!$fh) {
+	    warn "cant open ClamAV Database $dbname ($dbfile) - $!\n";
+	    return;
+	}
+	$fh->read($header, 512);
+	$fh->close();
+
+	## ClamAV-VDB:16 Mar 2016 23-17 +0000:57:4218790:60:06386f34a16ebeea2733ab037f0536be:
+	if ($header =~ m/^(ClamAV-VDB):([^:]+):(\d+):(\d+):/) {
+	    my ($ftype, $btime, $version, $nsigs) = ($1, $2, $3, $4);
+	    push @$res, {
+		name => $dbname,
+		type => $ftype,
+		build_time => $btime,
+		version => $version,
+		nsigs => $nsigs,
+	    };
+	} else {
+	    warn "unable to parse ClamAV Database $dbname ($dbfile)\n";
+	}
+    };
+
+    # main database
+    my $filename = "/var/lib/clamav/main.inc/main.info";
+    $filename = "/var/lib/clamav/main.cvd" if ! -f $filename;
+
+    $read_cvd_info->('main', $filename) if -f $filename;
+
+    # daily database
+    $filename = "/var/lib/clamav/daily.inc/daily.info";
+    $filename = "/var/lib/clamav/daily.cvd" if ! -f $filename;
+    $filename = "/var/lib/clamav/daily.cld" if ! -f $filename;
+
+    $read_cvd_info->('daily', $filename) if -f $filename;
+
+    $filename = "/var/lib/clamav/bytecode.cvd";
+    $read_cvd_info->('bytecode', $filename) if -f $filename;
+
+    my $last = 0;
+    my $nsigs = 0;
+    foreach $filename (</var/lib/clamav/*>) {
+	next if $filename !~ m/\.(ndb|hdb)$/;
+	my $fh = IO::File->new("<$filename");
+	next if !defined($fh);
+	my $st = stat($fh);
+	next if !$st;
+	my $mtime = $st->mtime();
+	$last = $mtime if $mtime > $last;
+	while (defined(my $line = <$fh>)) { $nsigs++; }
+    }
+
+    if ($nsigs > 0) {
+	push @$res, {
+	    name => 'Sanesecurity',
+	    type => 'unofficial',
+	    build_time => strftime("%d %b %Y %H-%M", localtime($last)),
+	    nsigs => $nsigs,
+	};
+    }
+
+    return $res;
 }
 
 1;
