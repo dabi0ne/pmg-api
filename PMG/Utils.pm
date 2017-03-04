@@ -549,7 +549,7 @@ sub clamav_dbstat {
 	push @$res, {
 	    name => 'Sanesecurity',
 	    type => 'unofficial',
-	    build_time => strftime("%d %b %Y %H-%M", localtime($last)),
+	    build_time => strftime("%d %b %Y %H-%M %z", localtime($last)),
 	    nsigs => $nsigs,
 	};
     }
