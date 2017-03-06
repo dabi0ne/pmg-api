@@ -116,7 +116,7 @@ sub load_groups {
 
     $sth->execute($rule->{id});
 
-    my ($from, $to, $when, $what, $action) = ((), (), (), (), ());
+    my ($from, $to, $when, $what, $action) = ([], [], [], [], []);
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	my $og = PMG::RuleDB::Group->new($ref->{name}, $ref->{info});
@@ -142,6 +142,21 @@ sub load_groups {
     $sth->finish();
 
     return ($from, $to, $when, $what, $action);
+}
+
+sub load_groups_by_name {
+    my ($self, $rule) = @_;
+
+    my ($from, $to, $when, $what, $action) =
+	$self->load_groups($rule);
+
+    return {
+	from => $from,
+	to => $to,
+	when => $when,
+	what => $what,
+	action => $action,
+    };
 }
 
 sub save_group {

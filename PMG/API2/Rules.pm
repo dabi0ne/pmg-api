@@ -101,4 +101,50 @@ __PACKAGE__->register_method ({
 	return $data;
    }});
 
+my $register_rule_group_api = sub {
+    my ($name) = @_;
+
+    __PACKAGE__->register_method ({
+	name => $name,
+	path => $name,
+	method => 'GET',
+	description => "Get '$name' group list.",
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		id => {
+		    description => "Rule ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => {
+	    type => 'array',
+	    items => {
+		type => "object",
+		properties => {
+		    id => { type => 'integer' },
+		},
+	    },
+	},
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $rule = $rdb->load_rule($param->{id});
+
+	    my $group_hash = $rdb->load_groups_by_name($rule);
+
+	    return PMG::API2::ObjectGroupHelpers::format_object_group(
+		$group_hash->{$name});
+	}});
+};
+
+$register_rule_group_api->('from');
+$register_rule_group_api->('to');
+$register_rule_group_api->('when');
+$register_rule_group_api->('what');
+$register_rule_group_api->('action');
+
 1;
