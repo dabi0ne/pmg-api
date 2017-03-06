@@ -13,6 +13,34 @@ use PVE::Tools qw(extract_param);
 use PMG::DBTools;
 use PMG::RuleDB;
 
+sub format_rule {
+    my ($rule, $from, $to, $when, $what, $action) = @_;
+
+    my $cond_create_group = sub {
+	my ($res, $name, $groupdata) = @_;
+
+	return if !$groupdata;
+
+	$res->{$name} = format_object_group($groupdata);
+    };
+
+    my $data = {
+	id =>  $rule->{id},
+	name => $rule->{name},
+	priority => $rule->{priority},
+	active => $rule->{active},
+	direction => $rule->{direction},
+    };
+
+    $cond_create_group->($data, 'from', $from);
+    $cond_create_group->($data, 'to', $to);
+    $cond_create_group->($data, 'when', $when);
+    $cond_create_group->($data, 'what', $what);
+    $cond_create_group->($data, 'action', $action);
+
+    return $data;
+}
+
 sub format_object_group {
     my ($ogroups) = @_;
 

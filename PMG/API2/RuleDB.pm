@@ -95,19 +95,8 @@ __PACKAGE__->register_method({
 	    my ($from, $to, $when, $what, $action) =
 		$rdb->load_groups($rule);
 
-	    my $data = {
-		id =>  $rule->{id},
-		name => $rule->{name},
-		priority => $rule->{priority},
-		active => $rule->{active},
-		direction => $rule->{direction},
-	    };
-
-	    $cond_create_group->($data, 'from', $from);
-	    $cond_create_group->($data, 'to', $to);
-	    $cond_create_group->($data, 'when', $when);
-	    $cond_create_group->($data, 'what', $what);
-	    $cond_create_group->($data, 'action', $action);
+	    my $data = PMG::API2::ObjectGroupHelpers::format_rule(
+		$rule, $from, $to, $when, $what, $action);
 
 	    push @$res, $data;
 	}

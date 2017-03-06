@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use DBI;
 use HTML::Entities;
+use Data::Dumper;
 
 use PVE::SafeSyslog;
 
@@ -715,6 +716,7 @@ sub load_rule {
     $sth->execute($id);
 
     my $ref = $sth->fetchrow_hashref();
+    die "rule '$id' does not exist\n" if !defined($ref);
 
     my $rule = PMG::RuleDB::Rule->new($ref->{name}, $ref->{priority},
 				      $ref->{active}, $ref->{direction});
