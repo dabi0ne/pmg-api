@@ -48,8 +48,8 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method({
-    name => 'dbstat',
-    path => 'dbstat',
+    name => 'database_status',
+    path => 'database',
     method => 'GET',
     description => "ClamAV virus database status.",
     parameters => {
@@ -78,7 +78,7 @@ __PACKAGE__->register_method({
 
 __PACKAGE__->register_method({
     name => 'update_database',
-    path => 'dbstat',
+    path => 'database',
     method => 'POST',
     description => "Update ClamAV virus databases.",
     protected => 1,
