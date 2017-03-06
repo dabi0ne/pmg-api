@@ -6,7 +6,7 @@ LogFileMaxSize 0
 Foreground false
 Debug false
 MaxAttempts 5
-Checks 24
+Checks [% IF pmg.clamav.safebrowsing %]48[% ELSE %]24[% END %]
 DatabaseDirectory /var/lib/clamav/
 PidFile /var/run/clamav/freshclam.pid
 DatabaseMirror [% pmg.clamav.dbmirror %]
@@ -16,6 +16,7 @@ ScriptedUpdates no
 CompressLocalDatabase no
 NotifyClamd /etc/clamav/clamd.conf
 Bytecode true
+SafeBrowsing [% IF pmg.clamav.safebrowsing %]true[% ELSE %]false[% END %]
 DNSDatabaseInfo current.cvd.clamav.net
 [% IF pmg.admin.proxyserver %]
 HTTPProxyServer [% pmg.admin.proxyserver %]

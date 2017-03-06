@@ -320,6 +320,11 @@ sub properties {
 	    minimum => 0,
 	    default => 0,
 	},
+	safebrowsing => {
+	    description => "Enables support for Google Safe Browsing.",
+	    type => 'boolean',
+	    default => 1
+	},
     };
 }
 
@@ -332,6 +337,7 @@ sub options {
 	maxscansize  => { optional => 1 },
 	dbmirror => { optional => 1 },
 	maxcccount => { optional => 1 },
+	safebrowsing => { optional => 1 },
     };
 }
 
