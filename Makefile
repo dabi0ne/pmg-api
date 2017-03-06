@@ -1,5 +1,5 @@
 PACKAGE=proxmox-mailgateway-api
-PKGVER=1.0
+PKGVER=5.0
 PKGREL=1
 
 # this requires package pmg-doc-generator
