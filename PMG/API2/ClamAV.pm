@@ -102,10 +102,7 @@ __PACKAGE__->register_method({
 	    # fixes bug #303
 	    unlink "/var/lib/clamav/mirrors.dat";
 
-	    my $outfile = "/var/log/update-clam.log";
-
-	    my $cmd = [['/usr/bin/freshclam', '--stdout'],
-		       ['/usr/bin/tee', $outfile ]];
+	    my $cmd = ['/usr/bin/freshclam', '--stdout'];
 
 	    PVE::Tools::run_command($cmd);
 	};
