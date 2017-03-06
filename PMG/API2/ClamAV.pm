@@ -76,4 +76,41 @@ __PACKAGE__->register_method({
 	return PMG::Utils::clamav_dbstat();
     }});
 
+__PACKAGE__->register_method({
+    name => 'update_database',
+    path => 'dbstat',
+    method => 'POST',
+    description => "Update ClamAV virus databases.",
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => { type => 'string' },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PVE::RESTEnvironment::get();
+	my $authuser = $rpcenv->get_user();
+
+	my $realcmd = sub {
+	    my $upid = shift;
+
+	    # remove mirrors.dat so freshclam checks all servers again
+	    # fixes bug #303
+	    unlink "/var/lib/clamav/mirrors.dat";
+
+	    my $outfile = "/var/log/update-clam.log";
+
+	    my $cmd = [['/usr/bin/freshclam', '--stdout'],
+		       ['/usr/bin/tee', $outfile ]];
+
+	    PVE::Tools::run_command($cmd);
+	};
+
+	return $rpcenv->fork_worker('avupdate', undef, $authuser, $realcmd);
+    }});
+
 1;
