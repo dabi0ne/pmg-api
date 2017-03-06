@@ -19,6 +19,11 @@ Proxmox Mail Gateway 5.0 News
 
 - no HTTP access (only HTTPS, also for user Quarantine)
 
+- new flag to include Google Safe Browsing database
+
+- depend on  clamav-unofficial-sigs (include Sanesecurity signatures)
+
+
 Incompatible changes:
 ---------------------
 
