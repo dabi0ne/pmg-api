@@ -110,6 +110,7 @@ LIBSOURCES =				\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/AccessControl.pm	\
 	PMG/API2/ObjectGroupHelpers.pm	\
+	PMG/API2/Rules.pm		\
 	PMG/API2/RuleDB.pm		\
 	PMG/API2/SMTPWhitelist.pm	\
 	PMG/API2/Who.pm			\
