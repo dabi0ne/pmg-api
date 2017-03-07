@@ -66,6 +66,7 @@ __PACKAGE__->register_method ({
     path => 'config',
     method => 'GET',
     description => "Get common rule properties.",
+    proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -106,6 +107,8 @@ __PACKAGE__->register_method ({
     path => 'config',
     method => 'PUT',
     description => "Set rule properties.",
+    proxyto => 'master',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -169,6 +172,7 @@ my $register_rule_group_api = sub {
 	path => $name,
 	method => 'GET',
 	description => "Get '$name' group list.",
+	proxyto => 'master',
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
