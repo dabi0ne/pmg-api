@@ -130,7 +130,7 @@ __PACKAGE__->register_method ({
 		description => "Rule direction. Value `0` matches incomming mails, value `1` matches outgoing mails, and value `2` matches both directions.",
 		type => 'integer',
 		minimum => 0,
-		maximim => 2,
+		maximum => 2,
 		optional => 1,
 	    },
 	    priority => {

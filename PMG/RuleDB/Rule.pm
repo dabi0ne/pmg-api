@@ -10,11 +10,11 @@ use PMG::RuleDB;
 
 sub new {
     my ($type, $name, $priority, $active, $direction) = @_;
-    
+
     my $self = { 
-	name => $name, 
-	priority => $priority, 
-	active => $active,
+	name => $name // '',
+	priority => $priority // 0,
+	active => $active // 0,
     }; 
     
     if (!defined($direction)) {

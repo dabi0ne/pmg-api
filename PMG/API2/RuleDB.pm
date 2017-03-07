@@ -106,6 +106,52 @@ __PACKAGE__->register_method({
 	return $res;
     }});
 
+__PACKAGE__->register_method({
+    name => 'create_rule',
+    path => 'rules',
+    method => 'POST',
+    description => "Create new rule.",
+    proxyto => 'master',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    name => {
+		description => "Rule name",
+		type => 'string',
+	    },
+	    priority => {
+		description => "Rule priotity.",
+		type => 'integer',
+		minimum => 0,
+		maximum => 100,
+	    },
+	    direction => {
+		description => "Rule direction. Value `0` matches incomming mails, value `1` matches outgoing mails, and value `2` matches both directions.",
+		type => 'integer',
+		minimum => 0,
+		maximum => 2,
+		optional => 1,
+	    },
+	    active => {
+		description => "Flag to activate rule.",
+		type => 'boolean',
+		optional => 1,
+	    },
+	},
+    },
+    returns => { type => 'integer' },
+    code => sub {
+	my ($param) = @_;
+
+	my $rdb = PMG::RuleDB->new();
+
+	my $rule = PMG::RuleDB::Rule->new (
+	    $param->{name}, $param->{priority}, $param->{active}, $param->{direction});
+
+	return $rdb->save_rule($rule);
+    }});
+
 __PACKAGE__->register_method ({
     subclass => 'PMG::API2::Rules',
     path => 'rules/{id}',
