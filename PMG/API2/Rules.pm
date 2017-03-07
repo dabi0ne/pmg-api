@@ -101,6 +101,66 @@ __PACKAGE__->register_method ({
 	return $data;
    }});
 
+__PACKAGE__->register_method ({
+    name => 'update_config',
+    path => 'config',
+    method => 'PUT',
+    description => "Set rule properties.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    id => {
+		description => "Rule ID.",
+		type => 'integer',
+	    },
+	    name => {
+		description => "Rule name",
+		type => 'string',
+		optional => 1,
+	    },
+	    active => {
+		description => "Flag to activate rule.",
+		type => 'boolean',
+		optional => 1,
+	    },
+	    direction => {
+		description => "Rule direction. Value `0` matches incomming mails, value `1` matches outgoing mails, and value `2` matches both directions.",
+		type => 'integer',
+		minimum => 0,
+		maximim => 2,
+		optional => 1,
+	    },
+	    priority => {
+		description => "Rule priotity.",
+		type => 'integer',
+		minimum => 0,
+		maximum => 100,
+		optional => 1,
+	    },
+	},
+    },
+    returns => { type => "null" },
+    code => sub {
+	my ($param) = @_;
+
+	my $id = extract_param($param, 'id');
+
+	die "no options specified\n"
+	    if !scalar(keys %$param);
+
+	my $rdb = PMG::RuleDB->new();
+
+	my $rule = $rdb->load_rule($id);
+
+	for my $key (qw(name active direction priority)) {
+	    $rule->{$key} = $param->{$key} if defined($param->{$key});
+	}
+
+	$rdb->save_rule($rule);
+
+	return undef;
+   }});
+
 my $register_rule_group_api = sub {
     my ($name) = @_;
 
