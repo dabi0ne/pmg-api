@@ -60,6 +60,32 @@ __PACKAGE__->register_method ({
 
     }});
 
+__PACKAGE__->register_method ({
+    name => 'delete_rule',
+    path => '',
+    method => 'DELETE',
+    description => "Delete rule.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    id => {
+		description => "Rule ID.",
+		type => 'integer',
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $rdb = PMG::RuleDB->new();
+
+	$rdb->load_rule($param->{id}); # test if rule exist
+
+	$rdb->delete_rule($param->{id});
+
+	return undef;
+    }});
 
 __PACKAGE__->register_method ({
     name => 'config',
@@ -203,6 +229,73 @@ my $register_rule_group_api = sub {
 	    return PMG::API2::ObjectGroupHelpers::format_object_group(
 		$group_hash->{$name});
 	}});
+
+    __PACKAGE__->register_method ({
+	name => "add_${name}_group",
+	path => $name,
+	method => 'POST',
+	description => "Add  group to '$name' list.",
+	proxyto => 'master',
+	protected => 1,
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		id => {
+		    description => "Rule ID.",
+		    type => 'integer',
+		},
+		ogroup => {
+		    description => "Groups ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => { type => 'null' },
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $rule = $rdb->load_rule($param->{id});
+
+	    $rdb->rule_add_group($param->{id}, $param->{ogroup}, $name);
+
+	    return undef;
+	}});
+
+    __PACKAGE__->register_method ({
+	name => "delete_${name}_group",
+	path => "$name/{ogroup}",
+	method => 'DELETE',
+	description => "Delete group from '$name' list.",
+	proxyto => 'master',
+	protected => 1,
+	parameters => {
+	    additionalProperties => 0,
+	    properties => {
+		id => {
+		    description => "Rule ID.",
+		    type => 'integer',
+		},
+		ogroup => {
+		    description => "Groups ID.",
+		    type => 'integer',
+		},
+	    },
+	},
+	returns => { type => 'null' },
+	code => sub {
+	    my ($param) = @_;
+
+	    my $rdb = PMG::RuleDB->new();
+
+	    my $rule = $rdb->load_rule($param->{id});
+
+	    $rdb->rule_remove_group($param->{id}, $param->{ogroup}, $name);
+
+	    return undef;
+	}});
+
 };
 
 $register_rule_group_api->('from');
