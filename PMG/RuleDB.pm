@@ -661,8 +661,19 @@ sub delete_testrules {
     return 1;
 }
 
+my $grouptype_hash = {
+    from => 0,
+    to => 1,
+    when => 2,
+    what => 3,
+    action => 4,
+};
+
 sub rule_add_group {
-    my ($self, $ruleid, $groupid, $gtype) = @_;
+    my ($self, $ruleid, $groupid, $gtype_str) = @_;
+
+    my $gtype = $grouptype_hash->{$gtype_str} //
+	die "unknown group type '$gtype_str'\n";
 
     defined($ruleid) || die "undefined rule id: ERROR";
     defined($groupid) || die "undefined group id: ERROR";
@@ -678,35 +689,38 @@ sub rule_add_group {
 sub rule_add_from_group {
     my ($self, $rule, $group) = @_;
 
-    $self->rule_add_group($rule->{id}, $group->{id}, 0);
+    $self->rule_add_group($rule->{id}, $group->{id}, 'from');
 }
 
 sub rule_add_to_group {
     my ($self, $rule, $group) = @_;
 
-    $self->rule_add_group($rule->{id}, $group->{id}, 1);
+    $self->rule_add_group($rule->{id}, $group->{id}, 'to');
 }
 
 sub rule_add_when_group {
     my ($self, $rule, $group) = @_;
 
-    $self->rule_add_group($rule->{id}, $group->{id}, 2);
+    $self->rule_add_group($rule->{id}, $group->{id}, 'when');
 }
 
 sub rule_add_what_group {
     my ($self, $rule, $group) = @_;
 
-    $self->rule_add_group($rule->{id}, $group->{id}, 3);
+    $self->rule_add_group($rule->{id}, $group->{id}, 'what');
 }
 
 sub rule_add_action {
     my ($self, $rule, $group) = @_;
 
-    $self->rule_add_group($rule->{id}, $group->{id}, 4);
+    $self->rule_add_group($rule->{id}, $group->{id}, 'action');
 }
 
 sub rule_remove_group {
-    my ($self, $ruleid, $groupid, $gtype) = @_;
+    my ($self, $ruleid, $groupid, $gtype_str) = @_;
+
+    my $gtype = $grouptype_hash->{$gtype_str} //
+	die "unknown group type '$gtype_str'\n";
 
     defined($ruleid) || die "undefined rule id: ERROR";
     defined($groupid) || die "undefined group id: ERROR";
@@ -821,7 +835,7 @@ Add an object group to the rule.
 
 Possible values for $gtype are:
 
-    0 = FROM, 1 = TO, 2 = WHEN, 3 = WHAT, 4 = ACTION
+    'from' 'to', 'when', 'what', 'action'
 
 =head3  $ruledb->rule_remove_group ($rule, $og, $gtype)
 
