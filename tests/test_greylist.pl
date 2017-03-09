@@ -2,6 +2,8 @@
 
 use strict;
 use warnings;
+use lib '..';
+
 use Socket;
 use IO::Socket::INET;
 use DBI;

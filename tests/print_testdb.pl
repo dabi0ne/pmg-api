@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use DBI;
+use lib '..';
 
 use PVE::SafeSyslog;
 
