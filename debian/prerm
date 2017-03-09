@@ -4,8 +4,6 @@ set -e
 
 case "$1" in
     remove)
-	echo "removing proxmox database";
-	pmgdb delete
     ;;
 
     upgrade|deconfigure)
