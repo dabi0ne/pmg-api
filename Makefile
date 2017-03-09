@@ -49,7 +49,6 @@ LIBSOURCES =				\
 	PMG/Utils.pm			\
 	PMG/ModGroup.pm			\
 	PMG/SMTPPrinter.pm		\
-	PMG/NoVncIndex.pm		\
 	PMG/Config.pm			\
 	PMG/Cluster.pm			\
 	PMG/ClusterConfig.pm		\

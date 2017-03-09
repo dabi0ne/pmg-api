@@ -18,7 +18,6 @@ use PVE::APIServer::AnyEvent;
 
 use PMG::HTTPServer;
 use PMG::API2;
-use PMG::NoVncIndex; # fixme: use a template instead
 
 use Template;
 
@@ -46,6 +45,7 @@ sub add_dirs {
 
 my $gui_base_dir = "/usr/share/javascript/proxmox-mailgateway-gui";
 my $fontawesome_dir = "/usr/share/fonts-font-awesome";
+my $novnc_dir = '/usr/share/novnc-pve';
 
 sub init {
     my ($self) = @_;
@@ -66,7 +66,7 @@ sub init {
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
     add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css/");
     add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts/");
-    add_dirs($dirs, '/novnc/' => '/usr/share/novnc-pve/');
+    add_dirs($dirs, '/novnc/' => $novnc_dir);
 
     #add_dirs($dirs, '/pve-docs/' => '/usr/share/pve-docs/');
 
@@ -145,29 +145,33 @@ sub get_index {
 	}
     }
 
+    my $langfile = 0; # fixme:
+
     $username = '' if !$username;
 
-    my $config = {
-	INCLUDE_PATH => $gui_base_dir,
+    my $config = {};
+
+    if (defined($args->{console}) && $args->{novnc}) {
+	$config->{INCLUDE_PATH} = $novnc_dir;
+    } else {
+	$config->{INCLUDE_PATH} = $gui_base_dir;
     };
 
     my $page = '';
 
-    if (defined($args->{console}) && $args->{novnc}) {
-	$page = PMG::NoVncIndex::get_index($lang, $username, $token, $args->{console}, $nodename);
-    } else {
-	my $template = Template->new($config);
-	my $vars = {
-	    lang => $lang,
-	    debug => $args->{debug} || $server->{debug},
-	    username => $username,
-	    csrftoken => $token,
-	    nodename => $nodename,
-	};
+    my $template = Template->new($config);
+    my $vars = {
+	lang => $lang,
+	langfile => $langfile,
+	username => $username,
+	token => $token,
+	console => $args->{console},
+	nodename => $nodename,
+	debug => $args->{debug} || $server->{debug},
+    };
 
-	$template->process("index.html", $vars, \$page) ||
-	    die $template->error();
-    }
+    $template->process("index.html.tpl", $vars, \$page) ||
+	die $template->error();
 
     my $headers = HTTP::Headers->new(Content_Type => "text/html; charset=utf-8");
     my $resp = HTTP::Response->new(200, "OK", $headers, $page);
