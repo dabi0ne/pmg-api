@@ -1,4 +1,4 @@
-PACKAGE=proxmox-mailgateway-api
+PACKAGE=proxmox-mailgateway
 PKGVER=5.0
 PKGREL=1
 

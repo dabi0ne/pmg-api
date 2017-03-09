@@ -97,7 +97,7 @@ sub init {
 	    '/' => sub { get_index($self->{nodename}, @_) },
 	    # avoid authentication when accessing favicon
 	    '/favicon.ico' => {
-		file => '/usr/share/doc/proxmox-mailgateway-api/favicon.ico',
+		file => '/usr/share/doc/proxmox-mailgateway/favicon.ico',
 	    },
 	    '/proxmoxlib.js' => {
 		file => '/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js',
