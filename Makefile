@@ -166,8 +166,8 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 
 .PHONY: upload
 upload: ${DEB}
-	 ./repoid.pl .git/ check
-	# fixme tar cf - ${DEB} | ssh repoman@repo.proxmox.com upload
+	./repoid.pl .git/ check
+	tar cf - ${DEB} | ssh -X repoman@repo.proxmox.com -- upload --product pmg --dist stretch
 
 .PHONY: check
 check:
