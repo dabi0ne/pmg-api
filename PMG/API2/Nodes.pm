@@ -184,9 +184,17 @@ __PACKAGE__->register_method ({
 	my $family = PVE::Tools::get_host_address_family($node);
 	my $port = PVE::Tools::next_vnc_port($family);
 
+	my $shcmd;
+
+	if ($user eq 'root@pam') {
+	    $shcmd = [ '/bin/login', '-f', 'root' ];
+	} else {
+	    $shcmd = [ '/bin/login' ];
+	}
+
 	my $cmd = ['/usr/bin/vncterm', '-rfbport', $port,
 		   '-timeout', 10, '-notls', '-listen', 'localhost',
-		   '-c', '/usr/bin/top'];
+		   '-c', @$shcmd];
 
 	my $realcmd = sub {
 	    my $upid = shift;
