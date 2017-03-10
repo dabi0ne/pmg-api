@@ -66,7 +66,7 @@ sub init {
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
     add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css/");
     add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts/");
-    add_dirs($dirs, '/novnc/' => $novnc_dir);
+    add_dirs($dirs, '/novnc/' => "$novnc_dir/");
 
     #add_dirs($dirs, '/pve-docs/' => '/usr/share/pve-docs/');
 
