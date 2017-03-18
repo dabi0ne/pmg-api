@@ -36,6 +36,8 @@ __PACKAGE__->register_method ({
 	    properties => {
 		section => { type => 'string'},
 		server1 => { type => 'string'},
+		server2 => { type => 'string', optional => 1},
+		comment => { type => 'string', optional => 1},
 		mode => { type => 'string'},
 	    },
 	},
@@ -51,11 +53,14 @@ __PACKAGE__->register_method ({
 	if (defined($ldap_cfg)) {
 	    foreach my $section (keys %{$ldap_cfg->{ids}}) {
 		my $d = $ldap_cfg->{ids}->{$section};
-		push @$res, {
+		my $entry = {
 		    section => $section,
 		    server1 => $d->{server1},
 		    mode => $d->{mode} // 'ldap',
 		};
+		$entry->{server2} = $d->{server2} if defined($d->{server2});
+		$entry->{comment} = $d->{comment} if defined($d->{comment});
+		push @$res, $entry;
 	    }
 	}
 

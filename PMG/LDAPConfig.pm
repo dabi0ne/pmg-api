@@ -24,6 +24,12 @@ my $defaultData = {
 
 sub properties {
     return {
+	comment => {
+	    description => "Description.",
+	    type => 'string',
+	    optional => 1,
+	    maxLength => 4096,
+	},
 	mode => {
 	    description => "LDAP protocol mode ('ldap' or 'ldaps').",
 	    type => 'string',
@@ -33,10 +39,12 @@ sub properties {
 	server1 => {
 	    description => "Server address.",
 	    type => 'string', format => 'address',
+	    maxLength => 256,
 	},
 	server2 => {
 	    description => "Fallback server address. Userd when the first server is not available.",
 	    type => 'string', format => 'address',
+	    maxLength => 256,
 	},
 	port => {
 	    description => "Specify the port to connect to.",
@@ -81,6 +89,7 @@ sub properties {
 
 sub options {
     return {
+	comment => { optional => 1 },
 	server1 => {  optional => 0 },
 	server2 => {  optional => 1 },
 	port => { optional => 1 },
@@ -103,22 +112,6 @@ sub private {
     return $defaultData;
 }
 
-sub decode_value {
-    my ($class, $type, $key, $value) = @_;
-
-    $value = decode_base64($value) if $key eq 'bindpw';
-
-    return $value;
-}
-
-sub encode_value {
-    my ($class, $type, $key, $value) = @_;
-
-    $value = encode_base64($value, '') if $key eq 'bindpw';
-
-    return $value;
-}
-
 sub parse_section_header {
     my ($class, $line) = @_;
 
@@ -131,6 +124,40 @@ sub parse_section_header {
 	return ($type, $sectionId, $errmsg, $config);
     }
     return undef;
+}
+
+sub parse_config {
+    my ($class, $filename, $raw) = @_;
+
+    my $cfg = $class->SUPER::parse_config($filename, $raw);
+
+    foreach my $section (keys %{$cfg->{ids}}) {
+	my $data = $cfg->{ids}->{$section};
+
+	$data->{comment} = PVE::Tools::decode_text($data->{comment})
+	    if defined($data->{comment});
+
+	$data->{bindpw} = decode_base64($data->{bindpw})
+	    if defined($data->{bindpw});
+    }
+
+    return $cfg;
+}
+
+sub write_config {
+    my ($class, $filename, $cfg) = @_;
+
+    foreach my $section (keys %{$cfg->{ids}}) {
+	my $data = $cfg->{ids}->{$section};
+
+	$data->{comment} = PVE::Tools::encode_text($data->{comment})
+	    if defined($data->{comment});
+
+	$data->{bindpw} = encode_base64($data->{bindpw}, '')
+	    if defined($data->{bindpw});
+    }
+
+    $class->SUPER::write_config($filename, $cfg);
 }
 
 my $lockfile = "/var/lock/pmgldapconfig.lck";
