@@ -78,6 +78,9 @@ __PACKAGE__->register_method ({
 	my $code = sub {
 
 	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+
+	    $cfg->{ids} //= {};
+
 	    my $ids = $cfg->{ids};
 
 	    my $section = extract_param($param, 'section');
