@@ -24,6 +24,11 @@ my $defaultData = {
 
 sub properties {
     return {
+	disable => {
+	    description => "Flag to disable/deactivate the entry.",
+	    type => 'boolean',
+	    optional => 1,
+	},
 	comment => {
 	    description => "Description.",
 	    type => 'string',

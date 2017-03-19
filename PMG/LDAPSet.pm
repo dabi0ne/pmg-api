@@ -27,6 +27,7 @@ sub new_from_ldap_cfg {
 	# fixme: does it work?
 	my $data = $ldap_cfg->{ids}->{$id};
 	next if !ref($data);
+	next if $data->{disable};
 
 	$data->{syncmode} = $syncmode;
 	$data->{id} = $id;
