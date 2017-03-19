@@ -94,6 +94,7 @@ sub properties {
 
 sub options {
     return {
+	disable => { optional => 1 },
 	comment => { optional => 1 },
 	server1 => {  optional => 0 },
 	server2 => {  optional => 1 },
