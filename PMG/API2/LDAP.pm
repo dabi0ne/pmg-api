@@ -35,6 +35,7 @@ __PACKAGE__->register_method ({
 	    type => "object",
 	    properties => {
 		section => { type => 'string'},
+		disable => { type => 'boolean' },
 		server1 => { type => 'string'},
 		server2 => { type => 'string', optional => 1},
 		comment => { type => 'string', optional => 1},
@@ -55,6 +56,7 @@ __PACKAGE__->register_method ({
 		my $d = $ldap_cfg->{ids}->{$section};
 		my $entry = {
 		    section => $section,
+		    disable => $d->{disable} ? 1 : 0,
 		    server1 => $d->{server1},
 		    mode => $d->{mode} // 'ldap',
 		};
