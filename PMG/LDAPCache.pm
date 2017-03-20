@@ -260,7 +260,7 @@ sub querygroups {
 
     return undef if !$self->{groupbasedn};
 
-    my $filter = "(objectclass=group)";
+    my $filter = "(|(objectclass=group)(objectclass=univentionGroup))";
 
     my $page = Net::LDAP::Control::Paged->new(size => 100);
 
@@ -268,7 +268,7 @@ sub querygroups {
 		 scope    => "subtree",
 		 filter   => $filter,
 		 control  => [ $page ],
-		 attrs  => [ 'member' ]
+		 attrs  => [ 'member', 'uniqueMember' ],
 		 );
 
     my $cookie;
@@ -287,7 +287,9 @@ sub querygroups {
 	foreach my $entry ( $mesg->entries ) {
 	    my $group = $entry->dn;
 	    my @members = $entry->get_value('member');
-
+	    if (!scalar(@members)) {
+		@members = $entry->get_value('uniqueMember');
+	    }
 	    my $cgid;
 	    $self->{dbstat}->{groups}->{dbh}->get($group, $cgid);
 	    if (!$cgid) {
