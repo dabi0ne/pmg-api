@@ -70,6 +70,17 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
+my $forced_ldap_sync = sub {
+    my ($section, $config) = @_;
+
+    my $ldapcache = PMG::LDAPCache->new(
+	id => $section, syncmode => 2, %$config);
+
+    die $ldapcache->{errors} if $ldapcache->{errors};
+
+    die "unable to find valid email addresses\n"
+	if !$ldapcache->{mcount};
+};
 
 __PACKAGE__->register_method ({
     name => 'create',
@@ -101,15 +112,8 @@ __PACKAGE__->register_method ({
 
 	    $ids->{$section} = $config;
 
-	    if (!$config->{disable}) {
-
-		# test ldap bind
-
-		my $ldapcache = PMG::LDAPCache->new(
-		    id => $section, syncmode => 1, %$config);
-
-		$ldapcache->ldap_connect_and_bind();
-	    }
+	    $forced_ldap_sync->($section, $config)
+		if !$config->{disable};
 
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
@@ -190,15 +194,8 @@ __PACKAGE__->register_method ({
 		$ids->{$section}->{$p} = $config->{$p};
 	    }
 
-	    if (!$config->{disable}) {
-
-		# test ldap bind
-
-		my $ldapcache = PMG::LDAPCache->new(
-		    id => $section, syncmode => 1, %$config);
-
-		$ldapcache->ldap_connect_and_bind();
-	    }
+	    $forced_ldap_sync->($section, $config)
+		if !$config->{disable};
 
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
