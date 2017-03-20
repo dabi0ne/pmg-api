@@ -14,6 +14,7 @@ use PVE::INotify;
 
 use PMG::LDAPConfig;
 use PMG::LDAPCache;
+use PMG::LDAPSet;
 
 use base qw(PVE::RESTHandler);
 
@@ -50,6 +51,8 @@ __PACKAGE__->register_method ({
 
 	my $ldap_cfg = PVE::INotify::read_file($ldapconfigfile);
 
+	my $ldap_set = PMG::LDAPSet->new_from_ldap_cfg($ldap_cfg, 1);
+
 	my $res = [];
 
 	if (defined($ldap_cfg)) {
@@ -63,6 +66,14 @@ __PACKAGE__->register_method ({
 		};
 		$entry->{server2} = $d->{server2} if defined($d->{server2});
 		$entry->{comment} = $d->{comment} if defined($d->{comment});
+
+		if (my $d = $ldap_set->{$section}) {
+		    foreach my $k (qw(gcount mcount ucount errors basedn)) {
+			my $v = $d->{$k};
+			$entry->{$k} = $v if defined($v) && ($v ne '');
+		    }
+		}
+
 		push @$res, $entry;
 	    }
 	}
