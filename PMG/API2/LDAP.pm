@@ -240,6 +240,8 @@ __PACKAGE__->register_method ({
 
 	    delete $ids->{$section};
 
+	    PMG::LDAPCache->delete($section);
+
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
 
