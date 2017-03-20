@@ -344,6 +344,30 @@ sub ldap_connect {
     return $ldap;
 }
 
+sub ldap_connect_and_bind {
+     my ($self) = @_;
+
+     my $ldap = $self->ldap_connect() ||
+	 die "Can't bind to ldap server '$self->{id}': $!\n";
+
+     my $mesg;
+
+     if ($self->{binddn}) {
+	 $mesg = $ldap->bind($self->{binddn}, password => $self->{bindpw});
+     } else {
+	 $mesg = $ldap->bind(); # anonymous bind
+     }
+
+     die "ldap bind failed: " . $mesg->error . "\n" if $mesg->code;
+
+     if (!$self->{basedn}) {
+	 my $root = $ldap->root_dse(attrs => [ 'defaultNamingContext' ]);
+	 $self->{basedn} = $root->get_value('defaultNamingContext');
+     }
+
+     return $ldap;
+}
+
 sub sync_database {
     my ($self) = @_;
 
@@ -354,33 +378,13 @@ sub sync_database {
 
     syslog('info', "syncing ldap database '$self->{id}'");
 
-    my $ldap = $self->ldap_connect();
+    my $ldap;
 
-    if (!$ldap) {
-	my $err = "Can't bind to ldap server '$self->{id}': $!";
+    eval { $ldap = $self->ldap_connect_and_bind(); };
+    if (my $err = $@) {
 	$self->{errors} .= "$err\n";
 	syslog('err', $err);
 	return;
-    }
-
-    my $mesg;
-
-    if ($self->{binddn}) {
-	$mesg = $ldap->bind($self->{binddn}, password => $self->{bindpw});
-    } else {
-	$mesg = $ldap->bind(); # anonymous bind
-    }
-
-    if ($mesg->code) {
-	my $err = "ldap bind failed: " . $mesg->error;
-	$self->{errors} .= "$err\n";
-	syslog('err', $err);
-	return;
-    }
-
-    if (!$self->{basedn}) {
-	my $root = $ldap->root_dse(attrs => [ 'defaultNamingContext' ]);
-	$self->{basedn} = $root->get_value('defaultNamingContext');
     }
 
     # open temporary database files
@@ -473,6 +477,8 @@ sub sync_database {
 	    $self->{gcount} = $self->{dbstat}->{groups}->{idcount};
 	    $self->{ucount} = __count_entries($self->{dbstat}->{accounts}->{dbh});
 	    $self->{mcount} = __count_entries($self->{dbstat}->{mails}->{dbh});
+
+	    syslog('info', "ldap sync '$self->{id}' successful ($self->{mcount})");
 	}
     }
 }

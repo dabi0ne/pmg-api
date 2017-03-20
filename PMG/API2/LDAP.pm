@@ -13,6 +13,7 @@ use PVE::RESTHandler;
 use PVE::INotify;
 
 use PMG::LDAPConfig;
+use PMG::LDAPCache;
 
 use base qw(PVE::RESTHandler);
 
@@ -100,6 +101,16 @@ __PACKAGE__->register_method ({
 
 	    $ids->{$section} = $config;
 
+	    if (!$config->{disable}) {
+
+		# test ldap bind
+
+		my $ldapcache = PMG::LDAPCache->new(
+		    id => $section, syncmode => 1, %$config);
+
+		$ldapcache->ldap_connect_and_bind();
+	    }
+
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
 
@@ -177,6 +188,16 @@ __PACKAGE__->register_method ({
 
 	    foreach my $p (keys %$config) {
 		$ids->{$section}->{$p} = $config->{$p};
+	    }
+
+	    if (!$config->{disable}) {
+
+		# test ldap bind
+
+		my $ldapcache = PMG::LDAPCache->new(
+		    id => $section, syncmode => 1, %$config);
+
+		$ldapcache->ldap_connect_and_bind();
 	    }
 
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
