@@ -68,9 +68,9 @@ __PACKAGE__->register_method ({
 		$entry->{comment} = $d->{comment} if defined($d->{comment});
 
 		if (my $d = $ldap_set->{$section}) {
-		    foreach my $k (qw(gcount mcount ucount errors basedn)) {
+		    foreach my $k (qw(gcount mcount ucount)) {
 			my $v = $d->{$k};
-			$entry->{$k} = $v if defined($v) && ($v ne '');
+			$entry->{$k} = $v if defined($v);
 		    }
 		}
 
