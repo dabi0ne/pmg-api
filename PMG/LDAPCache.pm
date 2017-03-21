@@ -398,6 +398,15 @@ sub sync_database {
 	$olddbh->{$db} = $self->{dbstat}->{$db}->{dbh};
     }
 
+    my $error_cleanup = sub {
+	# close and delete all files
+	foreach my $db (@dbs) {
+	    undef $self->{dbstat}->{$db}->{dbh};
+	    unlink $self->{dbstat}->{$db}->{tmpfilename};
+	    $self->{dbstat}->{$db}->{dbh} = $olddbh->{$db};
+	}
+    };
+
     eval {
 	foreach my $db (@dbs) {
 	    my $filename = $self->{dbstat}->{$db}->{tmpfilename};
@@ -418,71 +427,50 @@ sub sync_database {
 		if !$self->{dbstat}->{$db}->{dbh};
 	}
     };
-
-    my $err = $@;
-
-    if ($err) {
-	# close and delete all files
-	foreach my $db (@dbs) {
-	    undef $self->{dbstat}->{$db}->{dbh};
-	    unlink $self->{dbstat}->{$db}->{tmpfilename};
-	    $self->{dbstat}->{$db}->{dbh} = $olddbh->{$db};
-	}
+    if (my $err = $@) {
+	$error_cleanup->();
 	$self->{errors} .= $err;
 	syslog('err', $err);
-
 	return;
     }
 
     $self->querygroups ($ldap) if $self->{groupbasedn};
 
-    if (!$self->{errors}) {
-	$self->queryusers($ldap);
-    }
+    $self->queryusers($ldap) if !$self->{errors};
 
     $ldap->unbind;
 
     if ($self->{errors}) {
-	# close and delete all files
-	foreach my $db (@dbs) {
-	    undef $self->{dbstat}->{$db}->{dbh};
-	    unlink $self->{dbstat}->{$db}->{tmpfilename};
-	    $self->{dbstat}->{$db}->{dbh} = $olddbh->{$db};
-	}
-    } else {
-
-	my $lock = lockdir($self->{id});
-
-	if (!$lock) {
-	    my $err = "unable to get database lock for ldap database '$self->{id}'";
-	    $self->{errors} .= "$err\n";
-	    syslog('err', $err);
-
-	    # close and delete all files
-	    foreach my $db (@dbs) {
-		undef $self->{dbstat}->{$db}->{dbh};
-		unlink $self->{dbstat}->{$db}->{tmpfilename};
-		$self->{dbstat}->{$db}->{dbh} = $olddbh->{$db};
-	    }
-	} else {
-	    foreach my $db (@dbs) {
-		my $filename = $self->{dbstat}->{$db}->{filename} =
-		    "$cachedir/$dir/${db}.db";
-		$self->{dbstat}->{$db}->{dbh}->sync(); # flush everything
-		rename $self->{dbstat}->{$db}->{tmpfilename}, $filename;
-	    }
-
-	    $lock->release;
-
-	    $last_atime->{$self->{id}} = time();
-
-	    $self->{gcount} = $self->{dbstat}->{groups}->{idcount};
-	    $self->{ucount} = __count_entries($self->{dbstat}->{accounts}->{dbh});
-	    $self->{mcount} = __count_entries($self->{dbstat}->{mails}->{dbh});
-
-	    syslog('info', "ldap sync '$self->{id}' successful ($self->{mcount})");
-	}
+	$error_cleanup->();
+	return;
     }
+
+    my $lock = lockdir($self->{id});
+
+    if (!$lock) {
+	my $err = "unable to get database lock for ldap database '$self->{id}'";
+	$self->{errors} .= "$err\n";
+	syslog('err', $err);
+	$error_cleanup->();
+	return;
+    }
+
+    foreach my $db (@dbs) {
+	my $filename = $self->{dbstat}->{$db}->{filename} =
+	    "$cachedir/$dir/${db}.db";
+	$self->{dbstat}->{$db}->{dbh}->sync(); # flush everything
+	rename $self->{dbstat}->{$db}->{tmpfilename}, $filename;
+    }
+
+    $lock->release;
+
+    $last_atime->{$self->{id}} = time();
+
+    $self->{gcount} = $self->{dbstat}->{groups}->{idcount};
+    $self->{ucount} = __count_entries($self->{dbstat}->{accounts}->{dbh});
+    $self->{mcount} = __count_entries($self->{dbstat}->{mails}->{dbh});
+
+    syslog('info', "ldap sync '$self->{id}' successful ($self->{mcount})");
 }
 
 sub __count_entries {
