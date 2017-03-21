@@ -220,6 +220,45 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
+    name => 'sync',
+    path => '{section}',
+    method => 'POST',
+    description => "Synchronice LDAP users to local database.",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    section => {
+		description => "Secion ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $ids = $cfg->{ids};
+
+	my $section = extract_param($param, 'section');
+
+	die "LDAP entry '$section' does not exist\n"
+	    if !$ids->{$section};
+
+	my $config = $ids->{$section};
+
+	if ($config->{disable}) {
+	    die "LDAP entry '$section' is disabled\n";
+	} else {
+	    $forced_ldap_sync->($section, $config)
+	}
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
     name => 'delete',
     path => '{section}',
     method => 'DELETE',
