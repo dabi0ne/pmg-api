@@ -15,7 +15,7 @@ use base qw(PVE::SectionConfig);
 my $defaultData = {
     propertyList => {
 	type => { description => "Section type." },
-	section => {
+	profile => {
 	    description => "Secion ID.",
 	    type => 'string', format => 'pve-configid',
 	},
@@ -122,12 +122,12 @@ sub parse_section_header {
     my ($class, $line) = @_;
 
     if ($line =~ m/^(\S+):\s*(\S+)\s*$/) {
-	my ($type, $sectionId) = ($1, $2);
+	my ($type, $profileId) = ($1, $2);
 	my $errmsg = undef; # set if you want to skip whole section
-	eval { PVE::JSONSchema::pve_verify_configid($sectionId); };
+	eval { PVE::JSONSchema::pve_verify_configid($profileId); };
 	$errmsg = $@ if $@;
 	my $config = {}; # to return additional attributes
-	return ($type, $sectionId, $errmsg, $config);
+	return ($type, $profileId, $errmsg, $config);
     }
     return undef;
 }
@@ -137,8 +137,8 @@ sub parse_config {
 
     my $cfg = $class->SUPER::parse_config($filename, $raw);
 
-    foreach my $section (keys %{$cfg->{ids}}) {
-	my $data = $cfg->{ids}->{$section};
+    foreach my $profile (keys %{$cfg->{ids}}) {
+	my $data = $cfg->{ids}->{$profile};
 
 	$data->{comment} = PVE::Tools::decode_text($data->{comment})
 	    if defined($data->{comment});
@@ -153,8 +153,8 @@ sub parse_config {
 sub write_config {
     my ($class, $filename, $cfg) = @_;
 
-    foreach my $section (keys %{$cfg->{ids}}) {
-	my $data = $cfg->{ids}->{$section};
+    foreach my $profile (keys %{$cfg->{ids}}) {
+	my $data = $cfg->{ids}->{$profile};
 
 	$data->{comment} = PVE::Tools::encode_text($data->{comment})
 	    if defined($data->{comment});

@@ -24,7 +24,7 @@ __PACKAGE__->register_method ({
     name => 'index',
     path => '',
     method => 'GET',
-    description => "LDAP server list.",
+    description => "List configured LDAP profiles.",
     proxyto => 'master',
     protected => 1,
     parameters => {
@@ -36,7 +36,7 @@ __PACKAGE__->register_method ({
 	items => {
 	    type => "object",
 	    properties => {
-		section => { type => 'string'},
+		profile => { type => 'string'},
 		disable => { type => 'boolean' },
 		server1 => { type => 'string'},
 		server2 => { type => 'string', optional => 1},
@@ -47,7 +47,7 @@ __PACKAGE__->register_method ({
 		mode => { type => 'string'},
 	    },
 	},
-	links => [ { rel => 'child', href => "{section}" } ],
+	links => [ { rel => 'child', href => "{profile}" } ],
     },
     code => sub {
 	my ($param) = @_;
@@ -59,10 +59,10 @@ __PACKAGE__->register_method ({
 	my $res = [];
 
 	if (defined($ldap_cfg)) {
-	    foreach my $section (keys %{$ldap_cfg->{ids}}) {
-		my $d = $ldap_cfg->{ids}->{$section};
+	    foreach my $profile (keys %{$ldap_cfg->{ids}}) {
+		my $d = $ldap_cfg->{ids}->{$profile};
 		my $entry = {
-		    section => $section,
+		    profile => $profile,
 		    disable => $d->{disable} ? 1 : 0,
 		    server1 => $d->{server1},
 		    mode => $d->{mode} // 'ldap',
@@ -70,7 +70,7 @@ __PACKAGE__->register_method ({
 		$entry->{server2} = $d->{server2} if defined($d->{server2});
 		$entry->{comment} = $d->{comment} if defined($d->{comment});
 
-		if (my $d = $ldap_set->{$section}) {
+		if (my $d = $ldap_set->{$profile}) {
 		    foreach my $k (qw(gcount mcount ucount)) {
 			my $v = $d->{$k};
 			$entry->{$k} = $v if defined($v);
@@ -85,10 +85,10 @@ __PACKAGE__->register_method ({
     }});
 
 my $forced_ldap_sync = sub {
-    my ($section, $config) = @_;
+    my ($profile, $config) = @_;
 
     my $ldapcache = PMG::LDAPCache->new(
-	id => $section, syncmode => 2, %$config);
+	id => $profile, syncmode => 2, %$config);
 
     die $ldapcache->{errors} if $ldapcache->{errors};
 
@@ -102,7 +102,7 @@ __PACKAGE__->register_method ({
     method => 'POST',
     proxyto => 'master',
     protected => 1,
-    description => "Add LDAP server.",
+    description => "Add LDAP profile.",
     parameters => PMG::LDAPConfig->createSchema(1),
     returns => { type => 'null' },
     code => sub {
@@ -116,38 +116,38 @@ __PACKAGE__->register_method ({
 
 	    my $ids = $cfg->{ids};
 
-	    my $section = extract_param($param, 'section');
+	    my $profile = extract_param($param, 'profile');
 	    my $type = $param->{type};
 
-	    die "LDAP entry '$section' already exists\n"
-		if $ids->{$section};
+	    die "LDAP profile '$profile' already exists\n"
+		if $ids->{$profile};
 
-	    my $config = PMG::LDAPConfig->check_config($section, $param, 1, 1);
+	    my $config = PMG::LDAPConfig->check_config($profile, $param, 1, 1);
 
-	    $ids->{$section} = $config;
+	    $ids->{$profile} = $config;
 
-	    $forced_ldap_sync->($section, $config)
+	    $forced_ldap_sync->($profile, $config)
 		if !$config->{disable};
 
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
 
-	PMG::LDAPConfig::lock_config($code, "add LDAP entry failed");
+	PMG::LDAPConfig::lock_config($code, "add LDAP profile failed");
 
 	return undef;
     }});
 
 __PACKAGE__->register_method ({
     name => 'read',
-    path => '{section}',
+    path => '{profile}',
     method => 'GET',
-    description => "Get LDAP server configuration.",
+    description => "Get LDAP profile configuration.",
     proxyto => 'master',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    section => {
+	    profile => {
 		description => "Secion ID.",
 		type => 'string', format => 'pve-configid',
 	    },
@@ -159,10 +159,10 @@ __PACKAGE__->register_method ({
 
 	my $cfg = PVE::INotify::read_file($ldapconfigfile);
 
-	my $section = $param->{section};
+	my $profile = $param->{profile};
 
-	my $data = $cfg->{ids}->{$section};
-	die "LDAP entry '$section' does not exist\n" if !$data;
+	my $data = $cfg->{ids}->{$profile};
+	die "LDAP profile '$profile' does not exist\n" if !$data;
 
 	$data->{digest} = $cfg->{digest};
 
@@ -171,9 +171,9 @@ __PACKAGE__->register_method ({
 
 __PACKAGE__->register_method ({
     name => 'update',
-    path => '{section}',
+    path => '{profile}',
     method => 'PUT',
-    description => "Update LDAP server settings.",
+    description => "Update LDAP profile settings.",
     protected => 1,
     proxyto => 'master',
     parameters => PMG::LDAPConfig->updateSchema(),
@@ -189,39 +189,39 @@ __PACKAGE__->register_method ({
 	    my $digest = extract_param($param, 'digest');
 	    PVE::SectionConfig::assert_if_modified($cfg, $digest);
 
-	    my $section = extract_param($param, 'section');
+	    my $profile = extract_param($param, 'profile');
 
-	    die "LDAP entry '$section' does not exist\n"
-		if !$ids->{$section};
+	    die "LDAP profile '$profile' does not exist\n"
+		if !$ids->{$profile};
 
 	    my $delete_str = extract_param($param, 'delete');
 	    die "no options specified\n"
 		if !$delete_str && !scalar(keys %$param);
 
 	    foreach my $opt (PVE::Tools::split_list($delete_str)) {
-		delete $ids->{$section}->{$opt};
+		delete $ids->{$profile}->{$opt};
 	    }
 
-	    my $config = PMG::LDAPConfig->check_config($section, $param, 0, 1);
+	    my $config = PMG::LDAPConfig->check_config($profile, $param, 0, 1);
 
 	    foreach my $p (keys %$config) {
-		$ids->{$section}->{$p} = $config->{$p};
+		$ids->{$profile}->{$p} = $config->{$p};
 	    }
 
-	    $forced_ldap_sync->($section, $config)
+	    $forced_ldap_sync->($profile, $config)
 		if !$config->{disable};
 
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
 
-	PMG::LDAPConfig::lock_config($code, "update LDAP entry failed");
+	PMG::LDAPConfig::lock_config($code, "update LDAP profile failed");
 
 	return undef;
     }});
 
 __PACKAGE__->register_method ({
     name => 'sync',
-    path => '{section}',
+    path => '{profile}',
     method => 'POST',
     description => "Synchronice LDAP users to local database.",
     protected => 1,
@@ -229,8 +229,8 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    section => {
-		description => "Secion ID.",
+	    profile => {
+		description => "Profile ID.",
 		type => 'string', format => 'pve-configid',
 	    },
 	},
@@ -242,17 +242,17 @@ __PACKAGE__->register_method ({
 	my $cfg = PVE::INotify::read_file($ldapconfigfile);
 	my $ids = $cfg->{ids};
 
-	my $section = extract_param($param, 'section');
+	my $profile = extract_param($param, 'profile');
 
-	die "LDAP entry '$section' does not exist\n"
-	    if !$ids->{$section};
+	die "LDAP profile '$profile' does not exist\n"
+	    if !$ids->{$profile};
 
-	my $config = $ids->{$section};
+	my $config = $ids->{$profile};
 
 	if ($config->{disable}) {
-	    die "LDAP entry '$section' is disabled\n";
+	    die "LDAP profile '$profile' is disabled\n";
 	} else {
-	    $forced_ldap_sync->($section, $config)
+	    $forced_ldap_sync->($profile, $config)
 	}
 
 	return undef;
@@ -260,16 +260,16 @@ __PACKAGE__->register_method ({
 
 __PACKAGE__->register_method ({
     name => 'delete',
-    path => '{section}',
+    path => '{profile}',
     method => 'DELETE',
-    description => "Delete an LDAP server entry.",
+    description => "Delete an LDAP profile",
     protected => 1,
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    section => {
-		description => "Secion ID.",
+	    profile => {
+		description => "Profile ID.",
 		type => 'string', format => 'pve-configid',
 	    },
 	}
@@ -283,19 +283,19 @@ __PACKAGE__->register_method ({
 	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
 	    my $ids = $cfg->{ids};
 
-	    my $section = $param->{section};
+	    my $profile = $param->{profile};
 
-	    die "LDAP entry '$section' does not exist\n"
-		if !$ids->{$section};
+	    die "LDAP profile '$profile' does not exist\n"
+		if !$ids->{$profile};
 
-	    delete $ids->{$section};
+	    delete $ids->{$profile};
 
-	    PMG::LDAPCache->delete($section);
+	    PMG::LDAPCache->delete($profile);
 
 	    PVE::INotify::write_file($ldapconfigfile, $cfg);
 	};
 
-	PMG::LDAPConfig::lock_config($code, "delete LDAP entry failed");
+	PMG::LDAPConfig::lock_config($code, "delete LDAP profile failed");
 
 	return undef;
     }});
