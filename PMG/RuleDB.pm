@@ -23,8 +23,7 @@ use PMG::RuleDB::IPAddress;
 use PMG::RuleDB::IPNet;
 use PMG::RuleDB::Domain;
 use PMG::RuleDB::ReceiverDomain;
-# fixme:
-#use Proxmox::RuleDB::LDAP;
+use PMG::RuleDB::LDAP;
 use PMG::RuleDB::LDAPUser;
 use PMG::RuleDB::TimeFrame;
 use PMG::RuleDB::Spam;
@@ -316,10 +315,9 @@ sub get_object {
     elsif ($otype == PMG::RuleDB::IPNet::otype) {
 	$obj = PMG::RuleDB::IPNet->new();
     }
-# fixme
-#    elsif ($otype == Proxmox::RuleDB::LDAP::otype) {
-#	$obj = Proxmox::RuleDB::LDAP->new();
-#    }
+    elsif ($otype == PMG::RuleDB::LDAP::otype) {
+	$obj = PMG::RuleDB::LDAP->new();
+    }
     elsif ($otype == PMG::RuleDB::LDAPUser::otype) {
 	$obj = PMG::RuleDB::LDAPUser->new();
     }
