@@ -332,18 +332,16 @@ sub querygroups {
 sub ldap_connect {
     my ($self) = @_;
 
-    my $mode = $self->{mode};
-    my $portstr = '';
-    $portstr = ':' . $self->{port} if $self->{port};
+    my $hosts = [ $self->{server1} ];
 
-    my $serverstr = "$mode://$self->{server1}${portstr}/";
-    my $ldap = Net::LDAP->new($serverstr);
-    if(!$ldap && $self->{server2} && $self->{server2} ne '127.0.0.1')  {
-	$serverstr = "$mode://$self->{server2}${portstr}/";
-	$ldap = Net::LDAP->new($serverstr);
-    }
+    push @$hosts, $self->{server2} if $self->{server2};
 
-    return $ldap;
+    my $opts = { timeout => 10, onerror => 'die' };
+
+    $opts->{port} = $self->{port} if $self->{port};
+    $opts->{schema} = $self->{mode};
+
+    return Net::LDAP->new($hosts, %$opts);
 }
 
 sub ldap_connect_and_bind {
