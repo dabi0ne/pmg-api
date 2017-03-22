@@ -138,8 +138,41 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'read',
+    name => 'profile_index',
     path => '{profile}',
+    method => 'GET',
+    description => "Directory index",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    profile => {
+		description => "Profile ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		subdir => { type => 'string'},
+	    },
+	},
+	links => [ { rel => 'child', href => "{subdir}" } ],
+    },
+    code => sub {
+	my ($param) = @_;
+
+	return [
+	    { subdir => 'config' },
+	    { subdir => 'sync' },
+	];
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'read_config',
+    path => '{profile}/config',
     method => 'GET',
     description => "Get LDAP profile configuration.",
     proxyto => 'master',
@@ -148,7 +181,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    profile => {
-		description => "Secion ID.",
+		description => "Profile ID.",
 		type => 'string', format => 'pve-configid',
 	    },
 	},
@@ -170,8 +203,8 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'update',
-    path => '{profile}',
+    name => 'update_config',
+    path => '{profile}/config',
     method => 'PUT',
     description => "Update LDAP profile settings.",
     protected => 1,
@@ -220,8 +253,8 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'sync',
-    path => '{profile}',
+    name => 'sync_profile',
+    path => '{profile}/sync',
     method => 'POST',
     description => "Synchronice LDAP users to local database.",
     protected => 1,
