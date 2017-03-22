@@ -167,6 +167,8 @@ __PACKAGE__->register_method ({
 	return [
 	    { subdir => 'config' },
 	    { subdir => 'sync' },
+	    { subdir => 'users' },
+	    { subdir => 'groups' },
 	];
     }});
 
@@ -331,6 +333,157 @@ __PACKAGE__->register_method ({
 	PMG::LDAPConfig::lock_config($code, "delete LDAP profile failed");
 
 	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'profile_list_users',
+    path => '{profile}/users',
+    method => 'GET',
+    description => "List LDAP users.",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    profile => {
+		description => "Profile ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		dn => { type => 'string'},
+		account => { type => 'string'},
+		pmail => { type => 'string'},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $ids = $cfg->{ids};
+
+	my $profile = $param->{profile};
+
+	die "LDAP profile '$profile' does not exist\n"
+	    if !$ids->{$profile};
+
+	my $config = $ids->{$profile};
+
+	return [] if $config->{disable};
+
+	my $ldapcache = PMG::LDAPCache->new(
+	    id => $profile, syncmode => 1, %$config);
+
+	return $ldapcache->list_users();
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'address_list',
+    path => '{profile}/users/{email}',
+    method => 'GET',
+    description => "Get all email addresses for the specified user.",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    profile => {
+		description => "Profile ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	    email => {
+		description => "Email address.",
+		type => 'string', format => 'email',
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		primary => { type => 'boolean'},
+		email => { type => 'string'},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $ids = $cfg->{ids};
+
+	my $profile = $param->{profile};
+
+	die "LDAP profile '$profile' does not exist\n"
+	    if !$ids->{$profile};
+
+	my $config = $ids->{$profile};
+
+	die "profile '$profile' is disabled\n" if $config->{disable};
+
+	my $ldapcache = PMG::LDAPCache->new(
+	    id => $profile, syncmode => 1, %$config);
+
+	my $res = $ldapcache->list_addresses($param->{email});
+
+	die "unable to find ldap user with email address '$param->{email}'\n"
+	    if !$res;
+
+	return $res;
+
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'profile_list_groups',
+    path => '{profile}/groups',
+    method => 'GET',
+    description => "List LDAP groups.",
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    profile => {
+		description => "Profile ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		dn => { type => 'string'},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $ids = $cfg->{ids};
+
+	my $profile = $param->{profile};
+
+	die "LDAP profile '$profile' does not exist\n"
+	    if !$ids->{$profile};
+
+	my $config = $ids->{$profile};
+
+	return [] if $config->{disable};
+
+	my $ldapcache = PMG::LDAPCache->new(
+	    id => $profile, syncmode => 1, %$config);
+
+	return $ldapcache->list_groups();
     }});
 
 1;

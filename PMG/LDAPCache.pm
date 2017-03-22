@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use File::Path;
 use LockFile::Simple;
+use Data::Dumper;
 use Net::LDAP;
 use Net::LDAP::Control::Paged;
 use Net::LDAP::Constant qw (LDAP_CONTROL_PAGED);
@@ -556,11 +557,14 @@ sub loaddata {
     }
 }
 
-sub groups {
+sub list_groups {
     my ($self) = @_;
 
+    my $res = [];
+
     my $dbh = $self->{dbstat}->{groups}->{dbh};
-    return [] if !$dbh;
+
+    return $res if !$dbh;
 
     my $key = 0 ;
     my $value = "" ;
@@ -568,11 +572,78 @@ sub groups {
     my $keys;
 
     while ($status == 0) {
-        push @$keys, $key;
+	push @$res, {
+	    dn => $key,
+	};
         $status = $dbh->seq($key, $value, R_NEXT());
     }
 
-    return $keys;
+    return $res;
+}
+
+sub list_users {
+    my ($self) = @_;
+
+    my $res = [];
+
+    my $dbh = $self->{dbstat}->{users}->{dbh};
+
+    return $res if !$dbh;
+
+    my $key = 0 ;
+    my $value = "" ;
+    my $status = $dbh->seq($key, $value, R_FIRST());
+    my $keys;
+
+    while ($status == 0) {
+	my ($pmail, $account, $dn) = unpack('n/a* n/a* n/a*', $value);
+	push @$res, {
+	    pmail => $pmail,
+	    account => $account,
+	    dn => $dn,
+	};
+        $status = $dbh->seq($key, $value, R_NEXT());
+    }
+
+    return $res;
+}
+
+sub list_addresses {
+    my ($self, $mail) = @_;
+
+    my $dbhmails = $self->{dbstat}->{mails}->{dbh};
+    my $dbhusers = $self->{dbstat}->{users}->{dbh};
+
+    return undef if !$dbhmails || !$dbhusers;
+
+    $mail = lc($mail);
+
+    my $res = [];
+
+    my $cuid;
+    $dbhmails->get($mail, $cuid);
+    return undef if !$cuid;
+
+    my $rdata;
+    $dbhusers->get($cuid, $rdata);
+    return undef if !$rdata;
+
+    my ($pmail, $account, $dn) = unpack('n/a* n/a* n/a*', $rdata);
+
+    push @$res, { primary => 1, email => $pmail };
+
+    my $key = 0 ;
+    my $value = "" ;
+    my $status = $dbhmails->seq($key, $value, R_FIRST());
+
+    while ($status == 0) {
+	if ($value == $cuid && $key ne $pmail) {
+	    push @$res, { primary => 0, email => $key };
+	}
+	$status = $dbhmails->seq($key, $value, R_NEXT());
+    }
+
+    return $res;
 }
 
 sub mail_exists {
