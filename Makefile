@@ -79,6 +79,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/Receiver.pm		\
 	PMG/RuleDB/Domain.pm		\
 	PMG/RuleDB/ReceiverDomain.pm	\
+	PMG/RuleDB/LDAPUser.pm		\
 	PMG/RuleDB/TimeFrame.pm		\
 	PMG/RuleDB/MatchField.pm	\
 	PMG/RuleDB/ContentTypeFilter.pm	\

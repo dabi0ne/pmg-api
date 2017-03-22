@@ -25,7 +25,7 @@ use PMG::RuleDB::Domain;
 use PMG::RuleDB::ReceiverDomain;
 # fixme:
 #use Proxmox::RuleDB::LDAP;
-#use Proxmox::RuleDB::LDAPUser;
+use PMG::RuleDB::LDAPUser;
 use PMG::RuleDB::TimeFrame;
 use PMG::RuleDB::Spam;
 use PMG::RuleDB::ReportSpam;
@@ -320,9 +320,9 @@ sub get_object {
 #    elsif ($otype == Proxmox::RuleDB::LDAP::otype) {
 #	$obj = Proxmox::RuleDB::LDAP->new();
 #    }
-#    elsif ($otype == Proxmox::RuleDB::LDAPUser::otype) {
-#	$obj = Proxmox::RuleDB::LDAPUser->new();
-#    }
+    elsif ($otype == PMG::RuleDB::LDAPUser::otype) {
+	$obj = PMG::RuleDB::LDAPUser->new();
+    }
     # WHEN OBJECTS
     elsif ($otype == PMG::RuleDB::TimeFrame::otype) {
 	$obj = PMG::RuleDB::TimeFrame->new();
