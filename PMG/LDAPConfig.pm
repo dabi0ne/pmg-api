@@ -16,7 +16,7 @@ my $defaultData = {
     propertyList => {
 	type => { description => "Section type." },
 	profile => {
-	    description => "Secion ID.",
+	    description => "Profile ID.",
 	    type => 'string', format => 'pve-configid',
 	},
     },

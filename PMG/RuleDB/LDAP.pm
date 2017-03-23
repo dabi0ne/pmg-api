@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use DBI;
 
+use PVE::Exception qw(raise_param_exc);
+
 use PMG::Utils;
 use PMG::RuleDB::Object;
 use PMG::LDAPCache;
@@ -50,10 +52,10 @@ sub load_attr {
     my $obj;
     if ($value =~ m/^([^:]*):(.*)$/) {
 	$obj = $class->new($2, $1, $ogroup);
-	$obj->{digest} = Digest::SHA::sha1_hex ($id, $2, $1, $ogroup);
+	$obj->{digest} = Digest::SHA::sha1_hex($id, $2, $1, $ogroup);
     } else {
-	$obj = $class->new ($value, '', $ogroup);
-	$obj->{digest} = Digest::SHA::sha1_hex ($id, $value, '#', $ogroup);
+	$obj = $class->new($value, '', $ogroup);
+	$obj->{digest} = Digest::SHA::sha1_hex($id, $value, '#', $ogroup);
     }
 
     $obj->{id} = $id;
@@ -102,8 +104,11 @@ sub test_ldap {
 	return $ldap->mail_exists($addr, $profile);
     } elsif ($group eq '-') {
 	return !$ldap->mail_exists($addr, $profile);
-    } else {
+    } elsif ($profile) {
 	return $ldap->user_in_group ($addr, $group, $profile);
+    } else {
+	# fail if we have a real $group without $profile
+	return 0;
     }
 }
 
@@ -113,6 +118,102 @@ sub who_match {
     return 0 if !$ldap;
 
     return test_ldap($ldap, $addr, $self->{ldapgroup}, $self->{profile});
+}
+
+sub short_desc {
+    my ($self) = @_;
+
+    my $desc;
+
+    my $profile = $self->{profile};
+    my $group = $self->{ldapgroup};
+
+    if ($group eq '') {
+	$desc = "Existing LDAP address";
+	$desc = "$profile: $desc" if $profile;
+    } elsif ($group eq '-') {
+	$desc = "Unknown LDAP address";
+	$desc = "$profile: $desc" if $profile;
+    } elsif ($profile) {
+	$desc = "LDAP group '$group' from profile '$profile'";
+    } else {
+	$desc = "LDAP group without profile - fail always";
+    }
+
+    return $desc;
+}
+
+sub properties {
+    my ($class) = @_;
+
+    return {
+	mode => {
+	    description => "Operational mode. You can either match 'any' user, match when no such user exists with 'none', or match when the user is member of a specific group.",
+	    type => 'string',
+	    enum => ['any', 'none', 'group'],
+	},
+	profile => {
+	    description => "Profile ID.",
+	    type => 'string', format => 'pve-configid',
+	    optional => 1,
+	},
+	group => {
+	    description => "LDAP Group DN",
+	    type => 'string',
+	    maxLength => 1024,
+	    minLength => 1,
+	    optional => 1,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    my $group = $self->{ldapgroup};
+    my $profile = $self->{profile},
+
+    my $data = {};
+
+    if ($group eq '') {
+	$data->{mode} = 'any';
+    } elsif ($group eq '-') {
+	$data->{mode} = 'none';
+    } else {
+	$data->{mode} = 'group';
+	$data->{group} = $group;
+    }
+
+    $data->{profile} = $profile if $profile ne '';
+
+    return $data;
+ }
+
+sub update {
+    my ($self, $param) = @_;
+
+    my $mode = $param->{mode};
+
+    if ($mode eq 'any') {
+	raise_param_exc({ group => "paramater not allwed with mode '$mode'"})
+	    if defined($param->{group});
+	$self->{ldapgroup} = '';
+	$self->{profile} = $param->{profile} // '';
+    } elsif ($mode eq 'none') {
+	raise_param_exc({ group => "paramater not allwed with mode '$mode'"})
+	    if defined($param->{group});
+	$self->{ldapgroup} = '-';
+	$self->{profile} = $param->{profile} // '';
+    } elsif ($mode eq 'group') {
+	raise_param_exc({ group => "paramater is required with mode '$mode'"})
+	    if !defined($param->{group});
+	$self->{ldapgroup} = $param->{group};
+	raise_param_exc({ profile => "paramater is required with mode '$mode'"})
+	    if !defined($param->{profile});
+	$self->{profile} = $param->{profile};
+    } else {
+	die "internal error"; # just to me sure
+    }
 }
 
 1;

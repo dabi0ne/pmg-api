@@ -18,6 +18,7 @@ use PMG::RuleDB::EMail;
 use PMG::RuleDB::IPAddress;
 use PMG::RuleDB::IPNet;
 use PMG::RuleDB::Domain;
+use PMG::RuleDB::LDAP;
 use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
@@ -57,6 +58,7 @@ __PACKAGE__->register_method ({
 	    { subdir => 'regex' },
 	    { subdir => 'ip' },
 	    { subdir => 'network' },
+	    { subdir => 'ldap' },
 	    # fixme: ldap
 	];
 
@@ -71,5 +73,6 @@ PMG::RuleDB::Domain->register_api(__PACKAGE__, 'domain');
 PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'regex');
 PMG::RuleDB::IPAddress->register_api(__PACKAGE__, 'ip');
 PMG::RuleDB::IPNet->register_api(__PACKAGE__, 'network');
+PMG::RuleDB::LDAP->register_api(__PACKAGE__, 'ldap');
 
 1;
