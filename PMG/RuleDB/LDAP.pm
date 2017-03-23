@@ -194,6 +194,20 @@ sub update {
 
     my $mode = $param->{mode};
 
+    if (defined(my $profile = $param->{profile})) {
+	my $cfg = PVE::INotify::read_file("pmg-ldap.conf");
+	my $config = $cfg->{ids}->{$profile};
+	die "LDAP profile '$profile' does not exist\n" if !$config;
+
+	if (defined(my $group = $param->{group})) {
+	    my $ldapcache = PMG::LDAPCache->new(
+		id => $profile, syncmode => 1, %$config);
+
+	    die "LDAP group '$group' does not exist\n"
+		if !$ldapcache->group_exists($group);
+	}
+    }
+
     if ($mode eq 'any') {
 	raise_param_exc({ group => "paramater not allwed with mode '$mode'"})
 	    if defined($param->{group});

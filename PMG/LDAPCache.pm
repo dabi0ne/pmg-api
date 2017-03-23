@@ -672,6 +672,17 @@ sub account_exists {
     return $res;
 }
 
+sub group_exists {
+    my ($self, $group) = @_;
+
+    my $dbh = $self->{dbstat}->{groups}->{dbh};
+    return 0 if !$dbh;
+
+    my $res;
+    $dbh->get($group, $res);
+    return $res;
+}
+
 sub account_has_address {
     my ($self, $account, $mail) = @_;
 
