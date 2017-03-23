@@ -122,7 +122,7 @@ sub short_desc {
     my $desc;
 
     if ($profile) {
-	$desc = "$profile: $user";
+	$desc = "LDAP user '$user', profile '$profile'";
     } else {
 	$desc = "LDAP user without profile - fail always";
     }
