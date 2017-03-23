@@ -5,9 +5,12 @@ use warnings;
 use DBI;
 use Digest::SHA;
 
+use PVE::INotify;
+
 use PMG::Utils;
 use PMG::RuleDB::Object;
 use PMG::LDAPCache;
+use PMG::LDAPConfig;
 use PMG::LDAPSet;
 
 use base qw(PMG::RuleDB::Object);

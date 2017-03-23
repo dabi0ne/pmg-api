@@ -200,7 +200,7 @@ sub register_object_group_config_api {
 	name => 'set_config',
 	path => $path,
 	method => 'PUT',
-	description => "Modify who group properties",
+	description => "Modify '$oclass' group properties",
 	proxyto => 'master',
 	parameters => {
 	    additionalProperties => 0,
@@ -301,6 +301,7 @@ sub register_objects_api {
 	method => 'DELETE',
 	description => "Remove an object from the '$oclass' group.",
 	proxyto => 'master',
+	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {

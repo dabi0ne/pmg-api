@@ -172,6 +172,7 @@ sub register_api {
 	method => 'POST',
 	description => "Add '$otype_text' object.",
 	proxyto => 'master',
+	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $create_properties,
@@ -233,6 +234,7 @@ sub register_api {
 	method => 'PUT',
 	description => "Update '$otype_text' object.",
 	proxyto => 'master',
+	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $update_properties,
