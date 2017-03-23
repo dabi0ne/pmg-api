@@ -19,6 +19,7 @@ use PMG::RuleDB::IPAddress;
 use PMG::RuleDB::IPNet;
 use PMG::RuleDB::Domain;
 use PMG::RuleDB::LDAP;
+use PMG::RuleDB::LDAPUser;
 use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
@@ -74,5 +75,6 @@ PMG::RuleDB::WhoRegex->register_api(__PACKAGE__, 'regex');
 PMG::RuleDB::IPAddress->register_api(__PACKAGE__, 'ip');
 PMG::RuleDB::IPNet->register_api(__PACKAGE__, 'network');
 PMG::RuleDB::LDAP->register_api(__PACKAGE__, 'ldap');
+PMG::RuleDB::LDAPUser->register_api(__PACKAGE__, 'ldapuser');
 
 1;

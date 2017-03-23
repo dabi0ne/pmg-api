@@ -110,6 +110,68 @@ sub who_match {
     return test_ldap($ldap, $addr, $self->{ldapuser}, $self->{profile});
 }
 
+sub short_desc {
+    my ($self) = @_;
+
+    my $user = $self->{ldapuser};
+    my $profile = $self->{profile};
+
+    my $desc;
+
+    if ($profile) {
+	$desc = "$profile: $user";
+    } else {
+	$desc = "LDAP user without profile - fail always";
+    }
+
+    return $desc;
+}
+
+sub properties {
+    my ($class) = @_;
+
+    return {
+	profile => {
+	    description => "Profile ID.",
+	    type => 'string', format => 'pve-configid',
+	},
+	account => {
+	    description => "LDAP user account name.",
+	    type => 'string',
+	    maxLength => 1024,
+	    minLength => 1,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return {
+	account => $self->{ldapuser},
+	profile => $self->{profile},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    my $profile = $param->{profile};
+    my $cfg = PVE::INotify::read_file("pmg-ldap.conf");
+    my $config = $cfg->{ids}->{$profile};
+    die "LDAP profile '$profile' does not exist\n" if !$config;
+
+    my $account = $param->{account};
+    my $ldapcache = PMG::LDAPCache->new(
+	id => $profile, syncmode => 1, %$config);
+
+    die "LDAP acoount '$account' does not exist\n"
+	if !$ldapcache->account_exists($account);
+
+    $self->{ldapuser} = $account;
+    $self->{profile} = $profile;
+}
+
 1;
 
 __END__
