@@ -130,10 +130,18 @@ sub short_desc {
 
     if ($group eq '') {
 	$desc = "Existing LDAP address";
-	$desc .= ", profile '$profile'" if $profile;
+	if ($profile) {
+	    $desc .= ", profile '$profile'";
+	} else {
+	    $desc .= ", any profile";
+	}
     } elsif ($group eq '-') {
 	$desc = "Unknown LDAP address";
-	$desc .= ", profile '$profile'" if $profile;
+	if ($profile) {
+	    $desc .= ", profile '$profile'";
+	} else {
+	    $desc .= ", any profile";
+	}
     } elsif ($profile) {
 	$desc = "LDAP group '$group', profile '$profile'";
     } else {
