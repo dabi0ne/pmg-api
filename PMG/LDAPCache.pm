@@ -211,12 +211,9 @@ sub queryusers {
 	    if ($account && ($account =~ m/^\S+$/s)) {
 		$account = lc($account);
 		$self->{dbstat}->{accounts}->{dbh}->put($account, $cuid);
-	    } else {
-		$account = '';
+		my $data = pack('n/a* n/a* n/a*', $pmail, $account, $dn);
+		$self->{dbstat}->{users}->{dbh}->put($cuid, $data);
 	    }
-
-	    my $data = pack('n/a* n/a* n/a*', $pmail, $account, $dn);
-	    $self->{dbstat}->{users}->{dbh}->put($cuid, $data);
 
 	    foreach my $mail (@$addresses) {
 		$self->{dbstat}->{mails}->{dbh}->put($mail, $cuid);
