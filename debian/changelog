@@ -1,3 +1,9 @@
+proxmox-mailgateway (5.0-2) unstable; urgency=medium
+
+  * restart services after upgrade
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 24 Mar 2017 10:24:37 +0100
+
 proxmox-mailgateway (5.0-1) unstable; urgency=medium
 
   * adjust version (so that we are higher than previous
