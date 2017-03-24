@@ -16,6 +16,8 @@ use PMG::Utils;
 use base qw(PVE::RESTHandler);
 
 my $service_name_list = [
+    'clamav-daemon',
+    'clamav-freshclam',
     'pmgproxy',
     'pmgdaemon',
     'pmgpolicy',

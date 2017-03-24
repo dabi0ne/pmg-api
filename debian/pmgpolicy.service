@@ -1,5 +1,5 @@
 [Unit]
-Description=PMG Policy Daemon
+Description=Proxmox Mail Gateway Policy Daemon
 ConditionPathExists=/usr/bin/pmgpolicy
 Wants=remote-fs.target
 After=remote-fs.target

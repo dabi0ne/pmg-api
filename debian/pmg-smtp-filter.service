@@ -1,5 +1,5 @@
 [Unit]
-Description=PMG SMTP Filter Daemon
+Description=Proxmox SMTP Filter Daemon
 ConditionPathExists=/usr/bin/pmg-smtp-filter
 Wants=remote-fs.target
 After=remote-fs.target
