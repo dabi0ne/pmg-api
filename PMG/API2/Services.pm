@@ -18,6 +18,7 @@ use base qw(PVE::RESTHandler);
 my $service_name_list = [
     'pmgproxy',
     'pmgdaemon',
+    'pmgpolicy',
     'pmg-smtp-filter',
     'sshd',
     'syslog',
