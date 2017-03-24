@@ -23,6 +23,9 @@ Proxmox Mail Gateway 5.0 News
 
 - depend on  clamav-unofficial-sigs (include Sanesecurity signatures)
 
+- new LDAP configuration - Users need to reconfigure LDAP and all LDAP
+  Rule objects on update.
+
 
 Incompatible changes:
 ---------------------
