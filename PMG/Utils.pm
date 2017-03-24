@@ -670,4 +670,60 @@ sub update_node_status_rrd {
     die "RRD error: $err\n" if $err;
 }
 
+sub create_rrd_data {
+    my ($rrdname, $timeframe, $cf) = @_;
+
+    my $rrd = "${rrd_dir}/$rrdname";
+
+    my $setup = {
+	hour =>  [ 60, 70 ],
+	day  =>  [ 60*30, 70 ],
+	week =>  [ 60*180, 70 ],
+	month => [ 60*720, 70 ],
+	year =>  [ 60*10080, 70 ],
+    };
+
+    my ($reso, $count) = @{$setup->{$timeframe}};
+    my $ctime  = $reso*int(time()/$reso);
+    my $req_start = $ctime - $reso*$count;
+
+    $cf = "AVERAGE" if !$cf;
+
+    my @args = (
+	"-s" => $req_start,
+	"-e" => $ctime - 1,
+	"-r" => $reso,
+	);
+
+    push @args, "--daemon" => "unix:${rrdcached_socket}"
+	if -S $rrdcached_socket;
+
+    my ($start, $step, $names, $data) = RRDs::fetch($rrd, $cf, @args);
+
+    my $err = RRDs::error;
+    die "RRD error: $err\n" if $err;
+
+    die "got wrong time resolution ($step != $reso)\n"
+	if $step != $reso;
+
+    my $res = [];
+    my $fields = scalar(@$names);
+    for my $line (@$data) {
+	my $entry = { 'time' => $start };
+	$start += $step;
+	for (my $i = 0; $i < $fields; $i++) {
+	    my $name = $names->[$i];
+	    if (defined(my $val = $line->[$i])) {
+		$entry->{$name} = $val;
+	    } else {
+		# leave empty fields undefined
+		# maybe make this configurable?
+	    }
+	}
+	push @$res, $entry;
+    }
+
+    return $res;
+}
+
 1;

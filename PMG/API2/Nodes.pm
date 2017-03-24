@@ -75,6 +75,45 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method({
+    name => 'rrddata',
+    path => 'rrddata',
+    method => 'GET',
+    protected => 1, # fixme: can we avoid that?
+    proxyto => 'node',
+    description => "Read node RRD statistics",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    timeframe => {
+		description => "Specify the time frame you are interested in.",
+		type => 'string',
+		enum => [ 'hour', 'day', 'week', 'month', 'year' ],
+	    },
+	    cf => {
+		description => "The RRD consolidation function",
+		type => 'string',
+		enum => [ 'AVERAGE', 'MAX' ],
+		optional => 1,
+	    },
+	},
+    },
+    returns => {
+	type => "array",
+	items => {
+	    type => "object",
+	    properties => {},
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	return PMG::Utils::create_rrd_data(
+	    "pmg-node-v1.rrd", $param->{timeframe}, $param->{cf});
+    }});
+
+
+__PACKAGE__->register_method({
     name => 'syslog',
     path => 'syslog',
     method => 'GET',
