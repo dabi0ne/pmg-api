@@ -49,13 +49,23 @@ sub ldap_resync {
 	my $msg = "start syncing ldap profile '${p}' (${server})";
 	syslog('info', $msg);
 	print STDERR "$msg\n" if $tostderr;
+
 	$ldap->{$p}->update(2);
+
+	my $errors = $ldap->{$p}->{errors};
+	print STDERR $errors if $tostderr && $errors;
+
 	my $gcount = $ldap->{$p}->{gcount};
 	my $ucount = $ldap->{$p}->{ucount};
 	my $mcount = $ldap->{$p}->{mcount};
 
-	$msg = "finished syncing ldap profile '${p}' (${server}): " .
-	    "found $ucount accounts, $mcount addresses, $gcount groups";
+	if ($errors) {
+	    $msg = "aborted syncing ldap profile '${p}' (${server}): " .
+		"keep old data, $ucount accounts, $mcount addresses, $gcount groups";
+	} else {
+	    $msg = "finished syncing ldap profile '${p}' (${server}): " .
+		"found $ucount accounts, $mcount addresses, $gcount groups";
+	}
 	syslog('info', $msg);
 	print STDERR "$msg\n" if $tostderr;
     }

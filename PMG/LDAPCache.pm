@@ -374,8 +374,6 @@ sub sync_database {
 
     # open ldap connection
 
-    syslog('info', "syncing ldap database '$self->{id}'");
-
     my $ldap;
 
     eval { $ldap = $self->ldap_connect_and_bind(); };
@@ -465,8 +463,6 @@ sub sync_database {
     $self->{gcount} = $self->{dbstat}->{groups}->{idcount};
     $self->{ucount} = __count_entries($self->{dbstat}->{accounts}->{dbh});
     $self->{mcount} = __count_entries($self->{dbstat}->{mails}->{dbh});
-
-    syslog('info', "ldap sync '$self->{id}' successful ($self->{mcount})");
 }
 
 sub __count_entries {
