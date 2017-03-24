@@ -186,5 +186,7 @@ system("kill `cat $pidfile`") if -f $pidfile;
 
 print "ALL TESTS OK\n";
 
+system("systemctl start pmgpolicy");
+
 exit (0);
 
