@@ -17,7 +17,10 @@ use Xdgmime;
 use Data::Dumper;
 use Net::IP;
 use Socket;
+use RRDs;
+use Filesys::Df;
 
+use PVE::ProcFSTools;
 use PVE::Network;
 use PVE::Tools;
 use PVE::SafeSyslog;
@@ -251,7 +254,7 @@ sub analyze_virus {
 
 sub magic_mime_type_for_file {
     my ($filename) = @_;
-    
+
     # we do not use get_mime_type_for_file, because that considers
     # filename extensions - we only want magic type detection
 
@@ -260,7 +263,7 @@ sub magic_mime_type_for_file {
 
     my $ct = "application/octet-stream";
 
-    my $fh = IO::File->new("<$filename") || 
+    my $fh = IO::File->new("<$filename") ||
 	die "unable to open file '$filename' - $!";
 
     my ($buf, $len);
@@ -268,9 +271,9 @@ sub magic_mime_type_for_file {
 	$ct = xdg_mime_get_mime_type_for_data($buf, $len);
     }
     $fh->close();
-    
+
     die "unable to read file '$filename' - $!" if ($len < 0);
-    
+
     return $ct;
 }
 
@@ -558,6 +561,113 @@ sub clamav_dbstat {
     }
 
     return $res;
+}
+
+# RRD related code
+my $rrd_dir = "/var/lib/rrdcached/db";
+my $rrdcached_socket = "/var/run/rrdcached.sock";
+
+my $rrd_def_node = [
+    "DS:loadavg:GAUGE:120:0:U",
+    "DS:maxcpu:GAUGE:120:0:U",
+    "DS:cpu:GAUGE:120:0:U",
+    "DS:iowait:GAUGE:120:0:U",
+    "DS:memtotal:GAUGE:120:0:U",
+    "DS:memused:GAUGE:120:0:U",
+    "DS:swaptotal:GAUGE:120:0:U",
+    "DS:swapused:GAUGE:120:0:U",
+    "DS:roottotal:GAUGE:120:0:U",
+    "DS:rootused:GAUGE:120:0:U",
+    "DS:netin:DERIVE:120:0:U",
+    "DS:netout:DERIVE:120:0:U",
+
+    "RRA:AVERAGE:0.5:1:70", # 1 min avg - one hour
+    "RRA:AVERAGE:0.5:30:70", # 30 min avg - one day
+    "RRA:AVERAGE:0.5:180:70", # 3 hour avg - one week
+    "RRA:AVERAGE:0.5:720:70", # 12 hour avg - one month
+    "RRA:AVERAGE:0.5:10080:70", # 7 day avg - ony year
+
+    "RRA:MAX:0.5:1:70", # 1 min max - one hour
+    "RRA:MAX:0.5:30:70", # 30 min max - one day
+    "RRA:MAX:0.5:180:70", # 3 hour max - one week
+    "RRA:MAX:0.5:720:70", # 12 hour max - one month
+    "RRA:MAX:0.5:10080:70", # 7 day max - ony year
+];
+
+sub cond_create_rrd_file {
+    my ($filename, $rrddef) = @_;
+
+    return if -f $filename;
+
+    my @args = ($filename);
+
+    push @args, "--daemon" => "unix:${rrdcached_socket}"
+	if -S $rrdcached_socket;
+
+    push @args, '--step', 60;
+
+    push @args, @$rrddef;
+
+    # print "TEST: " . join(' ', @args) . "\n";
+
+    RRDs::create(@args);
+    my $err = RRDs::error;
+    die "RRD error: $err\n" if $err;
+}
+
+sub update_node_status_rrd {
+
+    my $filename = "$rrd_dir/pmg-node-v1.rrd";
+    cond_create_rrd_file($filename, $rrd_def_node);
+
+    my ($avg1, $avg5, $avg15) = PVE::ProcFSTools::read_loadavg();
+
+    my $stat = PVE::ProcFSTools::read_proc_stat();
+
+    my $netdev = PVE::ProcFSTools::read_proc_net_dev();
+
+    my ($uptime) = PVE::ProcFSTools::read_proc_uptime();
+
+    my $cpuinfo = PVE::ProcFSTools::read_cpuinfo();
+
+    my $maxcpu = $cpuinfo->{cpus};
+
+    # traffic from/to physical interface cards
+    my $netin = 0;
+    my $netout = 0;
+    foreach my $dev (keys %$netdev) {
+	next if $dev !~ m/^eth\d+$/;
+	$netin += $netdev->{$dev}->{receive};
+	$netout += $netdev->{$dev}->{transmit};
+    }
+
+    my $meminfo = PVE::ProcFSTools::read_meminfo();
+
+    my $dinfo = df('/', 1); # output is bytes
+
+    my $ctime = time();
+
+    # everything not free is considered to be used
+    my $dused = $dinfo->{blocks} - $dinfo->{bfree};
+
+    my $data = "$ctime:$avg1:$maxcpu:$stat->{cpu}:$stat->{wait}:" .
+	"$meminfo->{memtotal}:$meminfo->{memused}:" .
+	"$meminfo->{swaptotal}:$meminfo->{swapused}:" .
+	"$dinfo->{blocks}:$dused:$netin:$netout";
+
+
+    my @args = ($filename);
+
+    push @args, "--daemon" => "unix:${rrdcached_socket}"
+	if -S $rrdcached_socket;
+
+    push @args, $data;
+
+    # print "TEST: " . join(' ', @args) . "\n";
+
+    RRDs::update(@args);
+    my $err = RRDs::error;
+    die "RRD error: $err\n" if $err;
 }
 
 1;

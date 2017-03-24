@@ -49,7 +49,7 @@ use base qw(Net::Server::PreFork);
 
 my $opt_commandline = [$0, @ARGV];
 my $opt_max_dequeue = 1;
-my $opt_dequeue_time = 60*2;
+my $opt_dequeue_time = 30;
 
 my $opt_ext_port = 10024;
 my $opt_int_port = 10023;
@@ -496,10 +496,28 @@ sub child_finish_hook {
     $self->{ruledb}->close () if $self->{ruledb};
 }
 
+my $last_dequeue_time = 0;
+
 sub run_dequeue {
     my $self = shift;
 
+    my $err;
+
     # do database maintainance here
+
+    my $ctime = time();
+    my $tdiff = $ctime - $last_dequeue_time;
+    $last_dequeue_time = $ctime;
+
+    eval {
+	PMG::Utils::update_node_status_rrd();
+    };
+    if ($err = $@) {
+	$self->log(0, PMG::Utils::msgquote("ERROR: $err"));
+	# continue
+    }
+
+    return if $tdiff < 2*60;
 
     $self->log (2, "starting database maintainance");
 
@@ -512,9 +530,7 @@ sub run_dequeue {
     eval {
 	$dbh = PMG::DBTools::open_ruledb($database);
     };
-    my $err = $@;
-
-    if ($err) {
+    if ($err = $@) {
 	$self->log (0, PMG::Utils::msgquote("ERROR: $err"));
 	return;
     }
