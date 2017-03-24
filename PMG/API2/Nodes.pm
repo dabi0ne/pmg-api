@@ -69,6 +69,7 @@ __PACKAGE__->register_method ({
 	    { name => 'tasks' },
 	    { name => 'time' },
 	    { name => 'vncshell' },
+	    { name => 'rrddata' },
 	];
 
 	return $result;
