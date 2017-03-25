@@ -65,6 +65,12 @@ sub properties {
 	    type => 'boolean',
 	    default => 1,
 	},
+	statlifetime => {
+	    description => "User Statistics Lifetime (days)",
+	    type => 'integer',
+	    default => 7,
+	    minimum => 1,
+	},
 	demo => {
 	    description => "Demo mode - do not start SMTP filter.",
 	    type => 'boolean',
@@ -98,6 +104,7 @@ sub properties {
 
 sub options {
     return {
+	statlifetime => { optional => 1 },
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },
 	email => { optional => 1 },
