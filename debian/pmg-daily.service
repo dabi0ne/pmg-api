@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily Proxmox Mail Gateway activities
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/pmg/bin/pmg-daily

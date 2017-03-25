@@ -20,7 +20,7 @@ REPOID=`./repoid.pl .git`
 SERVICES = pmgdaemon pmgproxy
 CLITOOLS = pmgdb pmgconfig pmgperf
 CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy
-CRONSCRIPTS = pmg-hourly
+CRONSCRIPTS = pmg-hourly pmg-daily
 
 CLI_CLASSES = $(addprefix PMG/CLI/, $(addsuffix .pm, ${CLITOOLS}))
 SERVICE_CLASSES = $(addprefix PMG/Service/, $(addsuffix .pm, ${SERVICES}))

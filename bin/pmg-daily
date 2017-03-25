@@ -1,0 +1,106 @@
+#!/usr/bin/perl -T
+
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
+
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};  
+
+use strict;
+use warnings;
+use Time::Local;
+
+use PVE::SafeSyslog;
+use PVE::INotify;
+use PVE::RESTEnvironment;
+
+use PMG::Utils;
+use PMG::Config;
+use PMG::ClusterConfig;
+use PMG::DBTools;
+
+$SIG{'__WARN__'} = sub {
+    my $err = $@;
+    my $t = $_[0];
+    chomp $t;
+    print STDERR "$t\n";
+    syslog('warning', "%s", $t);
+    $@ = $err;
+};
+
+PVE::RESTEnvironment->setup_default_cli_env();
+
+initlog('pmg-daily', 'mail');
+
+my $cfg = PMG::Config->new();
+
+sub get_timespan {
+    
+    my ($sec, $min, $hour, $mday, $mon, $year) = 
+	localtime(time());
+    
+    my $end = timelocal(0, 0, 0, $mday, $mon, $year);
+    my $start = $end - 3600*24;
+
+    return ($start, $end);
+}
+
+my $statlifetime = $cfg->get('admin', 'statlifetime');
+
+if ($statlifetime && $statlifetime > 0) {
+    my ($start, $end) = get_timespan();
+    
+    $statlifetime -= 1;
+
+    my $secs = $statlifetime * 86400;
+
+    $start -= $secs;
+
+    # delete statistics older than $start
+
+    my $dbh;
+
+    my ($srows, $rrows) = (0, 0);
+
+    eval {
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	$dbh->begin_work;
+    
+	my $sth = $dbh->prepare("DELETE FROM CStatistic WHERE time < $start");
+	$sth->execute;
+	$srows = $sth->rows;
+	$sth->finish;
+
+	if ($srows > 0) {
+	    $sth = $dbh->prepare(
+		"DELETE FROM CReceivers WHERE NOT EXISTS " .
+		"(SELECT * FROM CStatistic WHERE CID = CStatistic_CID AND RID = CStatistic_RID)");
+
+	    $sth->execute;
+	    $rrows = $sth->rows;
+	    $sth->finish;
+	}
+
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback if $dbh;
+	syslog('err', PMG::Utils::msgquote($err));
+    } else {
+	syslog('info', "cleanup removed $srows entries from " .
+	       "statistic database ($srows, $rrows)") if $srows;
+    }
+
+    $dbh->disconnect() if $dbh;
+}
+
+
+# fixme: check for available updates
+
+# rotate razor log file
+rename('/root/.razor/razor-agent.log', '/root/.razor/razor-agent.log.0');
+
+# run bayes database maintainance
+system('sa-learn --force-expire >/dev/null 2>&1');
+
+exit (0);
+

@@ -3,4 +3,4 @@ Description=Hourly Proxmox Mail Gateway activities
 
 [Service]
 Type=oneshot
-ExecStart=/usr/lib/pmg/bin/pmg-cron-hourly
+ExecStart=/usr/lib/pmg/bin/pmg-hourly
