@@ -19,11 +19,16 @@ REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy
 CLITOOLS = pmgdb pmgconfig pmgperf
-CLISCRIPTS= pmg-smtp-filter pmgsh pmgpolicy
+CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy
+CRONSCRIPTS = pmg-cron-hourly
 
 CLI_CLASSES = $(addprefix, 'PMG/CLI/', $(addsuffix '.pm', ${CLITOOLS}))
-CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS})
+SERVICE_CLASSES = $(addprefix, 'PMG/Service/', $(addsuffix '.pm', ${SERVIVES}))
+
+CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS} ${CRONSCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
+
+
 SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8 pmgpolicy.8
 CONF_MANS= pmg.conf.5 cluster.conf.5
 
@@ -98,6 +103,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/Block.pm		\
 	PMG/RuleDB.pm			\
 	${CLI_CLASSES} 			\
+	${SERVICE_CLASSES}		\
 	PMG/API2/Network.pm             \
 	PMG/API2/Services.pm		\
 	PMG/API2/Tasks.pm		\
@@ -120,10 +126,12 @@ LIBSOURCES =				\
 	PMG/API2/Action.pm		\
 	PMG/API2.pm
 
-all: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
+SOURCES= ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
+
+all: ${SOURCES}
 
 .PHONY: deb
-deb ${DEB}: ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
+deb ${DEB}: ${SOURCES}
 	rm -rf build
 	rsync -a * build
 	cd build; dpkg-buildpackage -b -us -uc
@@ -142,7 +150,7 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	perl -I. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
 	mv $@.tmp $@
 
-install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(addsuffix .service-bash-completion, ${SERVICES}) ${LIBSOURCES} ${CLI_BINARIES} $(addsuffix .bash-completion, ${CLITOOLS}) ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
+install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuffix .bash-completion, ${CLITOOLS})
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
 	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
 	perl -I. bin/pmgsh verifyapi
@@ -163,7 +171,7 @@ install: ${BTDATA} $(addsuffix .pm, $(addprefix PMG/Service/, ${SERVICES})) $(ad
 	for i in ${CLI_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man1/$$i; done
 	for i in ${CONF_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man5/$$i; done
 	for i in ${SERVICE_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man8/$$i; done
-
+	for i in ${CRONSCRIPTS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/lib/pmg/bin/$$i; done
 
 .PHONY: upload
 upload: ${DEB}

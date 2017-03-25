@@ -1,0 +1,56 @@
+#!/usr/bin/perl -T
+
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
+
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};  
+
+use strict;
+use warnings;
+
+use PVE::SafeSyslog;
+use PVE::INotify;
+use PVE::RESTEnvironment;
+
+use PMG::Utils;
+use PMG::Config;
+use PMG::ClusterConfig;
+use PMG::LDAPSet;
+
+$SIG{'__WARN__'} = sub {
+    my $err = $@;
+    my $t = $_[0];
+    chomp $t;
+    print STDERR "$t\n";
+    syslog('warning', "%s", $t);
+    $@ = $err;
+};
+
+PVE::RESTEnvironment->setup_default_cli_env();
+
+initlog('pmg-cron-hourly', 'mail');
+
+my $cfg = PMG::Config->new();
+
+my $demo = $cfg->get('admin', 'demo');
+
+my $cluster = PMG::ClusterConfig->new();
+
+if ($demo) {
+    # fixme: generate fake statistics
+
+    return;
+}
+  
+PMG::Utils::service_cmd('pmgpolicy', 'restart');
+
+my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
+PMG::LDAPSet::ldap_resync($ldap_cfg);
+
+# sync bayes journal to database
+system('sa-learn --sync >/dev/null 2>&1');
+
+# make sure clamav-daemon is running
+PMG::Utils::service_cmd('clamav-daemon', 'start');
+
+exit(0);
+    
