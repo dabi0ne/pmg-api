@@ -1,5 +1,5 @@
 [Unit]
-Description=Run pmg-cron-hourly.service hourly
+Description=Hourly Proxmox Mail Gateway activities
 
 [Timer]
 OnCalendar=hourly

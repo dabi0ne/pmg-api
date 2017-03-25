@@ -27,7 +27,7 @@ $SIG{'__WARN__'} = sub {
 
 PVE::RESTEnvironment->setup_default_cli_env();
 
-initlog('pmg-cron-hourly', 'mail');
+initlog('pmg-hourly', 'mail');
 
 my $cfg = PMG::Config->new();
 

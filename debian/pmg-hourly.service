@@ -1,5 +1,5 @@
 [Unit]
-Description=Proxmox Mail Gateway Hourly Tasks
+Description=Hourly Proxmox Mail Gateway activities
 
 [Service]
 Type=oneshot
