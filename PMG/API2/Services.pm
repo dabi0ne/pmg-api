@@ -26,6 +26,8 @@ my $service_name_list = [
     'syslog',
     'postfix',
     'systemd-timesyncd',
+    'pmg-hourly',
+    'pmg-daily',
     ];
 
 my $get_full_service_state = sub {
