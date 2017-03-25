@@ -12,6 +12,9 @@ use PVE::SectionConfig;
 
 use base qw(PVE::SectionConfig);
 
+my $inotify_file_id = 'pmg-ldap.conf';
+my $config_filename = '/etc/pmg/ldap.conf';
+
 my $defaultData = {
     propertyList => {
 	type => { description => "Section type." },
@@ -166,6 +169,22 @@ sub write_config {
     $class->SUPER::write_config($filename, $cfg);
 }
 
+sub new {
+    my ($type) = @_;
+
+    my $class = ref($type) || $type;
+
+    my $cfg = PVE::INotify::read_file($inotify_file_id);
+
+    return bless $cfg, $class;
+}
+
+sub write {
+    my ($self) = @_;
+
+    PVE::INotify::write_file($inotify_file_id, $self);
+}
+
 my $lockfile = "/var/lock/pmgldapconfig.lck";
 
 sub lock_config {
@@ -201,7 +220,7 @@ sub write_pmg_ldap_conf {
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
-PVE::INotify::register_file('pmg-ldap.conf', "/etc/pmg/ldap.conf",
+PVE::INotify::register_file($inotify_file_id, $config_filename,
 			    \&read_pmg_ldap_conf,
 			    \&write_pmg_ldap_conf);
 
