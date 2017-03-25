@@ -24,7 +24,6 @@ my $service_name_list = [
     'pmg-smtp-filter',
     'sshd',
     'syslog',
-    'cron',
     'postfix',
     'systemd-timesyncd',
     ];
