@@ -18,8 +18,6 @@ use PMG::LDAPSet;
 
 use base qw(PVE::RESTHandler);
 
-my $ldapconfigfile = "pmg-ldap.conf";
-
 __PACKAGE__->register_method ({
     name => 'index',
     path => '',
@@ -52,7 +50,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $ldap_cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $ldap_cfg = PMG::LDAPConfig->new();
 
 	my $ldap_set = PMG::LDAPSet->new_from_ldap_cfg($ldap_cfg, 1);
 
@@ -110,7 +108,7 @@ __PACKAGE__->register_method ({
 
 	my $code = sub {
 
-	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	    my $cfg = PMG::LDAPConfig->new();
 
 	    $cfg->{ids} //= {};
 
@@ -129,7 +127,7 @@ __PACKAGE__->register_method ({
 	    $forced_ldap_sync->($profile, $config)
 		if !$config->{disable};
 
-	    PVE::INotify::write_file($ldapconfigfile, $cfg);
+	    $cfg->write();
 	};
 
 	PMG::LDAPConfig::lock_config($code, "add LDAP profile failed");
@@ -192,7 +190,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $cfg = PMG::LDAPConfig->new();
 
 	my $profile = $param->{profile};
 
@@ -218,7 +216,7 @@ __PACKAGE__->register_method ({
 
 	my $code = sub {
 
-	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	    my $cfg = PMG::LDAPConfig->new();
 	    my $ids = $cfg->{ids};
 
 	    my $digest = extract_param($param, 'digest');
@@ -246,7 +244,7 @@ __PACKAGE__->register_method ({
 	    $forced_ldap_sync->($profile, $config)
 		if !$config->{disable};
 
-	    PVE::INotify::write_file($ldapconfigfile, $cfg);
+	    $cfg->write();
 	};
 
 	PMG::LDAPConfig::lock_config($code, "update LDAP profile failed");
@@ -274,7 +272,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $cfg = PMG::LDAPConfig->new();
 	my $ids = $cfg->{ids};
 
 	my $profile = extract_param($param, 'profile');
@@ -315,7 +313,7 @@ __PACKAGE__->register_method ({
 
 	my $code = sub {
 
-	    my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	    my $cfg = PMG::LDAPConfig->new();
 	    my $ids = $cfg->{ids};
 
 	    my $profile = $param->{profile};
@@ -327,7 +325,7 @@ __PACKAGE__->register_method ({
 
 	    PMG::LDAPCache->delete($profile);
 
-	    PVE::INotify::write_file($ldapconfigfile, $cfg);
+	    $cfg->write();
 	};
 
 	PMG::LDAPConfig::lock_config($code, "delete LDAP profile failed");
@@ -365,7 +363,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $cfg = PMG::LDAPConfig->new();
 	my $ids = $cfg->{ids};
 
 	my $profile = $param->{profile};
@@ -416,7 +414,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $cfg = PMG::LDAPConfig->new();
 	my $ids = $cfg->{ids};
 
 	my $profile = $param->{profile};
@@ -468,7 +466,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file($ldapconfigfile);
+	my $cfg = PMG::LDAPConfig->new();
 	my $ids = $cfg->{ids};
 
 	my $profile = $param->{profile};
