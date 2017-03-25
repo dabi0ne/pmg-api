@@ -7,59 +7,7 @@ use PVE::Tools;
 
 use PVE::JSONSchema qw(get_standard_option);
 
-my $realm_regex = qr/[A-Za-z][A-Za-z0-9\.\-_]+/;
-
-PVE::JSONSchema::register_format('pmg-realm', \&verify_realm);
-sub verify_realm {
-    my ($realm, $noerr) = @_;
-
-    if ($realm !~ m/^${realm_regex}$/) {
-	return undef if $noerr;
-	die "value does not look like a valid realm\n";
-    }
-    return $realm;
-}
-
-PVE::JSONSchema::register_standard_option('realm', {
-    description => "Authentication domain ID",
-    type => 'string', format => 'pmg-realm',
-    maxLength => 32,
-});
-
-PVE::JSONSchema::register_format('pmg-userid', \&verify_username);
-sub verify_username {
-    my ($username, $noerr) = @_;
-
-    $username = '' if !$username;
-    my $len = length($username);
-    if ($len < 3) {
-	die "user name '$username' is too short\n" if !$noerr;
-	return undef;
-    }
-    if ($len > 64) {
-	die "user name '$username' is too long ($len > 64)\n" if !$noerr;
-	return undef;
-    }
-
-    # we only allow a limited set of characters
-    # colon is not allowed, because we store usernames in
-    # colon separated lists)!
-    # slash is not allowed because it is used as pve API delimiter
-    # also see "man useradd"
-    if ($username =~ m!^([^\s:/]+)\@(${realm_regex})$!) {
-	return wantarray ? ($username, $1, $2) : $username;
-    }
-
-    die "value '$username' does not look like a valid user name\n" if !$noerr;
-
-    return undef;
-}
-
-PVE::JSONSchema::register_standard_option('userid', {
-    description => "User ID",
-    type => 'string', format => 'pmg-userid',
-    maxLength => 64,
-});
+use PMG::UserConfig;
 
 sub normalize_path {
     my $path = shift;
@@ -86,54 +34,71 @@ sub authenticate_user {
 
     my ($ruid, $realm);
 
-    ($username, $ruid, $realm) = verify_username($username);
+    ($username, $ruid, $realm) = PMG::Utils::verify_username($username);
 
     if ($realm eq 'pam') {
-	is_valid_user_utf8($ruid, $password);
+	die "invalid pam user (only root allowed)\n" if $ruid ne 'root';
+	authenticate_pam_user($ruid, $password);
 	return $username;
     }
+
+    if ($realm eq 'pmg') {
+	my $usercfg = PMG::UserConfig->new();
+	$usercfg->authenticate_user($ruid, $password);
+	return $username;
+     }
 
     die "no such realm '$realm'\n";
 }
 
 sub domain_set_password {
-    my ($realm, $username, $password) = @_;
+    my ($realm, $ruid, $password) = @_;
 
     die "no auth domain specified" if !$realm;
 
-    die "not implemented";
+    if ($realm eq 'pam') {
+	die "invalid pam user (only root allowed)\n" if $ruid ne 'root';
+
+	my $cmd = ['usermod'];
+
+	my $epw = PMG::Utils::encrypt_pw($password);
+
+	push @$cmd, '-p', $epw, $ruid;
+
+	run_command($cmd, errmsg => "change password for '$ruid' failed");
+
+    } elsif ($realm eq 'pmg') {
+	PMG::UserConfig->set_password($ruid, $password);
+    } else {
+	die "no such realm '$realm'\n";
+    }
 }
 
-sub check_user_exist {
-    my ($usercfg, $username, $noerr) = @_;
-
-    $username = verify_username($username, $noerr);
-    return undef if !$username;
-
-    return $usercfg->{users}->{$username} if $usercfg && $usercfg->{users}->{$username};
-
-    die "no such user ('$username')\n" if !$noerr;
-
-    return undef;
-}
-
+# test if user exists and is enabled
 sub check_user_enabled {
-    my ($usercfg, $username, $noerr) = @_;
+    my ($username, $noerr) = @_;
 
-    my $data = check_user_exist($usercfg, $username, $noerr);
-    return undef if !$data;
+    my ($userid, $ruid, $realm) = PMG::Utils::verify_username($username, 1);
 
-    return 1 if $data->{enable};
+    if ($realm && $ruid) {
+	if ($realm eq 'pam') {
+	    return 1 if $ruid eq 'root';
+	} elsif ($realm eq 'pmg') {
+	    my $usercfg = PMG::UserConfig->new();
+	    my $data = $usercfg->check_user_exist($ruid, $noerr);
+	    return 1 if $data && $data->{enable};
+	}
+    }
 
     die "user '$username' is disabled\n" if !$noerr;
 
     return undef;
 }
 
-sub is_valid_user_utf8 {
+sub authenticate_pam_user {
     my ($username, $password) = @_;
 
-    # user (www-data) need to be able to read /etc/passwd /etc/shadow
+    # user need to be able to read /etc/passwd /etc/shadow
 
     my $pamh = Authen::PAM->new('common-auth', $username, sub {
 	my @res;
@@ -166,12 +131,6 @@ sub is_valid_user_utf8 {
     $pamh = 0; # call destructor
 
     return 1;
-}
-
-sub is_valid_user {
-    my ($username, $password) = @_;
-
-    return is_valid_user_utf8($username, encode("utf8", $password));
 }
 
 1;

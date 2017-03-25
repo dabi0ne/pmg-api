@@ -19,10 +19,16 @@ use PMG::API2::Transport;
 use PMG::API2::ClusterConfig;
 use PMG::API2::MyNetworks;
 use PMG::API2::SMTPWhitelist;
+use PMG::API2::Users;
 
 use base qw(PVE::RESTHandler);
 
 my $section_type_enum = PMG::Config::Base->lookup_types();
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Users",
+    path => 'users',
+});
 
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::RuleDB",
@@ -89,6 +95,7 @@ __PACKAGE__->register_method ({
 
 	push @$res, { section => 'ldap' };
 	push @$res, { section => 'mynetworks' };
+	push @$res, { section => 'users' };
 	push @$res, { section => 'domains' };
 	push @$res, { section => 'cluster' };
 	push @$res, { section => 'ruledb' };

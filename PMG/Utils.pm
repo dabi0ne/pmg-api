@@ -15,6 +15,7 @@ use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
 use Xdgmime;
 use Data::Dumper;
+use Digest::SHA;
 use Net::IP;
 use Socket;
 use RRDs;
@@ -29,6 +30,67 @@ use PMG::AtomicFile;
 use PMG::MailQueue;
 use PMG::SMTPPrinter;
 
+my $realm_regex = qr/[A-Za-z][A-Za-z0-9\.\-_]+/;
+
+PVE::JSONSchema::register_format('pmg-realm', \&verify_realm);
+sub verify_realm {
+    my ($realm, $noerr) = @_;
+
+    if ($realm !~ m/^${realm_regex}$/) {
+	return undef if $noerr;
+	die "value does not look like a valid realm\n";
+    }
+    return $realm;
+}
+
+PVE::JSONSchema::register_standard_option('realm', {
+    description => "Authentication domain ID",
+    type => 'string', format => 'pmg-realm',
+    maxLength => 32,
+});
+
+PVE::JSONSchema::register_format('pmg-userid', \&verify_username);
+sub verify_username {
+    my ($username, $noerr) = @_;
+
+    $username = '' if !$username;
+    my $len = length($username);
+    if ($len < 3) {
+	die "user name '$username' is too short\n" if !$noerr;
+	return undef;
+    }
+    if ($len > 64) {
+	die "user name '$username' is too long ($len > 64)\n" if !$noerr;
+	return undef;
+    }
+
+    # we only allow a limited set of characters
+    # colon is not allowed, because we store usernames in
+    # colon separated lists)!
+    # slash is not allowed because it is used as pve API delimiter
+    # also see "man useradd"
+    if ($username =~ m!^([^\s:/]+)\@(${realm_regex})$!) {
+	return wantarray ? ($username, $1, $2) : $username;
+    }
+
+    die "value '$username' does not look like a valid user name\n" if !$noerr;
+
+    return undef;
+}
+
+PVE::JSONSchema::register_standard_option('userid', {
+    description => "User ID",
+    type => 'string', format => 'pmg-userid',
+    maxLength => 64,
+					  });
+
+PVE::JSONSchema::register_standard_option('username', {
+    description => "Username (without realm)",
+    type => 'string',
+    pattern => '[^\s:\/\@]{3,60}',
+    maxLength => 64,
+});
+
 sub msgquote {
     my $msg = shift || '';
     $msg =~ s/%/%%/g;
@@ -40,6 +102,13 @@ sub lastid {
 
     return $dbh->last_insert_id(
 	undef, undef, undef, undef, { sequence => $seq});
+}
+
+sub encrypt_pw {
+    my ($pw) = @_;
+
+    my $time = substr(Digest::SHA::sha1_base64(time), 0, 8);
+    return crypt(encode("utf8", $pw), "\$5\$$time\$");
 }
 
 sub file_older_than {

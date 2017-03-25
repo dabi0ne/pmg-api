@@ -9,6 +9,8 @@ use PVE::RESTEnvironment;
 use PVE::RESTHandler;
 use PVE::JSONSchema qw(get_standard_option);
 
+use PMG::Utils;
+use PMG::UserConfig;
 use PMG::AccessControl;
 
 use Data::Dumper;
@@ -133,12 +135,9 @@ __PACKAGE__->register_method ({
 
 	my $rpcenv = PVE::RESTEnvironment::get();
 
-	my $usercfg = { users => { 'root@pam' => { enable => 1 } }};
-	
 	my $res;
 	eval {
-	    # test if user exists and is enabled
-	    PMG::AccessControl::check_user_enabled($usercfg, $username);
+	    PMG::AccessControl::check_user_enabled($username);
 	    $res = &$create_ticket($rpcenv, $username, $param->{password}, $param->{otp});
 	};
 	if (my $err = $@) {
@@ -178,24 +177,20 @@ __PACKAGE__->register_method ({
 	my $rpcenv = PVE::RESTEnvironment::get();
 	my $authuser = $rpcenv->get_user();
 
-	my ($userid, $ruid, $realm) = PMG::AccessControl::verify_username($param->{userid});
-
-	my $usercfg = {}; # fixme;
-	
-	PMG::AccessControl::check_user_exist($usercfg, $userid);
+	my ($userid, $ruid, $realm) = PMG::Utils::verify_username($param->{userid});
 
 	if ($authuser eq 'root@pam') {
 	    # OK - root can change anything
 	} else {
 	    if ($authuser eq $userid) {
-		PMG::AccessControl::check_user_enabled($usercfg, $userid);
-		# OK - each user can change its own password
+		# OK - each enable user can change its own password
+		PMG::AccessControl::check_user_enabled($userid);
 	    } else {
 		raise_perm_exc();
 	    }
 	}
 
-	PMP::AccessControl::domain_set_password($realm, $ruid, $param->{password});
+	PMG::AccessControl::domain_set_password($realm, $ruid, $param->{password});
 
 	syslog('info', "changed password for user '$userid'");
 
