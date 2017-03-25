@@ -85,9 +85,13 @@ my $service_state = sub {
 	return 'unknown';
     }
 
-    return $ss->{SubState} if $ss->{SubState};
+    my $state = $ss->{SubState} // 'unknown';
 
-    return 'unknown';
+    $state = $ss->{Result}
+    if $state eq 'dead' && $ss->{Type} && $ss->{Type} eq 'oneshot' &&
+	$ss->{Result};
+
+    return $state;
 };
 
 __PACKAGE__->register_method ({
@@ -123,7 +127,7 @@ __PACKAGE__->register_method ({
 		service => $id,
 		name => $service_list->{$id}->{name},
 		desc => $service_list->{$id}->{desc},
-		state => &$service_state($id),
+		state => $service_state->($id),
 	    };
 	}
 
