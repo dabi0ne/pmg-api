@@ -1,0 +1,6 @@
+[Unit]
+Description=Proxmox Mail Gateway Hourly Tasks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/pmg/bin/pmg-cron-hourly

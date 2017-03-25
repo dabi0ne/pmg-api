@@ -22,10 +22,12 @@ CLITOOLS = pmgdb pmgconfig pmgperf
 CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy
 CRONSCRIPTS = pmg-cron-hourly
 
-CLI_CLASSES = $(addprefix, 'PMG/CLI/', $(addsuffix '.pm', ${CLITOOLS}))
-SERVICE_CLASSES = $(addprefix, 'PMG/Service/', $(addsuffix '.pm', ${SERVIVES}))
+CLI_CLASSES = $(addprefix PMG/CLI/, $(addsuffix .pm, ${CLITOOLS}))
+SERVICE_CLASSES = $(addprefix PMG/Service/, $(addsuffix .pm, ${SERVICES}))
+SERVICE_UNITS = $(addprefix debian/, $(addsuffix .service, ${SERVICES}))
+TIMER_UNITS = $(addprefix debian/, $(addsuffix .timer, ${CRONSCRIPTS}))
 
-CLI_BINARIES = $(addprefix, 'bin/', ${CLITOOLS} ${CLISCRIPTS} ${CRONSCRIPTS})
+CLI_BINARIES = $(addprefix bin/, ${CLITOOLS} ${CLISCRIPTS} ${CRONSCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
 
 
@@ -47,7 +49,7 @@ TEMPLATES =				\
 	postgresql.conf.in		\
 	pg_hba.conf.in
 
-TEMPLATES_FILES = $(addprefix, 'templates/', ${TEMPLATES})
+TEMPLATES_FILES = $(addprefix templates/, ${TEMPLATES})
 
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
@@ -126,7 +128,7 @@ LIBSOURCES =				\
 	PMG/API2/Action.pm		\
 	PMG/API2.pm
 
-SOURCES= ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS}
+SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS} 
 
 all: ${SOURCES}
 
@@ -172,6 +174,7 @@ install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuff
 	for i in ${CONF_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man5/$$i; done
 	for i in ${SERVICE_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man8/$$i; done
 	for i in ${CRONSCRIPTS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/lib/pmg/bin/$$i; done
+	for i in ${CRONSCRIPTS}; do install -D -m 0644 debian/$$i.timer ${DESTDIR}/lib/systemd/system/$$i.timer; done
 
 .PHONY: upload
 upload: ${DEB}

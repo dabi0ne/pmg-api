@@ -1,0 +1,9 @@
+[Unit]
+Description=Run pmg-cron-hourly.service hourly
+
+[Timer]
+OnCalendar=hourly
+Persistent=true     
+
+[Install]
+WantedBy=timers.target
