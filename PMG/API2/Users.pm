@@ -125,17 +125,7 @@ __PACKAGE__->register_method ({
     description => "Update user data.",
     protected => 1,
     proxyto => 'master',
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    userid => get_standard_option('username'),
-	    comment => {
-		description => "Comment.",
-		type => 'string',
-		optional => 1,
-	    },
-	},
-    },
+    parameters => $PMG::UserConfig::update_schema,
     returns => { type => 'null' },
     code => sub {
 	my ($param) = @_;
@@ -144,10 +134,26 @@ __PACKAGE__->register_method ({
 
 	    my $cfg = PMG::UserConfig->new();
 
-	    my $data = $cfg->lookup_user_data($param->{userid});
+	    my $userid = extract_param($param, 'userid');
 
-	    die "fixme";
-	    #$data->{comment} = $param->{comment};
+	    my $entry = $cfg->lookup_user_data($userid);
+
+	    my $delete_str = extract_param($param, 'delete');
+	    die "no options specified\n"
+		if !$delete_str && !scalar(keys %$param);
+
+	    foreach my $k (PVE::Tools::split_list($delete_str)) {
+		delete $entry->{$k};
+	    }
+
+	    foreach my $k (keys %$param) {
+		my $v = $param->{$k};
+		if ($k eq 'password') {
+		    $entry->{$k} = PMG::Utils::encrypt_pw($v);
+		} else {
+		    $entry->{$k} = $v;
+		}
+	    }
 
 	    $cfg->write();
 	};

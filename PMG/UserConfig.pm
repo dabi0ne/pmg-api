@@ -104,6 +104,12 @@ our $schema = {
 
 our $update_schema = clone($schema);
 $update_schema->{properties}->{role}->{optional} = 1;
+$update_schema->{properties}->{delete} = {
+    type => 'string', format => 'pve-configid-list',
+    description => "A list of settings you want to delete.",
+    maxLength => 4096,
+    optional => 1,
+};
 
 my $verity_entry = sub {
     my ($entry) = @_;
@@ -198,6 +204,10 @@ sub write_user_conf {
 	my $line = "$userid:";
 	for my $k (qw(enable expire crypt_pass role email first last keys)) {
 	    $line .= ($d->{$k} // '') . ':';
+	}
+	if (my $comment = $d->{comment}) {
+	    my $firstline = (split /\n/, $comment)[0]; # only allow one line
+	    $raw .= "#$firstline\n";
 	}
 	$raw .= $line . "\n";
     }
