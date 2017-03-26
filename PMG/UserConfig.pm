@@ -6,7 +6,8 @@ use warnings;
 
 use PVE::Tools;
 use PVE::INotify;
-use PVE::JSONSchema;
+use PVE::JSONSchema qw(get_standard_option);
+use PVE::Exception qw(raise);
 
 use PMG::Utils;
 
@@ -40,6 +41,66 @@ sub lock_config {
     }
 }
 
+my $schema = {
+    additionalProperties => 0,
+    properties => {
+	userid => get_standard_option('username'),
+	email => {
+	    description => "Users E-Mail address.",
+	    text => 'string', format => 'email',
+	    optional => 1,
+	},
+	expire => {
+	    description => "Account expiration date, expressed as unix epoch.",
+	    type => 'integer',
+	    minimum => 0,
+	},
+	enable => {
+	    description => "Flag to enable or disable the account.",
+	    type => 'boolean',
+	},
+	crypt_pass => {
+	    description => "Encrypted password (see `man crypt`)",
+	    type => 'string',
+	    pattern => '\$\d\$[a-zA-Z0-9\.\/]+\$[a-zA-Z0-9\.\/]+',
+	    optional => 1,
+	},
+	role => {
+	    description => "User role.",
+	    type => 'string',
+	    enum => ['root', 'admin', 'qmanager', 'quser', 'audit'],
+	},
+	first => {
+	    description => "First name.",
+	    type => 'string',
+	    maxLength => 64,
+	    optional => 1,
+	},
+	'last' => {
+	    description => "Last name.",
+	    type => 'string',
+	    maxLength => 64,
+	    optional => 1,
+	},
+	keys => {
+	    description => "OTP Keys",
+	    type => 'string',
+	    maxLength => 128,
+	    optional => 1,
+	},
+    },
+};
+
+my $verity_entry = sub {
+    my ($entry) = @_;
+
+    my $errors = {};
+    PVE::JSONSchema::check_prop($entry, $schema, '', $errors);
+    if (scalar(%$errors)) {
+	raise "verify entry failed\n", errors => $errors;
+    }
+};
+
 sub read_user_conf {
     my ($filename, $fh) = @_;
 
@@ -55,18 +116,38 @@ sub read_user_conf {
 		$comment = $1;
 		next;
 	    }
-	    if ($line =~ m/^\S+:([01]):\S+:[a-z]+:\S*:$/) {
-		my ($userid, $enable, $crypt_pass, $role, $email) = ($1, $2, $3, $4);
+
+	    if ($line =~ m/^
+               (?<userid>(?:[^\s:]+)) :
+               (?<enable>[01]) :
+               (?<expire>\d+) :
+               (?<pass>(?:[^\s:]*)) :
+               (?<role>[a-z]+) :
+               (?<email>(?:[^\s:]*)) :
+               (?<first>(?:[^:]*)) :
+               (?<last>(?:[^:]*)) :
+               (?<keys>(?:[^:]*)) :
+               $/x
+	    ) {
 		my $d = {
-		    userid => $userid,
-		    enable => $enable,
-		    crypt_pass => $crypt_pass,
-		    role => $role,
+		    userid => $+{userid},
+		    enable => $+{enable},
+		    expire => $+{expire},
+		    crypt_pass => $+{pass},
+		    role => $+{role},
 		};
 		$d->{comment} = $comment if $comment;
 		$comment = '';
-		$d->{email} = $email if $email;
-		$cfg->{$userid} = $d;
+		foreach my $k (qw(email first last keys)) {
+		    $d->{$k} = $+{$k} if $+{$k};
+		}
+		eval {
+		    $verity_entry->($d);
+		    $cfg->{$d->{userid}} = $d;
+		};
+		if (my $err = $@) {
+		    warn "$filename: $err";
+		}
 	    } else {
 		warn "$filename: ignore invalid line $.\n";
 		$comment = '';
@@ -115,6 +196,11 @@ sub authenticate_user {
     die "no password\n" if !$password;
 
     my $data = $self->lookup_user_data($username);
+
+    my $ctime = time();
+    my $expire = $data->{expire};
+
+    die "account expired\n" if $expire && ($expire < $ctime);
 
     if ($data->{crypt_pass}) {
 	my $encpw = crypt($password, $data->{crypt_pass});
