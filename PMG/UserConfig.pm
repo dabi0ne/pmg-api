@@ -3,6 +3,8 @@ package PMG::UserConfig;
 
 use strict;
 use warnings;
+use Data::Dumper;
+use Clone 'clone';
 
 use PVE::Tools;
 use PVE::INotify;
@@ -41,23 +43,27 @@ sub lock_config {
     }
 }
 
-my $schema = {
+our $schema = {
     additionalProperties => 0,
     properties => {
 	userid => get_standard_option('username'),
 	email => {
 	    description => "Users E-Mail address.",
-	    text => 'string', format => 'email',
+	    type => 'string', format => 'email',
 	    optional => 1,
 	},
 	expire => {
-	    description => "Account expiration date, expressed as unix epoch.",
+	    description => "Account expiration date (seconds since epoch). '0' means no expiration date.",
 	    type => 'integer',
 	    minimum => 0,
+	    default => 0,
+	    optional => 1,
 	},
 	enable => {
 	    description => "Flag to enable or disable the account.",
 	    type => 'boolean',
+	    default => 0,
+	    optional => 1,
 	},
 	crypt_pass => {
 	    description => "Encrypted password (see `man crypt`)",
@@ -83,13 +89,21 @@ my $schema = {
 	    optional => 1,
 	},
 	keys => {
-	    description => "OTP Keys",
+	    description => "Keys for two factor auth (yubico).",
 	    type => 'string',
 	    maxLength => 128,
 	    optional => 1,
 	},
+	comment => {
+	    description => "Comment.",
+	    type => 'string',
+	    optional => 1,
+	},
     },
 };
+
+our $update_schema = clone($schema);
+$update_schema->{properties}->{role}->{optional} = 1;
 
 my $verity_entry = sub {
     my ($entry) = @_;
@@ -119,9 +133,9 @@ sub read_user_conf {
 
 	    if ($line =~ m/^
                (?<userid>(?:[^\s:]+)) :
-               (?<enable>[01]) :
-               (?<expire>\d+) :
-               (?<pass>(?:[^\s:]*)) :
+               (?<enable>[01]?) :
+               (?<expire>\d*) :
+               (?<crypt_pass>(?:[^\s:]*)) :
                (?<role>[a-z]+) :
                (?<email>(?:[^\s:]*)) :
                (?<first>(?:[^:]*)) :
@@ -131,14 +145,13 @@ sub read_user_conf {
 	    ) {
 		my $d = {
 		    userid => $+{userid},
-		    enable => $+{enable},
-		    expire => $+{expire},
-		    crypt_pass => $+{pass},
+		    enable => $+{enable} || 0,
+		    expire => $+{expire} || 0,
 		    role => $+{role},
 		};
 		$d->{comment} = $comment if $comment;
 		$comment = '';
-		foreach my $k (qw(email first last keys)) {
+		foreach my $k (qw(crypt_pass email first last keys)) {
 		    $d->{$k} = $+{$k} if $+{$k};
 		}
 		eval {
@@ -170,6 +183,24 @@ sub write_user_conf {
 
     my $raw = '';
 
+    delete $cfg->{root}->{crypt_pass};
+
+    foreach my $userid (keys %$cfg) {
+	my $d = $cfg->{$userid};
+	$d->{userid} = $userid;
+	eval {
+	    $verity_entry->($d);
+	    $cfg->{$d->{userid}} = $d;
+	};
+	if (my $err = $@) {
+	    die $err;
+	}
+	my $line = "$userid:";
+	for my $k (qw(enable expire crypt_pass role email first last keys)) {
+	    $line .= ($d->{$k} // '') . ':';
+	}
+	$raw .= $line . "\n";
+    }
 
     PVE::Tools::safe_print($filename, $fh, $raw);
 }

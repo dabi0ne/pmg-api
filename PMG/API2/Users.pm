@@ -58,24 +58,7 @@ __PACKAGE__->register_method ({
     proxyto => 'master',
     protected => 1,
     description => "Creat new user",
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    userid => get_standard_option('username'),
-	    password => {
-		description => "Initial password.",
-		type => 'string',
-		optional => 1,
-		minLength => 5,
-		maxLength => 64
-	    },
-	    comment => {
-		description => "Comment.",
-		type => 'string',
-		optional => 1,
-	    },
-	},
-    },
+    parameters => $PMG::UserConfig::schema,
     returns => { type => 'null' },
     code => sub {
 	my ($param) = @_;
@@ -87,7 +70,21 @@ __PACKAGE__->register_method ({
 	    die "User '$param->{userid}' already exists\n"
 		if $cfg->{$param->{userid}};
 
-	    die "fixme";
+	    my $entry = {};
+	    foreach my $k (keys %$param) {
+		my $v = $param->{$k};
+		if ($k eq 'password') {
+		    $entry->{$k} = PMG::Utils::encrypt_pw($v);
+		} else {
+		    $entry->{$k} = $v;
+		}
+	    }
+
+	    $entry->{enable} //= 0;
+	    $entry->{expire} //= 0;
+	    $entry->{role} //= 'audit';
+
+	    $cfg->{$param->{userid}} = $entry;
 
 	    $cfg->write();
 	};
