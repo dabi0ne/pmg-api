@@ -81,13 +81,15 @@ sub verify_username {
 PVE::JSONSchema::register_standard_option('userid', {
     description => "User ID",
     type => 'string', format => 'pmg-userid',
+    minLength => 4,
     maxLength => 64,
-					  });
+});
 
 PVE::JSONSchema::register_standard_option('username', {
     description => "Username (without realm)",
     type => 'string',
     pattern => '[^\s:\/\@]{3,60}',
+    minLength => 4,
     maxLength => 64,
 });
 
