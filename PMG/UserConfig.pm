@@ -180,6 +180,7 @@ sub read_user_conf {
     $cfg->{'root@pam'} //= {};
     $cfg->{'root@pam'}->{userid} = 'root@pam';
     $cfg->{'root@pam'}->{enable} = 1;
+    $cfg->{'root@pam'}->{expire} = 0;
     $cfg->{'root@pam'}->{comment} = 'Unix Superuser';
     $cfg->{'root@pam'}->{role} = 'root';
     delete $cfg->{'root@pam'}->{crypt_pass};
@@ -212,6 +213,7 @@ sub write_user_conf {
 	if ($userid eq 'root@pam') {
 	    $line = 'root:';
 	    $d->{crypt_pass} = '',
+	    $d->{expire} = '0',
 	    $d->{role} = 'root';
 	} else {
 	    next if $userid !~ m/^(?<username>.+)\@pmg$/;
