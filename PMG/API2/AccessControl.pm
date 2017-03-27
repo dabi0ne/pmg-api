@@ -196,7 +196,7 @@ __PACKAGE__->register_method ({
 	    }
 	}
 
-	PMG::AccessControl::domain_set_password($realm, $ruid, $param->{password});
+	PMG::AccessControl::set_user_password($userid, $param->{password});
 
 	syslog('info', "changed password for user '$userid'");
 

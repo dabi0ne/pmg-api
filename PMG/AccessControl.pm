@@ -44,17 +44,19 @@ sub authenticate_user {
 
     if ($realm eq 'pmg') {
 	my $usercfg = PMG::UserConfig->new();
-	$usercfg->authenticate_user($ruid, $password);
+	$usercfg->authenticate_user($username, $password);
 	return $username;
      }
 
     die "no such realm '$realm'\n";
 }
 
-sub domain_set_password {
-    my ($realm, $ruid, $password) = @_;
+sub set_user_password {
+    my ($username, $password) = @_;
 
-    die "no auth domain specified" if !$realm;
+    my ($ruid, $realm);
+    
+    ($username, $ruid, $realm) = PMG::Utils::verify_username($username);
 
     if ($realm eq 'pam') {
 	die "invalid pam user (only root allowed)\n" if $ruid ne 'root';
@@ -68,7 +70,7 @@ sub domain_set_password {
 	run_command($cmd, errmsg => "change password for '$ruid' failed");
 
     } elsif ($realm eq 'pmg') {
-	PMG::UserConfig->set_password($ruid, $password);
+	PMG::UserConfig->set_user_password($username, $password);
     } else {
 	die "no such realm '$realm'\n";
     }
@@ -78,14 +80,16 @@ sub domain_set_password {
 sub check_user_enabled {
     my ($username, $noerr) = @_;
 
-    my ($userid, $ruid, $realm) = PMG::Utils::verify_username($username, 1);
+    my ($ruid, $realm);
+
+    ($username, $ruid, $realm) = PMG::Utils::verify_username($username, 1);
 
     if ($realm && $ruid) {
 	if ($realm eq 'pam') {
 	    return 1 if $ruid eq 'root';
 	} elsif ($realm eq 'pmg') {
 	    my $usercfg = PMG::UserConfig->new();
-	    my $data = $usercfg->check_user_exist($ruid, $noerr);
+	    my $data = $usercfg->lookup_user_data($username, $noerr);
 	    return 1 if $data && $data->{enable};
 	}
     }

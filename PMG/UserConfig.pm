@@ -280,7 +280,7 @@ sub authenticate_user {
     return 1;
 }
 
-sub set_password {
+sub set_user_password {
     my ($class, $username, $password) = @_;
 
     lock_config(sub {
