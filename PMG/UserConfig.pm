@@ -207,7 +207,7 @@ sub write_user_conf {
 
 	$d->{userid} = $userid;
 
-	die "invalid userid '$userid'" if $userid eq 'root@pmg';
+	die "invalid userid '$userid'\n" if $userid eq 'root@pmg';
 
 	eval {
 	    $verity_entry->($d);
