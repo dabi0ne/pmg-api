@@ -46,7 +46,7 @@ sub lock_config {
 our $schema = {
     additionalProperties => 0,
     properties => {
-	userid => get_standard_option('username'),
+	userid => get_standard_option('userid'),
 	email => {
 	    description => "Users E-Mail address.",
 	    type => 'string', format => 'email',
@@ -150,7 +150,7 @@ sub read_user_conf {
                $/x
 	    ) {
 		my $d = {
-		    userid => $+{userid},
+		    userid => $+{userid} . '@pmg',
 		    enable => $+{enable} || 0,
 		    expire => $+{expire} || 0,
 		    role => $+{role},
@@ -175,7 +175,7 @@ sub read_user_conf {
     }
 
     $cfg->{root} //= {};
-    $cfg->{root}->{userid} = 'root';
+    $cfg->{root}->{userid} = 'root@pam'; # hack: we list root@pam here
     $cfg->{root}->{enable} = 1;
     $cfg->{root}->{comment} = 'Unix Superuser';
     $cfg->{root}->{role} = 'root';
@@ -194,6 +194,7 @@ sub write_user_conf {
     foreach my $userid (keys %$cfg) {
 	my $d = $cfg->{$userid};
 	$d->{userid} = $userid;
+
 	eval {
 	    $verity_entry->($d);
 	    $cfg->{$d->{userid}} = $d;
@@ -201,7 +202,10 @@ sub write_user_conf {
 	if (my $err = $@) {
 	    die $err;
 	}
-	my $line = "$userid:";
+	next if $userid !~ m/^(?<username>.+)\@pmg$/;
+
+	my $line = "$+{username}:";
+
 	for my $k (qw(enable expire crypt_pass role email first last keys)) {
 	    $line .= ($d->{$k} // '') . ':';
 	}
