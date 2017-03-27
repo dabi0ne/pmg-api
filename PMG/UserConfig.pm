@@ -121,6 +121,17 @@ my $verity_entry = sub {
     }
 };
 
+my $fixup_root_properties = sub {
+    my ($cfg) = @_;
+
+    $cfg->{'root@pam'}->{userid} = 'root@pam';
+    $cfg->{'root@pam'}->{enable} = 1;
+    $cfg->{'root@pam'}->{expire} = 0;
+    $cfg->{'root@pam'}->{comment} = 'Unix Superuser';
+    $cfg->{'root@pam'}->{role} = 'root';
+    delete $cfg->{'root@pam'}->{crypt_pass};
+};
+
 sub read_user_conf {
     my ($filename, $fh) = @_;
 
@@ -178,12 +189,8 @@ sub read_user_conf {
     $cfg->{'root@pam'} = $cfg->{'root@pmg'} // {};
     delete $cfg->{'root@pmg'};
     $cfg->{'root@pam'} //= {};
-    $cfg->{'root@pam'}->{userid} = 'root@pam';
-    $cfg->{'root@pam'}->{enable} = 1;
-    $cfg->{'root@pam'}->{expire} = 0;
-    $cfg->{'root@pam'}->{comment} = 'Unix Superuser';
-    $cfg->{'root@pam'}->{role} = 'root';
-    delete $cfg->{'root@pam'}->{crypt_pass};
+
+    $fixup_root_properties->($cfg);
 
     return $cfg;
 }
@@ -193,7 +200,7 @@ sub write_user_conf {
 
     my $raw = '';
 
-    delete $cfg->{root}->{crypt_pass};
+    $fixup_root_properties->($cfg);
 
     foreach my $userid (keys %$cfg) {
 	my $d = $cfg->{$userid};
