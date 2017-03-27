@@ -72,9 +72,9 @@ our $schema = {
 	    optional => 1,
 	},
 	role => {
-	    description => "User role.",
+	    description => "User role. Role 'root' is reseved for the Unix Superuser.",
 	    type => 'string',
-	    enum => ['root', 'admin', 'qmanager', 'quser', 'audit'],
+	    enum => ['root', 'admin', 'qmanager', 'audit'],
 	},
 	firstname => {
 	    description => "First name.",
@@ -174,6 +174,8 @@ sub read_user_conf {
 		eval {
 		    $verity_entry->($d);
 		    $cfg->{$d->{userid}} = $d;
+		    die "role 'root' is reserved\n"
+			if $d->{role} eq 'root' && $d->{userid} ne 'root@pmg';
 		};
 		if (my $err = $@) {
 		    warn "$filename: $err";
@@ -212,6 +214,9 @@ sub write_user_conf {
 	eval {
 	    $verity_entry->($d);
 	    $cfg->{$d->{userid}} = $d;
+
+	    die "role 'root' is reserved\n"
+		if $d->{role} eq 'root' && $d->{userid} ne 'root@pam';
 	};
 	if (my $err = $@) {
 	    die $err;
