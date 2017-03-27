@@ -76,13 +76,13 @@ our $schema = {
 	    type => 'string',
 	    enum => ['root', 'admin', 'qmanager', 'quser', 'audit'],
 	},
-	first => {
+	firstname => {
 	    description => "First name.",
 	    type => 'string',
 	    maxLength => 64,
 	    optional => 1,
 	},
-	'last' => {
+	lastname => {
 	    description => "Last name.",
 	    type => 'string',
 	    maxLength => 64,
@@ -144,8 +144,8 @@ sub read_user_conf {
                (?<crypt_pass>(?:[^\s:]*)) :
                (?<role>[a-z]+) :
                (?<email>(?:[^\s:]*)) :
-               (?<first>(?:[^:]*)) :
-               (?<last>(?:[^:]*)) :
+               (?<firstname>(?:[^:]*)) :
+               (?<lastname>(?:[^:]*)) :
                (?<keys>(?:[^:]*)) :
                $/x
 	    ) {
@@ -157,7 +157,7 @@ sub read_user_conf {
 		};
 		$d->{comment} = $comment if $comment;
 		$comment = '';
-		foreach my $k (qw(crypt_pass email first last keys)) {
+		foreach my $k (qw(crypt_pass email firstname lastname keys)) {
 		    $d->{$k} = $+{$k} if $+{$k};
 		}
 		eval {
@@ -206,7 +206,7 @@ sub write_user_conf {
 
 	my $line = "$+{username}:";
 
-	for my $k (qw(enable expire crypt_pass role email first last keys)) {
+	for my $k (qw(enable expire crypt_pass role email firstname lastname keys)) {
 	    $line .= ($d->{$k} // '') . ':';
 	}
 	if (my $comment = $d->{comment}) {
