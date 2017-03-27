@@ -174,12 +174,15 @@ sub read_user_conf {
 	}
     }
 
-    $cfg->{root} //= {};
-    $cfg->{root}->{userid} = 'root@pam'; # hack: we list root@pam here
-    $cfg->{root}->{enable} = 1;
-    $cfg->{root}->{comment} = 'Unix Superuser';
-    $cfg->{root}->{role} = 'root';
-    delete $cfg->{root}->{crypt_pass};
+    # hack: we list root@pam here (root@pmg is an alias for root@pam)
+    $cfg->{'root@pam'} = $cfg->{'root@pmg'} // {};
+    delete $cfg->{'root@pmg'};
+    $cfg->{'root@pam'} //= {};
+    $cfg->{'root@pam'}->{userid} = 'root@pam';
+    $cfg->{'root@pam'}->{enable} = 1;
+    $cfg->{'root@pam'}->{comment} = 'Unix Superuser';
+    $cfg->{'root@pam'}->{role} = 'root';
+    delete $cfg->{'root@pam'}->{crypt_pass};
 
     return $cfg;
 }
@@ -193,6 +196,7 @@ sub write_user_conf {
 
     foreach my $userid (keys %$cfg) {
 	my $d = $cfg->{$userid};
+
 	$d->{userid} = $userid;
 
 	eval {
@@ -202,9 +206,17 @@ sub write_user_conf {
 	if (my $err = $@) {
 	    die $err;
 	}
-	next if $userid !~ m/^(?<username>.+)\@pmg$/;
 
-	my $line = "$+{username}:";
+	my $line;
+
+	if ($userid eq 'root@pam') {
+	    $line = 'root:';
+	    $d->{crypt_pass} = '',
+	    $d->{role} = 'root';
+	} else {
+	    next if $userid !~ m/^(?<username>.+)\@pmg$/;
+	    $line = "$+{username}:";
+	}
 
 	for my $k (qw(enable expire crypt_pass role email firstname lastname keys)) {
 	    $line .= ($d->{$k} // '') . ':';
