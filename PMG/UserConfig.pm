@@ -200,6 +200,8 @@ sub write_user_conf {
 
 	$d->{userid} = $userid;
 
+	die "invalid userid '$userid'" if $userid eq 'root@pmg';
+
 	eval {
 	    $verity_entry->($d);
 	    $cfg->{$d->{userid}} = $d;
