@@ -47,6 +47,13 @@ our $schema = {
     additionalProperties => 0,
     properties => {
 	userid => get_standard_option('userid'),
+	realm => {
+	    description => "Authentication realm.",
+	    type => 'string',
+	    enum => ['pam', 'pmg'],
+	    default => 'pmg',
+	    optional => 1,
+	},
 	email => {
 	    description => "Users E-Mail address.",
 	    type => 'string', format => 'email',
@@ -125,6 +132,7 @@ my $fixup_root_properties = sub {
     my ($cfg) = @_;
 
     $cfg->{'root@pam'}->{userid} = 'root@pam';
+    $cfg->{'root@pam'}->{realm} = 'pam';
     $cfg->{'root@pam'}->{enable} = 1;
     $cfg->{'root@pam'}->{expire} = 0;
     $cfg->{'root@pam'}->{comment} = 'Unix Superuser';
@@ -162,6 +170,7 @@ sub read_user_conf {
 	    ) {
 		my $d = {
 		    userid => $+{userid} . '@pmg',
+		    realm => 'pmg',
 		    enable => $+{enable} || 0,
 		    expire => $+{expire} || 0,
 		    role => $+{role},
@@ -215,8 +224,11 @@ sub write_user_conf {
 	    $verity_entry->($d);
 	    $cfg->{$d->{userid}} = $d;
 
-	    die "role 'root' is reserved\n"
-		if $d->{role} eq 'root' && $d->{userid} ne 'root@pam';
+	    if ($d->{userid} ne 'root@pam') {
+		die "role 'root' is reserved\n" if $d->{role} eq 'root';
+		die "unable to add users for realm '$d->{realm}'\n"
+		    if $d->{realm} ne 'pmg';
+	    }
 	};
 	if (my $err = $@) {
 	    die $err;
