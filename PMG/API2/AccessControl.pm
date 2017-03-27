@@ -12,11 +12,16 @@ use PVE::JSONSchema qw(get_standard_option);
 use PMG::Utils;
 use PMG::UserConfig;
 use PMG::AccessControl;
+use PMG::API2::Users;
 
 use Data::Dumper;
 
 use base qw(PVE::RESTHandler);
 
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Users",
+    path => 'users',
+});
 
 __PACKAGE__->register_method ({
     name => 'index', 
@@ -43,10 +48,11 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
     
-	my $res = [];
-
-	push @$res, { subdir => 'ticket' };
-	#push @$res, { subdir => 'password' };
+	my $res = [
+	    { subdir => 'ticket' },
+	    { subdir => 'password' },
+	    { subdir => 'users' },
+	];
 
 	return $res;
     }});
