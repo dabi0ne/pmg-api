@@ -227,7 +227,7 @@ sub write_user_conf {
 	    if ($d->{userid} ne 'root@pam') {
 		die "role 'root' is reserved\n" if $d->{role} eq 'root';
 		die "unable to add users for realm '$d->{realm}'\n"
-		    if $d->{realm} ne 'pmg';
+		    if $d->{realm} && $d->{realm} ne 'pmg';
 	    }
 	};
 	if (my $err = $@) {
