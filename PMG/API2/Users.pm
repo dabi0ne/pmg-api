@@ -173,7 +173,7 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    userid => get_standard_option('username'),
+	    userid => get_standard_option('userid'),
 	}
     },
     returns => { type => 'null' },
