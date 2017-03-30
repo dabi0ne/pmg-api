@@ -47,6 +47,7 @@ our $schema = {
     additionalProperties => 0,
     properties => {
 	userid => get_standard_option('userid'),
+	username => get_standard_option('username', { optional => 1 }),
 	realm => {
 	    description => "Authentication realm.",
 	    type => 'string',
@@ -132,6 +133,7 @@ my $fixup_root_properties = sub {
     my ($cfg) = @_;
 
     $cfg->{'root@pam'}->{userid} = 'root@pam';
+    $cfg->{'root@pam'}->{username} = 'root';
     $cfg->{'root@pam'}->{realm} = 'pam';
     $cfg->{'root@pam'}->{enable} = 1;
     $cfg->{'root@pam'}->{expire} = 0;
@@ -169,6 +171,7 @@ sub read_user_conf {
                $/x
 	    ) {
 		my $d = {
+		    username => $+{userid},
 		    userid => $+{userid} . '@pmg',
 		    realm => 'pmg',
 		    enable => $+{enable} || 0,
