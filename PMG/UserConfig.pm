@@ -270,6 +270,8 @@ sub write_user_conf {
 	$raw .= $line . "\n";
     }
 
+    chmod(0600, $fh);
+
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
