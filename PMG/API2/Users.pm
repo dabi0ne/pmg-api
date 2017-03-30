@@ -69,7 +69,7 @@ __PACKAGE__->register_method ({
     proxyto => 'master',
     protected => 1,
     description => "Creat new user",
-    parameters => $PMG::UserConfig::schema,
+    parameters => $PMG::UserConfig::create_schema,
     returns => { type => 'null' },
     code => sub {
 	my ($param) = @_;

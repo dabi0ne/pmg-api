@@ -43,7 +43,7 @@ sub lock_config {
     }
 }
 
-our $schema = {
+my $schema = {
     additionalProperties => 0,
     properties => {
 	userid => get_standard_option('userid'),
@@ -110,8 +110,14 @@ our $schema = {
     },
 };
 
+our $create_schema = clone($schema);
+delete $create_schema->{properties}->{username};
+delete $create_schema->{properties}->{realm};
+
 our $update_schema = clone($schema);
 $update_schema->{properties}->{role}->{optional} = 1;
+delete $update_schema->{properties}->{username};
+delete $update_schema->{properties}->{realm};
 $update_schema->{properties}->{delete} = {
     type => 'string', format => 'pve-configid-list',
     description => "A list of settings you want to delete.",
