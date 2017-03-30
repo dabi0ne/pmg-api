@@ -113,11 +113,16 @@ my $schema = {
 our $create_schema = clone($schema);
 delete $create_schema->{properties}->{username};
 delete $create_schema->{properties}->{realm};
+$create_schema->{properties}->{password} = {
+    description => "Password",
+    type => 'string',
+    maxLength => 32,
+    minLength => 5,
+    optional => 1,
+};
 
-our $update_schema = clone($schema);
+our $update_schema = clone($create_schema);
 $update_schema->{properties}->{role}->{optional} = 1;
-delete $update_schema->{properties}->{username};
-delete $update_schema->{properties}->{realm};
 $update_schema->{properties}->{delete} = {
     type => 'string', format => 'pve-configid-list',
     description => "A list of settings you want to delete.",
