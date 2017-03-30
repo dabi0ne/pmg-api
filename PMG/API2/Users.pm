@@ -85,7 +85,7 @@ __PACKAGE__->register_method ({
 	    foreach my $k (keys %$param) {
 		my $v = $param->{$k};
 		if ($k eq 'password') {
-		    $entry->{crypt_pass} = PMG::Utils::encrypt_pw($v);
+		    $entry->{crypt_pass} = PVE::Tools::encrypt_pw($v);
 		} else {
 		    $entry->{$k} = $v;
 		}
@@ -164,7 +164,7 @@ __PACKAGE__->register_method ({
 	    foreach my $k (keys %$param) {
 		my $v = $param->{$k};
 		if ($k eq 'password') {
-		    $entry->{crypt_pass} = PMG::Utils::encrypt_pw($v);
+		    $entry->{crypt_pass} = PVE::Tools::encrypt_pw($v);
 		} else {
 		    $entry->{$k} = $v;
 		}

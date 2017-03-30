@@ -317,7 +317,7 @@ sub set_user_password {
     lock_config(sub {
 	my $cfg = $class->new();
 	my $data = $cfg->lookup_user_data($username); # user exists
-	my $epw = PMG::Utils::encrypt_pw($password);
+	my $epw = PVE::Tools::encrypt_pw($password);
 	$data->{crypt_pass} = $epw;
 	$cfg->write();
     });

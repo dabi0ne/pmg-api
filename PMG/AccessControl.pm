@@ -3,8 +3,8 @@ package PMG::AccessControl;
 use strict;
 use warnings;
 use Authen::PAM;
-use PVE::Tools;
 
+use PVE::Tools;
 use PVE::JSONSchema qw(get_standard_option);
 
 use PMG::UserConfig;
@@ -63,7 +63,7 @@ sub set_user_password {
 
 	my $cmd = ['usermod'];
 
-	my $epw = PMG::Utils::encrypt_pw($password);
+	my $epw = PVE::Tools::encrypt_pw($password);
 
 	push @$cmd, '-p', $epw, $ruid;
 
