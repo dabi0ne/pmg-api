@@ -14,6 +14,17 @@ use PMG::UserConfig;
 
 use base qw(PVE::RESTHandler);
 
+my $extract_userdata = sub {
+    my ($entry) = @_;
+
+    my $res = {};
+    foreach my $k (keys %$entry) {
+	$res->{$k} = $entry->{$k} if $k ne 'crypt_pass';
+    }
+
+    return $res;
+};
+
 __PACKAGE__->register_method ({
     name => 'index',
     path => '',
@@ -45,7 +56,7 @@ __PACKAGE__->register_method ({
 	my $res = [];
 
 	foreach my $userid (sort keys %$cfg) {
-	    push @$res, $cfg->{$userid};
+	    push @$res, $extract_userdata->($cfg->{$userid});
 	}
 
 	return $res;
@@ -115,7 +126,11 @@ __PACKAGE__->register_method ({
 
 	my $cfg = PMG::UserConfig->new();
 
-	return $cfg->lookup_user_data($param->{userid});
+	my $data = $cfg->lookup_user_data($param->{userid});
+
+	my $res = $extract_userdata->($data);
+
+	return $res;
     }});
 
 __PACKAGE__->register_method ({
