@@ -1,6 +1,5 @@
 package PMG::UserConfig;
 
-
 use strict;
 use warnings;
 use Data::Dumper;
@@ -270,7 +269,9 @@ sub write_user_conf {
 	$raw .= $line . "\n";
     }
 
-    chmod(0600, $fh);
+    my $gid = getgrnam('www-data');
+    chown(0, $gid, $fh);
+    chmod(0640, $fh);
 
     PVE::Tools::safe_print($filename, $fh, $raw);
 }

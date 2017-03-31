@@ -32,6 +32,7 @@ __PACKAGE__->register_method ({
     description => "List users.",
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
