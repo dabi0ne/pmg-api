@@ -29,7 +29,7 @@ sub new {
     my $self = $class->SUPER::new(%args);
     
     $self->{rpcenv} = PVE::RESTEnvironment->init(
-	$self->{trusted_env} ? 'priv' : 'pub', atfork =>  sub { $self-> atfork_handler() });
+	$self->{trusted_env} ? 'priv' : 'pub', atfork =>  sub { $self->atfork_handler() });
 
     return $self;
 }
