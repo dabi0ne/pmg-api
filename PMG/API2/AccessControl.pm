@@ -165,6 +165,10 @@ __PACKAGE__->register_method ({
     path => 'password', 
     method => 'PUT',
     protected => 1, # else we can't access shadow files
+    permissions => {
+	description => "Each user is allowed to change his own password. Only root can change the password of another user.",
+	user => 'all',
+    },
     description => "Change user password.",
     parameters => {
 	additionalProperties => 0,
