@@ -77,6 +77,7 @@ sub set_user_password {
 }
 
 # test if user exists and is enabled
+# returns: role
 sub check_user_enabled {
     my ($username, $noerr) = @_;
 
@@ -86,11 +87,11 @@ sub check_user_enabled {
 
     if ($realm && $ruid) {
 	if ($realm eq 'pam') {
-	    return 1 if $ruid eq 'root';
+	    return 'root' if $ruid eq 'root';
 	} elsif ($realm eq 'pmg') {
 	    my $usercfg = PMG::UserConfig->new();
 	    my $data = $usercfg->lookup_user_data($username, $noerr);
-	    return 1 if $data && $data->{enable};
+	    return $data->{role} if $data && $data->{enable};
 	}
     }
 

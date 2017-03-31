@@ -131,6 +131,7 @@ __PACKAGE__->register_method ({
 	    username => { type => 'string' },
 	    ticket => { type => 'string', optional => 1},
 	    CSRFPreventionToken => { type => 'string', optional => 1 },
+	    role => { type => 'string', optional => 1},
 	}
     },
     code => sub {
@@ -143,8 +144,9 @@ __PACKAGE__->register_method ({
 
 	my $res;
 	eval {
-	    PMG::AccessControl::check_user_enabled($username);
+	    my $role = PMG::AccessControl::check_user_enabled($username);
 	    $res = &$create_ticket($rpcenv, $username, $param->{password}, $param->{otp});
+	    $res->{role} = $role;
 	};
 	if (my $err = $@) {
 	    my $clientip = $rpcenv->get_client_ip() || '';
