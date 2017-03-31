@@ -205,7 +205,7 @@ sub read_pmg_ldap_conf {
 
     local $/ = undef; # slurp mode
 
-    my $raw = <$fh>;
+    my $raw = defined($fh) ? <$fh> : '';
 
     return __PACKAGE__->parse_config($filename, $raw);
 }
@@ -215,14 +215,18 @@ sub write_pmg_ldap_conf {
 
     my $raw = __PACKAGE__->write_config($filename, $cfg);
 
-    chmod(0600, $fh);
+    my $gid = getgrnam('www-data');
+    chown(0, $gid, $fh);
+    chmod(0640, $fh);
 
     PVE::Tools::safe_print($filename, $fh, $raw);
 }
 
 PVE::INotify::register_file($inotify_file_id, $config_filename,
 			    \&read_pmg_ldap_conf,
-			    \&write_pmg_ldap_conf);
+			    \&write_pmg_ldap_conf,
+			    undef,
+			    always_call_parser => 1);
 
 
 1;

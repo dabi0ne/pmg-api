@@ -24,7 +24,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "List configured LDAP profiles.",
     proxyto => 'master',
-    protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
     	additionalProperties => 0,
 	properties => {},
@@ -99,6 +99,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'POST',
     proxyto => 'master',
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     description => "Add LDAP profile.",
     parameters => PMG::LDAPConfig->createSchema(1),
@@ -140,6 +141,9 @@ __PACKAGE__->register_method ({
     path => '{profile}',
     method => 'GET',
     description => "Directory index",
+    permissions => {
+	user => 'all',
+    },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -176,7 +180,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Get LDAP profile configuration.",
     proxyto => 'master',
-    protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -207,6 +211,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/config',
     method => 'PUT',
     description => "Update LDAP profile settings.",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     proxyto => 'master',
     parameters => PMG::LDAPConfig->updateSchema(),
@@ -257,6 +262,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/sync',
     method => 'POST',
     description => "Synchronice LDAP users to local database.",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -296,6 +302,7 @@ __PACKAGE__->register_method ({
     path => '{profile}',
     method => 'DELETE',
     description => "Delete an LDAP profile",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -338,6 +345,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/users',
     method => 'GET',
     description => "List LDAP users.",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -386,6 +394,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/users/{email}',
     method => 'GET',
     description => "Get all email addresses for the specified user.",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -443,6 +452,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/groups',
     method => 'GET',
     description => "List LDAP groups.",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
