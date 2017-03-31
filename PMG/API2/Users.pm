@@ -31,6 +31,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "List users.",
     proxyto => 'master',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -111,6 +112,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Read User data.",
     proxyto => 'master',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
