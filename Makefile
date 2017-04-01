@@ -64,6 +64,7 @@ LIBSOURCES =				\
 	PMG/AccessControl.pm		\
 	PMG/AtomicFile.pm		\
 	PMG/MailQueue.pm		\
+	PMG/Postfix.pm			\
 	PMG/SMTP.pm			\
 	PMG/Unpack.pm			\
 	PMG/RuleCache.pm		\
@@ -119,6 +120,7 @@ LIBSOURCES =				\
 	PMG/API2/ClusterConfig.pm	\
 	PMG/API2/ClamAV.pm		\
 	PMG/API2/Nodes.pm		\
+	PMG/API2/Postfix.pm		\
 	PMG/API2/AccessControl.pm	\
 	PMG/API2/ObjectGroupHelpers.pm	\
 	PMG/API2/Rules.pm		\
