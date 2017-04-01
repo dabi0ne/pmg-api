@@ -82,5 +82,38 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'mailq',
+    path => 'mailq',
+    method => 'GET',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    proxyto => 'node',
+    description => "List the mail queue for a specific domain.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    domain => {
+		description => "The domain name.",
+		type => 'string', format => 'dns-name',
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {},
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $res = PMG::Postfix::mailq($param->{domain});
+
+	return $res;
+    }});
+
 
 1;
