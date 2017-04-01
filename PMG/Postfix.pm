@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use File::Find;
+use JSON;
 
 my $spooldir = "/var/spool/postfix";
 
@@ -101,11 +102,59 @@ sub qshape {
     my $res = [];
     while (($count++ < 10000) && (defined($line = <$fh>))) {
 	if ($line =~ m/^\s+(\S+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+)$/) {
-	    push @$res, $1;
+	    my @d = split(/\s+/, $1);
+	    push @$res, { 
+		domain => $d[0],
+		total => $d[1],
+		'5s' => $d[2],
+		'10s' => $d[3],
+		'20s' => $d[4],
+		'40s' => $d[5],
+		'80s' => $d[6],
+		'160s' => $d[7],
+		'320s' => $d[8],
+		'640s' => $d[9],
+		'1280s' => $d[10],
+		'1280s+' => $d[11],
+	    };
 	}
     }
 
     close($fh);
+
+    return $res;
+}
+
+sub mailq {
+    my ($domain, $limit) = @_;
+
+    $domain = lc($domain);
+
+    open(my $fh, '-|', '/usr/sbin/postqueue', '-j') || die "ERROR: unable to run postqueue - $!\n";
+
+    my $count = 0;
+    my $res = [];
+    my $line;
+    while (defined($line = <$fh>)) {
+	my $rec = decode_json($line);
+	my $recipients = $rec->{recipients};
+
+	foreach my $entry (@$recipients) {
+	    my $address = lc($entry->{address});
+	    if ($address =~ m/\@$domain$/) {
+		my $data = {};
+		foreach my $k (qw(queue_name queue_id arrival_time message_size sender)) {
+		    $data->{$k} = $rec->{$k};
+		}
+		$data->{receiver} = $address;
+		$data->{reason} = $entry->{delay_reason};
+		push @$res, $data;
+		last if $limit && (++$count >= $limit);
+	    }
+	}
+    }
+
+    close (CMD);
 
     return $res;
 }

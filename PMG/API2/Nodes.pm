@@ -16,8 +16,14 @@ use PMG::API2::Tasks;
 use PMG::API2::Services;
 use PMG::API2::Network;
 use PMG::API2::ClamAV;
+use PMG::API2::Postfix;
 
 use base qw(PVE::RESTHandler);
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Postfix",
+    path => 'postfix',
+});
 
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::ClamAV",
@@ -64,6 +70,7 @@ __PACKAGE__->register_method ({
 
 	my $result = [
 	    { name => 'clamav' },
+	    { name => 'postfix' },
 	    { name => 'services' },
 	    { name => 'syslog' },
 	    { name => 'tasks' },
