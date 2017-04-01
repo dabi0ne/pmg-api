@@ -59,8 +59,8 @@ my $postfix_qenv = sub {
     return $res;
 };
 
+# Fixme: it is a bad idea to scan everything - list can be too large
 sub show_deferred_queue {
-
     my $res;
 
     my $queue = 'deferred';
@@ -82,6 +82,30 @@ sub show_deferred_queue {
     };
 
     find($callback, "$spooldir/deferred");
+
+    return $res;
+}
+
+sub qshape {
+    my ($queues) = @_;
+
+    open(my $fh, '-|', '/usr/sbin/qshape', $queues) || die "ERROR: unable to run qshape: $!\n";
+
+    my $line = <$fh>;
+    if (!$line || !($line =~ m/^\s+T\s+5\s+10\s+20\s+40\s+80\s+160\s+320\s+640\s+1280\s+1280\+$/)) {
+	close (CMD);
+	die "ERROR: unable to parse qshape output: - $line";
+    }
+
+    my $count = 0;
+    my $res = [];
+    while (($count++ < 10000) && (defined($line = <$fh>))) {
+	if ($line =~ m/^\s+(\S+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+)$/) {
+	    push @$res, $1;
+	}
+    }
+
+    close($fh);
 
     return $res;
 }
