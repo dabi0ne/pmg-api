@@ -40,6 +40,9 @@ __PACKAGE__->register_method ({
 	my $result = [
 	    { name => 'mailq' },
 	    { name => 'qshape' },
+	    { name => 'flush_queues' },
+	    { name => 'delete_deferred_queue' },
+	    { name => 'discard_verify_cache' },
 	];
 
 	return $result;
@@ -133,5 +136,73 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'flush_queues',
+    path => 'flush_queues',
+    method => 'POST',
+    description => "Flush the queue: attempt to deliver all queued mail.",
+    proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::flush_queues();
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'delete_deferred_queue',
+    path => 'delete_deferred_queue',
+    method => 'POST',
+    description => "Delete all mails in the deffered queue.",
+    proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::delete_deferred_queue();
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'discard_verify_cache',
+    path => 'discard_verify_cache',
+    method => 'POST',
+    description => "Discards the address verification cache.",
+    proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::discard_verify_cache();
+
+	return undef;
+    }});
 
 1;

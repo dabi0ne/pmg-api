@@ -6,6 +6,8 @@ use Data::Dumper;
 use File::Find;
 use JSON;
 
+use PMG::Utils;
+
 my $spooldir = "/var/spool/postfix";
 
 my $postfix_rec_get = sub {
@@ -161,6 +163,20 @@ sub mailq {
     close (CMD);
 
     return ($count, $res);
+}
+
+sub flush_queues {
+    system("/usr/sbin/postqueue -f");
+}
+
+sub delete_deferred_queue {
+    system("/usr/sbin/postsuper -d ALL deferred");
+}
+
+sub discard_verify_cache {
+    unlink "/var/lib/postfix/verify_cache.db";
+
+    PMG::Utils::service_cmd('postfix', 'reload');
 }
 
 1;
