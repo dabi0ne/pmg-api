@@ -126,11 +126,15 @@ sub qshape {
 }
 
 sub mailq {
-    my ($filter, $limit) = @_;
+    my ($filter, $start, $limit) = @_;
 
     open(my $fh, '-|', '/usr/sbin/postqueue', '-j') || die "ERROR: unable to run postqueue - $!\n";
 
     my $count = 0;
+
+    $start = 0 if !$start;
+    $limit = 50 if !$limit;
+
     my $res = [];
     my $line;
     while (defined($line = <$fh>)) {
@@ -140,6 +144,9 @@ sub mailq {
 	foreach my $entry (@$recipients) {
 	    if (!$filter || $entry->{address} =~ m/$filter/i ||
 		$rec->{sender} =~ m/$filter/i) {
+		next if $count++ < $start;
+		next if $limit-- <= 0;
+
 		my $data = {};
 		foreach my $k (qw(queue_name queue_id arrival_time message_size sender)) {
 		    $data->{$k} = $rec->{$k};
@@ -147,14 +154,13 @@ sub mailq {
 		$data->{receiver} = $entry->{address};
 		$data->{reason} = $entry->{delay_reason};
 		push @$res, $data;
-		last if $limit && (++$count >= $limit);
 	    }
 	}
     }
 
     close (CMD);
 
-    return $res;
+    return ($count, $res);
 }
 
 1;

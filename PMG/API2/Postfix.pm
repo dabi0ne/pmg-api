@@ -95,6 +95,16 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    node => get_standard_option('pve-node'),
+	    start => {
+		type => 'integer',
+		minimum => 0,
+		optional => 1,
+	    },
+	    limit => {
+		type => 'integer',
+		minimum => 0,
+		optional => 1,
+	    },
 	    filter => {
 		description => "Filter string.",
 		type => 'string',
@@ -113,7 +123,12 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $res = PMG::Postfix::mailq($param->{filter});
+	my $restenv = PVE::RESTEnvironment::get();
+
+	my ($count, $res) = PMG::Postfix::mailq(
+	    $param->{filter}, $param->{start}, $param->{limit});
+
+	$restenv->set_result_attrib('total', $count);
 
 	return $res;
     }});
