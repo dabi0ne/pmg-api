@@ -38,6 +38,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'mailq' },
 	    { name => 'qshape' },
 	];
 
@@ -94,9 +95,11 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    node => get_standard_option('pve-node'),
-	    domain => {
-		description => "The domain name.",
-		type => 'string', format => 'dns-name',
+	    filter => {
+		description => "Filter string.",
+		type => 'string',
+		maxLength => 64,
+		optional => 1,
 	    },
 	},
     },
@@ -110,7 +113,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $res = PMG::Postfix::mailq($param->{domain});
+	my $res = PMG::Postfix::mailq($param->{filter});
 
 	return $res;
     }});

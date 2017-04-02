@@ -126,9 +126,7 @@ sub qshape {
 }
 
 sub mailq {
-    my ($domain, $limit) = @_;
-
-    $domain = lc($domain);
+    my ($filter, $limit) = @_;
 
     open(my $fh, '-|', '/usr/sbin/postqueue', '-j') || die "ERROR: unable to run postqueue - $!\n";
 
@@ -140,13 +138,13 @@ sub mailq {
 	my $recipients = $rec->{recipients};
 
 	foreach my $entry (@$recipients) {
-	    my $address = lc($entry->{address});
-	    if ($address =~ m/\@$domain$/) {
+	    if (!$filter || $entry->{address} =~ m/$filter/i ||
+		$rec->{sender} =~ m/$filter/i) {
 		my $data = {};
 		foreach my $k (qw(queue_name queue_id arrival_time message_size sender)) {
 		    $data->{$k} = $rec->{$k};
 		}
-		$data->{receiver} = $address;
+		$data->{receiver} = $entry->{address};
 		$data->{reason} = $entry->{delay_reason};
 		push @$res, $data;
 		last if $limit && (++$count >= $limit);
