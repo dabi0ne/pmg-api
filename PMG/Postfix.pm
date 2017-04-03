@@ -6,6 +6,8 @@ use Data::Dumper;
 use File::Find;
 use JSON;
 
+use PVE::Tools;
+
 use PMG::Utils;
 
 my $spooldir = "/var/spool/postfix";
@@ -57,8 +59,6 @@ my $postfix_qenv = sub {
 	elsif ($r eq "E") { last; }
     }
 
-    close($fh);
-
     return $res;
 };
 
@@ -96,7 +96,6 @@ sub qshape {
 
     my $line = <$fh>;
     if (!$line || !($line =~ m/^\s+T\s+5\s+10\s+20\s+40\s+80\s+160\s+320\s+640\s+1280\s+1280\+$/)) {
-	close (CMD);
 	die "ERROR: unable to parse qshape output: - $line";
     }
 
@@ -105,7 +104,7 @@ sub qshape {
     while (($count++ < 10000) && (defined($line = <$fh>))) {
 	if ($line =~ m/^\s+(\S+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+)$/) {
 	    my @d = split(/\s+/, $1);
-	    push @$res, { 
+	    push @$res, {
 		domain => $d[0],
 		total => $d[1],
 		'5s' => $d[2],
@@ -122,13 +121,11 @@ sub qshape {
 	}
     }
 
-    close($fh);
-
     return $res;
 }
 
 sub mailq {
-    my ($filter, $start, $limit) = @_;
+    my ($queue, $filter, $start, $limit) = @_;
 
     open(my $fh, '-|', '/usr/sbin/postqueue', '-j') || die "ERROR: unable to run postqueue - $!\n";
 
@@ -142,6 +139,7 @@ sub mailq {
     while (defined($line = <$fh>)) {
 	my $rec = decode_json($line);
 	my $recipients = $rec->{recipients};
+	next if $rec->{queue_name} ne $queue;
 
 	foreach my $entry (@$recipients) {
 	    if (!$filter || $entry->{address} =~ m/$filter/i ||
@@ -160,17 +158,54 @@ sub mailq {
 	}
     }
 
-    close (CMD);
-
     return ($count, $res);
 }
 
-sub flush_queues {
-    system("/usr/sbin/postqueue -f");
+sub postcat {
+    my ($queue_id, $header, $body) = @_;
+
+    die "no option specified (select header or body or both)"
+	if !($header || $body);
+
+    my @opts = ();
+
+    push @opts, '-h' if $header;
+    push @opts, '-b' if $body;
+
+    push @opts, '-q', $queue_id;
+
+    open(my $fh, '-|', '/usr/sbin/postcat', @opts) || die "ERROR: unable to run postcat - $!\n";
+
+    my $res = '';
+    while (defined(my $line = <$fh>)) {
+	$res .= $line;
+    }
+
+    return $res;
 }
 
-sub delete_deferred_queue {
-    system("/usr/sbin/postsuper -d ALL deferred");
+# flush all queues
+sub flush_queues {
+    PVE::Tools::run_command(['/usr/sbin/postqueue', '-f']);
+}
+
+# flush a single mail
+sub flush_queued_mail {
+    my ($queue_id) = @_;
+
+    PVE::Tools::run_command(['/usr/sbin/postqueue', '-i', $queue_id]);
+}
+
+sub delete_queued_mail {
+    my ($queue, $queue_id) = @_;
+
+    PVE::Tools::run_command(['/usr/sbin/postsuper', '-d', $queue_id, $queue]);
+}
+
+sub delete_queue {
+    my ($queue) = @_;
+
+    PVE::Tools::run_command(['/usr/sbin/postsuper', '-d', 'ALL', $queue]);
 }
 
 sub discard_verify_cache {

@@ -14,6 +14,22 @@ use PMG::Postfix;
 
 use base qw(PVE::RESTHandler);
 
+my $postfix_queues = ['deferred', 'active', 'incoming', 'hold'];
+
+my $queue_name_option = {
+    description => "Postfix queue name.",
+    type => 'string',
+    enum => $postfix_queues,
+};
+
+my $queue_id_option = {
+    description => "The Message queue ID.",
+    type => 'string',
+    pattern => '[a-zA-Z0-9]+',
+    minLength => 8,
+    maxLength => 20,
+};
+
 __PACKAGE__->register_method ({
     name => 'index',
     path => '',
@@ -38,10 +54,9 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
-	    { name => 'mailq' },
+	    { name => 'queue' },
 	    { name => 'qshape' },
 	    { name => 'flush_queues' },
-	    { name => 'delete_deferred_queue' },
 	    { name => 'discard_verify_cache' },
 	];
 
@@ -61,9 +76,9 @@ __PACKAGE__->register_method ({
 	properties => {
 	    node => get_standard_option('pve-node'),
 	    queue => {
-		description => "Postfix queue name.",
+		description => $queue_name_option->{description},
 		type => 'string',
-		enum => ['deferred', 'active', 'incoming', 'bounce'],
+		enum => $postfix_queues,
 		default => 'deferred',
 		optional => 1,
 	    },
@@ -86,9 +101,40 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
+
+__PACKAGE__->register_method ({
+    name => 'queue_index',
+    path => 'queue',
+    method => 'GET',
+    permissions => { user => 'all' },
+    description => "Directory index.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {},
+	},
+	links => [ { rel => 'child', href => "{name}" } ],
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $res = [];
+	foreach my $queue (@$postfix_queues) {
+	    push @$res, { name => $queue };
+	}
+	return $res;
+   }});
+
 __PACKAGE__->register_method ({
     name => 'mailq',
-    path => 'mailq',
+    path => 'queue/{queue}',
     method => 'GET',
     permissions => { check => [ 'admin' ] },
     protected => 1,
@@ -98,6 +144,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    node => get_standard_option('pve-node'),
+	    queue => $queue_name_option,
 	    start => {
 		type => 'integer',
 		minimum => 0,
@@ -122,19 +169,134 @@ __PACKAGE__->register_method ({
 	    type => "object",
 	    properties => {},
 	},
-    },
+	links => [ { rel => 'child', href => "{queue_id}" } ],
+     },
     code => sub {
 	my ($param) = @_;
 
 	my $restenv = PVE::RESTEnvironment::get();
 
 	my ($count, $res) = PMG::Postfix::mailq(
-	    $param->{filter}, $param->{start}, $param->{limit});
+	    $param->{queue}, $param->{filter}, $param->{start}, $param->{limit});
 
 	$restenv->set_result_attrib('total', $count);
 
 	return $res;
     }});
+
+
+__PACKAGE__->register_method ({
+    name => 'read_queued_mail',
+    path => 'queue/{queue}/{queue_id}',
+    method => 'GET',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    proxyto => 'node',
+    description => "Get the contents of a queued mail.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    queue => $queue_name_option,
+	    queue_id => $queue_id_option,
+	    header => {
+		description => "Show message header content.",
+		type => 'boolean',
+		default => 1,
+		optional => 1,
+	    },
+	    body => {
+		description => "Include body content.",
+		type => 'boolean',
+		default => 0,
+		optional => 1,
+	    },
+	},
+    },
+    returns => { type => 'string' },
+    code => sub {
+	my ($param) = @_;
+
+	$param->{header} //= 1;
+
+	return PMG::Postfix::postcat($param->{queue_id}, $param->{header}, $param->{body});
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'flush_queued_mail',
+    path => 'queue/{queue}/{queue_id}',
+    method => 'POST',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    proxyto => 'node',
+    description => "Schedule immediate delivery of deferred mail with the specified queue ID.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    queue => $queue_name_option,
+	    queue_id => $queue_id_option,
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::flush_queued_mail($param->{queue_id});
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'delete_queued_mail',
+    path => 'queue/{queue}/{queue_id}',
+    method => 'DELETE',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    proxyto => 'node',
+    description => "Delete one message with the named queue ID.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    queue => $queue_name_option,
+	    queue_id => $queue_id_option,
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::delete_queued_mail($param->{queue}, $param->{queue_id});
+
+	return undef;
+    }});
+
+
+__PACKAGE__->register_method ({
+    name => 'delete_queue',
+    path => 'queue/{queue}',
+    method => 'DELETE',
+    description => "Delete all mails in the queue.",
+    proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    queue => $queue_name_option,
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::delete_queue($param->{queue});
+
+	return undef;
+    }});
+
 
 __PACKAGE__->register_method ({
     name => 'flush_queues',
@@ -159,28 +321,6 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
-__PACKAGE__->register_method ({
-    name => 'delete_deferred_queue',
-    path => 'delete_deferred_queue',
-    method => 'POST',
-    description => "Delete all mails in the deffered queue.",
-    proxyto => 'node',
-    permissions => { check => [ 'admin' ] },
-    protected => 1,
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
-    },
-    returns => { type => 'null' },
-    code => sub {
-	my ($param) = @_;
-
-	PMG::Postfix::delete_deferred_queue();
-
-	return undef;
-    }});
 
 __PACKAGE__->register_method ({
     name => 'discard_verify_cache',
