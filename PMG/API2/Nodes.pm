@@ -143,15 +143,21 @@ __PACKAGE__->register_method({
 		optional => 1,
 	    },
 	    since => {
-		type=> 'string',
+		type => 'string',
 		pattern => '^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$',
 		description => "Display all log since this date-time string.",
 		optional => 1,
 	    },
 	    'until' => {
-		type=> 'string',
+		type => 'string',
 		pattern => '^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$',
 		description => "Display all log until this date-time string.",
+		optional => 1,
+	    },
+	    service => {
+		description => "Service ID",
+		type => 'string',
+		maxLength => 128,
 		optional => 1,
 	    },
 	},
@@ -177,8 +183,14 @@ __PACKAGE__->register_method({
 
 	my $restenv = PVE::RESTEnvironment::get();
 
-	my ($count, $lines) = PVE::Tools::dump_journal($param->{start}, $param->{limit},
-						       $param->{since}, $param->{'until'});
+	my $service = $param->{service};
+	if ($service && $service eq 'postfix') {
+	    $service = 'postfix@-';
+	}
+
+	my ($count, $lines) = PVE::Tools::dump_journal(
+	    $param->{start}, $param->{limit},
+	    $param->{since}, $param->{'until'}, $service);
 
 	$restenv->set_result_attrib('total', $count);
 
