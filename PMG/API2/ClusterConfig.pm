@@ -26,6 +26,7 @@ __PACKAGE__->register_method({
 	additionalProperties => 0,
 	properties => {},
     },
+    permissions => { check => [ 'admin' ] },
     returns => {
 	type => 'array',
 	items => {
@@ -43,5 +44,40 @@ __PACKAGE__->register_method({
 
 	return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
     }});
+
+__PACKAGE__->register_method({
+    name => 'create_master',
+    path => '',
+    method => 'POST',
+    description => "Create initial cluster config with current node as master.",
+    # alway read local file
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+	    my $cfg = PMG::ClusterConfig->new();
+
+	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
+
+	    my $info = PMG::Cluster::read_local_cluster_info();
+
+	    $info->{type} = 'master';
+	    $info->{maxcid} = 1,
+
+	    $cfg->{ids}->{$info->{maxcid}} = $info;
+
+	    $cfg->write();
+	};
+
+	PMG::ClusterConfig::lock_config($code, "create cluster failed");
+
+	return undef;
+    }});
+
 
 1;

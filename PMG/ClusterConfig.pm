@@ -60,10 +60,17 @@ sub properties {
 	hostrsapubkey => {
 	    description => "Public SSH RSA key for the host.",
 	    type => 'string',
+	    pattern => '^[A-Za-z0-9\.\/\+]{200,}$',
 	},
 	rootrsapubkey => {
 	    description => "Public SSH RSA key for the root user.",
 	    type => 'string',
+	    pattern => '^[A-Za-z0-9\.\/\+]{200,}$',
+	},
+	fingerprint => {
+	    description => "SSL certificate fingerprint.",
+	    type => 'string',
+	    pattern => '^(:?[A-Z0-9][A-Z0-9]:){31}[A-Z0-9][A-Z0-9]$',
 	},
     };
 }
@@ -74,6 +81,7 @@ sub options {
 	name => { fixed => 1 },
 	hostrsapubkey => {},
 	rootrsapubkey => {},
+	fingerprint => {},
     };
 }
 
@@ -105,6 +113,7 @@ sub options {
 	name => { fixed => 1 },
 	hostrsapubkey => {},
 	rootrsapubkey => {},
+	fingerprint => {},
     };
 }
 
