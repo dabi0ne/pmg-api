@@ -161,12 +161,12 @@ __PACKAGE__->register_method ({
 
 	my $cfg = PMG::Config->new();
 
-	PMG::Ticket::generate_api_cert($param->{force});
+	PMG::Ticket::generate_api_cert();
 	PMG::Ticket::generate_csrf_key();
 	PMG::Ticket::generate_auth_key();
 	
 	if ($cfg->get('mail', 'tls')) {
-	    PMG::Utils::gen_proxmox_tls_cert($param->{force});
+	    PMG::Utils::gen_proxmox_tls_cert();
 	}
 	
 	return undef;
