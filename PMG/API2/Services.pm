@@ -22,7 +22,7 @@ my $service_name_list = [
     'pmgdaemon',
     'pmgpolicy',
     'pmg-smtp-filter',
-    'sshd',
+    'ssh',
     'syslog',
     'postfix',
     'systemd-timesyncd',
