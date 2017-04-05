@@ -1,6 +1,6 @@
 PACKAGE=proxmox-mailgateway
 PKGVER=5.0
-PKGREL=2
+PKGREL=3
 
 # this requires package pmg-doc-generator
 export NOVIEW=1

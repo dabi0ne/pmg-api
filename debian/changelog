@@ -1,3 +1,15 @@
+proxmox-mailgateway (5.0-3) unstable; urgency=medium
+
+  * initial cluster management API
+
+  * ldap and user API
+
+  * mail queue APIL
+
+  * small fixes and improvements
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 05 Apr 2017 10:27:10 +0200
+
 proxmox-mailgateway (5.0-2) unstable; urgency=medium
 
   * restart services after upgrade
