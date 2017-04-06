@@ -16,7 +16,7 @@ use PMG::API2::RuleDB;
 use PMG::API2::LDAP;
 use PMG::API2::Domains;
 use PMG::API2::Transport;
-use PMG::API2::ClusterConfig;
+use PMG::API2::Cluster;
 use PMG::API2::MyNetworks;
 use PMG::API2::SMTPWhitelist;
 
@@ -58,7 +58,7 @@ __PACKAGE__->register_method ({
 });
 
 __PACKAGE__->register_method ({
-    subclass => "PMG::API2::ClusterConfig",
+    subclass => "PMG::API2::Cluster",
     path => 'cluster',
 });
 

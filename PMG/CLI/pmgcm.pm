@@ -12,7 +12,7 @@ use PVE::CLIHandler;
 use PMG::DBTools;
 use PMG::Cluster;
 use PMG::ClusterConfig;
-use PMG::API2::ClusterConfig;
+use PMG::API2::Cluster;
 
 use base qw(PVE::CLIHandler);
 
@@ -30,8 +30,9 @@ my $format_nodelist = sub {
 };
 
 our $cmddef = {
-    nodes => [ 'PMG::API2::ClusterConfig', 'index', [], {}, $format_nodelist],
-    create => [ 'PMG::API2::ClusterConfig', 'create_master', []],
+    nodes => [ 'PMG::API2::Cluster', 'nodes', [], {}, $format_nodelist],
+    create => [ 'PMG::API2::Cluster', 'create', []],
+    join => [ 'PMG::API2::Cluster', 'join', ['master_ip', 'fingerprint']],
 };
 
 1;

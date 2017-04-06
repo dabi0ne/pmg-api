@@ -118,7 +118,7 @@ LIBSOURCES =				\
 	PMG/API2/Transport.pm		\
 	PMG/API2/MyNetworks.pm		\
 	PMG/API2/Config.pm		\
-	PMG/API2/ClusterConfig.pm	\
+	PMG/API2/Cluster.pm		\
 	PMG/API2/ClamAV.pm		\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/Postfix.pm		\
