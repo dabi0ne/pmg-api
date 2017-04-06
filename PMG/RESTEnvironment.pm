@@ -8,6 +8,7 @@ use PVE::RESTEnvironment;
 
 use PMG::Cluster;
 use PMG::ClusterConfig;
+use PMG::AccessControl;
 
 use base qw(PVE::RESTEnvironment);
 
@@ -22,6 +23,7 @@ sub init {
     my $self = $class->SUPER::init($type, %params);
 
     $self->{cinfo} = {};
+    $self->{usercfg} = {};
  
     return $self;
 };
@@ -33,6 +35,7 @@ sub init_request {
     $self->SUPER::init_request(%params);
     
     $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
+    $self->{usercfg} = PVE::INotify::read_file("pmg-user.conf");
 }
 
 sub check_node_is_master {
@@ -45,6 +48,28 @@ sub check_node_is_master {
     return undef if $noerr;
 
     die "this node ('$nodename') is not the master node\n";
+}
+
+sub check_api2_permissions {
+    my ($self, $perm, $username, $uri_param) = @_;
+
+    return 1 if !$username && $perm->{user} && $perm->{user} eq 'world';
+
+    raise_perm_exc("user == null") if !$username;
+
+    return 1 if $username eq 'root@pam';
+
+    raise_perm_exc('user != root@pam') if !$perm;
+
+    return 1 if $perm->{user} && $perm->{user} eq 'all';
+
+    my $role = PMG::AccessControl::check_user_enabled($self->{usercfg}, $username);
+
+    if (my $allowed_roles = $perm->{check}) {
+	return 1 if grep { $_ eq $role } @$allowed_roles;
+    }
+
+    raise_perm_exc();
 }
 
 1;

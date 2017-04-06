@@ -110,7 +110,7 @@ sub rest_handler {
 	}
 
 	# check access permissions
-	PMG::AccessControl::check_api2_permissions($info->{permissions}, $auth->{userid});
+	$rpcenv->check_api2_permissions($info->{permissions}, $auth->{userid}, $uri_param);
 
 	if (my $pn = $info->{proxyto}) {
 

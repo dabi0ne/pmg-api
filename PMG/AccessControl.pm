@@ -80,7 +80,7 @@ sub set_user_password {
 # test if user exists and is enabled
 # returns: role
 sub check_user_enabled {
-    my ($username, $noerr) = @_;
+    my ($usercfg, $username, $noerr) = @_;
 
     my ($ruid, $realm);
 
@@ -99,28 +99,6 @@ sub check_user_enabled {
     raise_perm_exc("user '$username' is disabled") if !$noerr;
 
     return undef;
-}
-
-sub check_api2_permissions {
-    my ($perm, $username, $uri_param) = @_;
-
-    return 1 if !$username && $perm->{user} && $perm->{user} eq 'world';
-
-    raise_perm_exc("user == null") if !$username;
-
-    return 1 if $username eq 'root@pam';
-
-    raise_perm_exc('user != root@pam') if !$perm;
-
-    return 1 if $perm->{user} && $perm->{user} eq 'all';
-
-    my $role = check_user_enabled($username);
-
-    if (my $allowed_roles = $perm->{check}) {
-	return 1 if grep { $_ eq $role } @$allowed_roles;
-    }
-
-    raise_perm_exc();
 }
 
 sub authenticate_pam_user {

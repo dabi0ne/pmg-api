@@ -144,7 +144,7 @@ __PACKAGE__->register_method ({
 
 	my $res;
 	eval {
-	    my $role = PMG::AccessControl::check_user_enabled($username);
+	    my $role = PMG::AccessControl::check_user_enabled($rpcenv->{usercfg}, $username);
 	    $res = &$create_ticket($rpcenv, $username, $param->{password}, $param->{otp});
 	    $res->{role} = $role;
 	};
@@ -196,7 +196,7 @@ __PACKAGE__->register_method ({
 	} else {
 	    if ($authuser eq $userid) {
 		# OK - each enable user can change its own password
-		PMG::AccessControl::check_user_enabled($userid);
+		PMG::AccessControl::check_user_enabled($rpcenv->{usercfg}, $userid);
 	    } else {
 		raise_perm_exc();
 	    }
