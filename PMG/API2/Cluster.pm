@@ -11,10 +11,22 @@ use Storable qw(dclone);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
+use PVE::APIClient::LWP;
 
 use PMG::ClusterConfig;
+use PMG::Cluster;
 
 use base qw(PVE::RESTHandler);
+
+sub cluster_join {
+    my ($conn_setup) = @_;
+
+    my $conn = PVE::APIClient::LWP->new(%$conn_setup);
+
+    my $info = PMG::Cluster::read_local_cluster_info();
+
+    my $res = $conn->post("/config/cluster/nodes", $info);
+}
 
 __PACKAGE__->register_method({
     name => 'index',
@@ -82,6 +94,51 @@ __PACKAGE__->register_method({
 	return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
     }});
 
+my $add_node_schema = PMG::ClusterConfig::Node->createSchema(1);
+delete  $add_node_schema->{properties}->{cid};
+
+__PACKAGE__->register_method({
+    name => 'add_node',
+    path => 'nodes',
+    method => 'POST',
+    description => "Add an node to the cluster config.",
+    proxyto => 'master',
+    protected => 1,
+    parameters => $add_node_schema,
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+	    my $cfg = PMG::ClusterConfig->new();
+
+	    die "no cluster defined\n" if !scalar(keys %{$cfg->{ids}});
+
+	    my $master = $cfg->{master} || die "unable to lookup master node\n";
+
+	    $master->{maxcid}++;
+
+	    my $node = {
+		type => 'node',
+		cid => $master->{maxcid},
+	    };
+
+	    foreach my $k (qw(ip name hostrsapubkey rootrsapubkey fingerprint)) {
+		$node->{$k} = $param->{$k};
+	    }
+
+	    # fixme: test if IP or name already exists
+
+	    $cfg->{ids}->{$node->{cid}} = $node;
+
+	    $cfg->write();
+	};
+
+	PMG::ClusterConfig::lock_config($code, "create cluster failed");
+
+	return undef;
+    }});
+
 __PACKAGE__->register_method({
     name => 'create',
     path => 'create',
@@ -134,6 +191,11 @@ __PACKAGE__->register_method({
 		type => 'string',
 		pattern => '^(:?[A-Z0-9][A-Z0-9]:){31}[A-Z0-9][A-Z0-9]$',
 	    },
+	    password => {
+		description => "Superuser password.",
+		type => 'string',
+		maxLength => 128,
+	    },
 	},
     },
     returns => { type => 'null' },
@@ -145,7 +207,17 @@ __PACKAGE__->register_method({
 
 	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
 
-	    die "implement me";
+	    my $setup = {
+		username => 'root@pam',
+		password => $param->{password},
+		cookie_name => 'PMGAuthCookie',
+		host => $param->{master_ip},
+		cached_fingerprints => {
+		    $param->{fingerprint} => 1,
+		}
+	    };
+
+	    cluster_join($setup);
 	};
 
 	PMG::ClusterConfig::lock_config($code, "cluster join failed");
