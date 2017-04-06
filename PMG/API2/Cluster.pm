@@ -116,7 +116,27 @@ __PACKAGE__->register_method({
 
 	    my $master = $cfg->{master} || die "unable to lookup master node\n";
 
-	    $master->{maxcid}++;
+	    my $next_cid;
+	    foreach my $cid (keys %{$cfg->{ids}}) {
+		my $d = $cfg->{ids}->{$cid};
+
+		if ($d->{type} eq 'node' && $d->{ip} eq $param->{ip} && $d->{name} eq $param->{name}) {
+		    $nextcid = $cid; # allow overwrite existing node data
+		    last;
+		}
+
+		if ($d->{ip} eq $param->{ip}) {
+		    die "ip address '$param->{ip}' is already used by existing node $d->{name}\n";
+		}
+
+		if ($d->{name} eq $param->{name}) {
+		    die "node with name '$param->{name}' already exists\n";
+		}
+	    }
+
+	    if (!defined($next_cid)) {
+		$next_cid = ++$master->{maxcid};
+	    }
 
 	    my $node = {
 		type => 'node',
@@ -126,8 +146,6 @@ __PACKAGE__->register_method({
 	    foreach my $k (qw(ip name hostrsapubkey rootrsapubkey fingerprint)) {
 		$node->{$k} = $param->{$k};
 	    }
-
-	    # fixme: test if IP or name already exists
 
 	    $cfg->{ids}->{$node->{cid}} = $node;
 
