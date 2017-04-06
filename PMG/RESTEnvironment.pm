@@ -3,11 +3,15 @@ package PMG::RESTEnvironment;
 use strict;
 use warnings;
 
+use PVE::INotify;
 use PVE::RESTEnvironment;
 
+use PMG::Cluster;
 use PMG::ClusterConfig;
 
 use base qw(PVE::RESTEnvironment);
+
+my $nodename = PVE::INotify::nodename();
 
 # initialize environment - must be called once at program startup
 sub init {
@@ -29,6 +33,18 @@ sub init_request {
     $self->SUPER::init_request(%params);
     
     $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
+}
+
+sub check_node_is_master {
+    my ($self, $noerr);
+
+    my $master = PMG::Cluster::get_master_node($self->{cinfo});
+
+    return 1 if $master eq 'localhost' || $master eq $nodename;
+
+    return undef if $noerr;
+
+    die "this node ('$nodename') is not the master node\n";
 }
 
 1;

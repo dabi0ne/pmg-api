@@ -112,8 +112,7 @@ sub rest_handler {
 	# check access permissions
 	PMG::AccessControl::check_api2_permissions($info->{permissions}, $auth->{userid});
 
-	if ($info->{proxyto}) {
-	    my $pn = $info->{proxyto};
+	if (my $pn = $info->{proxyto}) {
 
 	    my $node;
 	    if ($pn eq 'master') {
@@ -135,6 +134,12 @@ sub rest_handler {
 	if ($info->{protected} && ($euid != 0)) {
 	    $resp = { proxy => 'localhost' , proxy_params => $params };
 	    return;
+	}
+
+	if (my $pn = $info->{proxyto}) {
+	    if ($pn eq 'master') {
+		$rpcenv->check_node_is_master();
+	    }
 	}
 
 	$resp = {
