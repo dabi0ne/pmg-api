@@ -155,10 +155,11 @@ my $lockfile = "/var/lock/pmgcluster.lck";
 sub lock_config {
     my ($code, $errmsg) = @_;
 
-    my $p = PVE::Tools::lock_file($lockfile, undef, $code);
+    my $res = PVE::Tools::lock_file($lockfile, undef, $code);
     if (my $err = $@) {
 	$errmsg ? die "$errmsg: $err" : die $err;
     }
+    return $res;
 }
 
 sub read_cluster_conf {

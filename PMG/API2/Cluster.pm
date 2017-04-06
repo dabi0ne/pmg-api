@@ -19,13 +19,19 @@ use PMG::Cluster;
 use base qw(PVE::RESTHandler);
 
 sub cluster_join {
-    my ($conn_setup) = @_;
+    my ($cfg, $conn_setup) = @_;
 
     my $conn = PVE::APIClient::LWP->new(%$conn_setup);
 
     my $info = PMG::Cluster::read_local_cluster_info();
 
     my $res = $conn->post("/config/cluster/nodes", $info);
+
+    foreach my $node (@$res) {
+	$cfg->{ids}->{$node->{cid}} = $node;
+    }
+
+    $cfg->write();
 }
 
 __PACKAGE__->register_method({
@@ -105,7 +111,16 @@ __PACKAGE__->register_method({
     proxyto => 'master',
     protected => 1,
     parameters => $add_node_schema,
-    returns => { type => 'null' },
+    returns => {
+	description => "Returns the resulting node list.",
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		cid => { type => 'integer' },
+	    },
+	},
+    },
     code => sub {
 	my ($param) = @_;
 
@@ -121,7 +136,7 @@ __PACKAGE__->register_method({
 		my $d = $cfg->{ids}->{$cid};
 
 		if ($d->{type} eq 'node' && $d->{ip} eq $param->{ip} && $d->{name} eq $param->{name}) {
-		    $nextcid = $cid; # allow overwrite existing node data
+		    $next_cid = $cid; # allow overwrite existing node data
 		    last;
 		}
 
@@ -150,11 +165,11 @@ __PACKAGE__->register_method({
 	    $cfg->{ids}->{$node->{cid}} = $node;
 
 	    $cfg->write();
+
+	    return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
 	};
 
-	PMG::ClusterConfig::lock_config($code, "create cluster failed");
-
-	return undef;
+	return PMG::ClusterConfig::lock_config($code, "add node failed");
     }});
 
 __PACKAGE__->register_method({
@@ -235,7 +250,7 @@ __PACKAGE__->register_method({
 		}
 	    };
 
-	    cluster_join($setup);
+	    cluster_join($cfg, $setup);
 	};
 
 	PMG::ClusterConfig::lock_config($code, "cluster join failed");

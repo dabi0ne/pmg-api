@@ -90,7 +90,7 @@ __PACKAGE__->register_method({
 	my ($param) = @_;
 
 	my $code = sub {
-	    my $cfg = PVE::INotify::read_file('cluster.conf');
+	    my $cfg = PMG::ClusterConfig->new();
 
 	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
 
@@ -114,7 +114,7 @@ __PACKAGE__->register_method({
 		$setup->{manual_verification} = 1;
 	    }
 
-	    PMG::API2::Cluster::cluster_join($setup);
+	    PMG::API2::Cluster::cluster_join($cfg, $setup);
 	};
 
 	PMG::ClusterConfig::lock_config($code, "cluster join failed");
