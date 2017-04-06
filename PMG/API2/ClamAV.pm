@@ -92,7 +92,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $rpcenv = PMG::RESTEnvironment::get();
+	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
 
 	my $realcmd = sub {

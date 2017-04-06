@@ -57,7 +57,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $res = [];
 
@@ -161,7 +161,7 @@ __PACKAGE__->register_method({
 	raise_param_exc({ upid => "unable to parse worker upid" }) if !$task;
 	raise_param_exc({ upid => "no such task" }) if ! -f $filename;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 	PMG::RESTEnvironment->check_worker($param->{upid}, 1);
 
 	return undef;
@@ -215,7 +215,7 @@ __PACKAGE__->register_method({
 
 	my $lines = [];
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $fh = IO::File->new($filename, "r");
 	raise_param_exc({ upid => "no such task - unable to open file - $!" }) if !$fh;

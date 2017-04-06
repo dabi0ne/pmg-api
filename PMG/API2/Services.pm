@@ -222,7 +222,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $user = $restenv->get_user();
 
@@ -258,7 +258,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $user = $restenv->get_user();
 
@@ -294,7 +294,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $user = $restenv->get_user();
 
@@ -330,7 +330,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $user = $restenv->get_user();
 

@@ -140,7 +140,7 @@ __PACKAGE__->register_method ({
 	my $username = $param->{username};
 	$username .= "\@$param->{realm}" if $param->{realm};
 
-	my $rpcenv = PMG::RESTEnvironment::get();
+	my $rpcenv = PMG::RESTEnvironment->get();
 
 	my $res;
 	eval {
@@ -186,7 +186,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $rpcenv = PMG::RESTEnvironment::get();
+	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
 
 	my ($userid, $ruid, $realm) = PMG::Utils::verify_username($param->{userid});

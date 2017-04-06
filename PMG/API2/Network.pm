@@ -182,7 +182,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PMG::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment->get();
 
 	my $tmp = PVE::INotify::read_file('interfaces', 1);
 	my $config = $tmp->{data};
