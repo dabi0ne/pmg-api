@@ -19,6 +19,11 @@ use base qw(PVE::CLIHandler);
 my $format_nodelist = sub {
     my $res = shift;
 
+    if (!scalar(@$res)) {
+	print "no cluster defined\n";
+	return;
+    }
+
     print "NAME(CID)--------------IPADDRESS----ROLE-STATE---------UPTIME---LOAD----MEM---DISK\n";
     foreach my $ni (@$res) {
 	my $state = '?';

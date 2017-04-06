@@ -72,6 +72,13 @@ __PACKAGE__->register_method({
 
 	my $cfg = PVE::INotify::read_file('cluster.conf');
 
+	if (scalar(keys %{$cfg->{ids}})) {
+	    my $role = $cfg->{local}->{type} // '-';
+	    if ($role eq '-') {
+		die "local node '$cfg->{local}->{name}' not part of cluster\n";
+	    }
+	}
+
 	return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
     }});
 
