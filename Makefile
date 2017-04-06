@@ -53,6 +53,7 @@ TEMPLATES_FILES = $(addprefix templates/, ${TEMPLATES})
 
 LIBSOURCES =				\
 	PMG/pmgcfg.pm			\
+	PMG/RESTEnvironment.pm		\
 	PMG/Utils.pm			\
 	PMG/ModGroup.pm			\
 	PMG/SMTPPrinter.pm		\

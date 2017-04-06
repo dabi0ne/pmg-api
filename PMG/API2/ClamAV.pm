@@ -8,7 +8,7 @@ use PVE::SafeSyslog;
 use PVE::INotify;
 use PVE::Exception qw(raise_param_exc);
 use PVE::RESTHandler;
-use PVE::RESTEnvironment;
+use PMG::RESTEnvironment;
 use PVE::JSONSchema qw(get_standard_option);
 
 use PMG::Utils;
@@ -92,7 +92,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $rpcenv = PVE::RESTEnvironment::get();
+	my $rpcenv = PMG::RESTEnvironment::get();
 	my $authuser = $rpcenv->get_user();
 
 	my $realcmd = sub {

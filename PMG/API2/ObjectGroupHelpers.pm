@@ -6,7 +6,7 @@ use warnings;
 use PVE::INotify;
 use PVE::RESTHandler;
 use PVE::JSONSchema qw(get_standard_option);
-use PVE::RESTEnvironment;
+use PMG::RESTEnvironment;
 use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
 

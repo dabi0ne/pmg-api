@@ -174,7 +174,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PVE::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment::get();
 
 	my ($count, $res) = PMG::Postfix::mailq(
 	    $param->{queue}, $param->{filter}, $param->{start}, $param->{limit});

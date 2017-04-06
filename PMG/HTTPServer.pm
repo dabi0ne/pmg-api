@@ -8,7 +8,7 @@ use PVE::INotify;
 use PVE::Tools;
 use PVE::APIServer::AnyEvent;
 use PVE::Exception qw(raise_param_exc);
-use PVE::RESTEnvironment;
+use PMG::RESTEnvironment;
 
 use PMG::Ticket;
 use PMG::Cluster;
@@ -28,7 +28,7 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
     
-    $self->{rpcenv} = PVE::RESTEnvironment->init(
+    $self->{rpcenv} = PMG::RESTEnvironment->init(
 	$self->{trusted_env} ? 'priv' : 'pub', atfork =>  sub { $self->atfork_handler() });
 
     return $self;

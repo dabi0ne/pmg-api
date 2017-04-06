@@ -9,7 +9,7 @@ use PVE::SafeSyslog;
 use PVE::INotify;
 use PVE::Exception qw(raise_param_exc);
 use PVE::RESTHandler;
-use PVE::RESTEnvironment;
+use PMG::RESTEnvironment;
 use PVE::JSONSchema qw(get_standard_option);
 
 use base qw(PVE::RESTHandler);
@@ -182,7 +182,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PVE::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment::get();
 
 	my $tmp = PVE::INotify::read_file('interfaces', 1);
 	my $config = $tmp->{data};

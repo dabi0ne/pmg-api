@@ -8,7 +8,7 @@ use Time::Local qw(timegm_nocheck);
 use PVE::INotify;
 use PVE::RESTHandler;
 use PVE::JSONSchema qw(get_standard_option);
-use PVE::RESTEnvironment;
+use PMG::RESTEnvironment;
 use PVE::SafeSyslog;
 
 use PMG::Ticket;
@@ -181,7 +181,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PVE::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment::get();
 
 	my $service = $param->{service};
 	if ($service && $service eq 'postfix') {
@@ -235,7 +235,7 @@ __PACKAGE__->register_method ({
 
 	my $authpath = "/nodes/$node";
 
-	my $restenv = PVE::RESTEnvironment->get();
+	my $restenv = PMG::RESTEnvironment->get();
 	my $user = $restenv->get_user();
 
 	my $ticket = PMG::Ticket::assemble_vnc_ticket($user, $authpath);
@@ -326,7 +326,7 @@ __PACKAGE__->register_method({
 
 	my $authpath = "/nodes/$param->{node}";
 
-	my $restenv = PVE::RESTEnvironment->get();
+	my $restenv = PMG::RESTEnvironment->get();
 	my $user = $restenv->get_user();
 
 	PMG::Ticket::verify_vnc_ticket($param->{vncticket}, $user, $authpath);

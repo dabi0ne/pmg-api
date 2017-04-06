@@ -9,7 +9,7 @@ use PVE::Tools;
 use PVE::SafeSyslog;
 use PVE::RESTHandler;
 use PVE::ProcFSTools;
-use PVE::RESTEnvironment;
+use PMG::RESTEnvironment;
 use PVE::JSONSchema qw(get_standard_option);
 
 use base qw(PVE::RESTHandler);
@@ -57,7 +57,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $restenv = PVE::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment::get();
 
 	my $res = [];
 
@@ -161,8 +161,8 @@ __PACKAGE__->register_method({
 	raise_param_exc({ upid => "unable to parse worker upid" }) if !$task;
 	raise_param_exc({ upid => "no such task" }) if ! -f $filename;
 
-	my $restenv = PVE::RESTEnvironment::get();
-	PVE::RESTEnvironment->check_worker($param->{upid}, 1);
+	my $restenv = PMG::RESTEnvironment::get();
+	PMG::RESTEnvironment->check_worker($param->{upid}, 1);
 
 	return undef;
     }});
@@ -215,7 +215,7 @@ __PACKAGE__->register_method({
 
 	my $lines = [];
 
-	my $restenv = PVE::RESTEnvironment::get();
+	my $restenv = PMG::RESTEnvironment::get();
 
 	my $fh = IO::File->new($filename, "r");
 	raise_param_exc({ upid => "no such task - unable to open file - $!" }) if !$fh;
