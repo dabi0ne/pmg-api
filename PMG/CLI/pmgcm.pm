@@ -38,7 +38,7 @@ __PACKAGE__->register_method({
     name => 'join_cmd',
     path => 'join_cmd',
     method => 'GET',
-    description => "Print information about cluster master node.",
+    description => "Prints the command for joining an new node to the cluster. You need to execute the command on the new node.",
     parameters => {
 	additionalProperties => 0,
 	properties => {},
