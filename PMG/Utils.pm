@@ -501,6 +501,38 @@ sub get_full_service_state {
     return $res;
 }
 
+sub service_wait_stopped {
+    my ($timeout, $service_list) = @_;
+
+    my $starttime = time();
+
+    foreach my $service (@$service_list) {
+	PVE::Tools::run_command(['systemctl', 'stop', $service]);
+    }
+
+    while (1) {
+	my $wait = 0;
+
+	foreach my $service (@$service_list) {
+	    my $ss = get_full_service_state($service);
+	    my $state = $ss->{ActiveState} // 'unknown';
+
+	    if ($state ne 'inactive') {
+		if ((time() - $starttime) > $timeout) {
+		    syslog('err', "unable to stop services (got timeout)");
+		    $wait = 0;
+		    last;
+		}
+		$wait = 1;
+	    }
+	}
+
+	last if !$wait;
+
+	sleep(1);
+    }
+}
+
 sub service_cmd {
     my ($service, $cmd) = @_;
 

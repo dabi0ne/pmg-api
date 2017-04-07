@@ -1035,4 +1035,40 @@ sub init_ruledb {
     cond_create_std_actions ($ruledb);
 }
 
+sub init_masterdb {
+    my ($lcid, $database) = @_;
+
+    die "got unexpected cid for new master" if !$lcid;
+
+    my $dbh;
+
+    eval {
+	$dbh = open_ruledb($database);
+
+	$dbh->begin_work;
+
+	print STDERR "update quarantine database\n";
+	$dbh->do ("UPDATE CMailStore SET CID = $lcid WHERE CID = 0;" .
+		  "UPDATE CMSReceivers SET CMailStore_CID = $lcid WHERE CMailStore_CID = 0;");
+
+	print STDERR "update statistic database\n";
+	$dbh->do ("UPDATE CStatistic SET CID = $lcid WHERE CID = 0;" .
+		  "UPDATE CReceivers SET CStatistic_CID = $lcid WHERE CStatistic_CID = 0;");
+
+	print STDERR "update greylist database\n";
+	$dbh->do ("UPDATE CGreylist SET CID = $lcid WHERE CID = 0;");
+
+	$dbh->commit;
+    };
+    my $err = $@;
+
+    if ($dbh) {
+	$dbh->rollback if $err;
+	$dbh->disconnect();
+    }
+
+    die $err if $err;
+}
+
+
 1;

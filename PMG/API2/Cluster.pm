@@ -13,8 +13,10 @@ use PVE::RESTHandler;
 use PVE::INotify;
 use PVE::APIClient::LWP;
 
+use PMG::RESTEnvironment;
 use PMG::ClusterConfig;
 use PMG::Cluster;
+use PMG::DBTools;
 
 use base qw(PVE::RESTHandler);
 
@@ -182,28 +184,61 @@ __PACKAGE__->register_method({
 	additionalProperties => 0,
 	properties => {},
     },
-    returns => { type => 'null' },
+    protected => 1,
+    returns => { type => 'string' },
     code => sub {
 	my ($param) = @_;
 
-	my $code = sub {
+	my $rpcenv = PMG::RESTEnvironment->get();
+        my $authuser = $rpcenv->get_user();
+
+	my $realcmd = sub {
 	    my $cfg = PMG::ClusterConfig->new();
 
 	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
 
 	    my $info = PMG::Cluster::read_local_cluster_info();
 
+	    my $cid = 1;
+
 	    $info->{type} = 'master';
-	    $info->{maxcid} = 1,
 
-	    $cfg->{ids}->{$info->{maxcid}} = $info;
+	    $info->{maxcid} = $cid,
 
-	    $cfg->write();
+	    $cfg->{ids}->{$cid} = $info;
+
+	    # fixme:
+	    #my $service_list = [ 'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
+	    my $service_list = [ 'pmgpolicy', 'pmg-smtp-filter' ];
+	    eval {
+		print STDERR "stop all services accessing the database\n";
+		# stop all services accessing the database
+		PMG::Utils::service_wait_stopped(40, $service_list);
+
+		print STDERR "save new cluster configuration\n";
+		$cfg->write();
+
+		PMG::DBTools::init_masterdb($cid);
+
+		PMG::Cluster::create_needed_dirs($cid, 1);
+
+		print STDERR "cluster master successfully created\n";
+	    };
+	    my $err = $@;
+
+	    foreach my $service (reverse @$service_list) {
+		eval { PVE::Tools::run_command(['systemctl', 'start', $service]); };
+		warn $@ if $@;
+	    }
+
+	    die $err if $err;
 	};
 
-	PMG::ClusterConfig::lock_config($code, "create cluster failed");
+	my $code = sub {
+	    return $rpcenv->fork_worker('clustercreate', undef, $authuser, $realcmd);
+	};
 
-	return undef;
+	return PMG::ClusterConfig::lock_config($code, "create cluster failed");
     }});
 
 __PACKAGE__->register_method({

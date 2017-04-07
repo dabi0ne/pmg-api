@@ -11,12 +11,23 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::RESTEnvironment;
 use PMG::DBTools;
 use PMG::Cluster;
 use PMG::ClusterConfig;
 use PMG::API2::Cluster;
 
 use base qw(PVE::CLIHandler);
+
+sub setup_environment {
+    PMG::RESTEnvironment->setup_default_cli_env();
+}
+
+my $upid_exit = sub {
+    my $upid = shift;
+    my $status = PVE::Tools::upid_read_status($upid);
+    exit($status eq 'OK' ? 0 : -1);
+};
 
 my $format_nodelist = sub {
     my $res = shift;
@@ -124,7 +135,7 @@ __PACKAGE__->register_method({
 
 our $cmddef = {
     nodes => [ 'PMG::API2::Cluster', 'nodes', [], {}, $format_nodelist],
-    create => [ 'PMG::API2::Cluster', 'create', []],
+    create => [ 'PMG::API2::Cluster', 'create', [], {}, $upid_exit],
     join => [ __PACKAGE__, 'join', ['master_ip']],
     join_cmd => [ __PACKAGE__, 'join_cmd', []],
 };

@@ -4,11 +4,26 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Socket;
+use File::Path;
 
 use PVE::Tools;
 use PVE::INotify;
 
 use PMG::ClusterConfig;
+
+our $spooldir = "/var/spool/proxmox";
+
+sub create_needed_dirs {
+    my ($lcid, $cleanup) = @_;
+
+    # if requested, remove any stale date
+    rmtree("$spooldir/cluster") if $cleanup;
+
+    if ($lcid) {
+	mkpath "$spooldir/cluster/$lcid/virus";
+	mkpath "$spooldir/cluster/$lcid/spam";
+    }
+}
 
 sub remote_node_ip {
     my ($nodename, $noerr) = @_;
