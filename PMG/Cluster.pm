@@ -17,7 +17,7 @@ sub create_needed_dirs {
     my ($lcid, $cleanup) = @_;
 
     # if requested, remove any stale date
-    rmtree("$spooldir/cluster", "$spooldir/virus" "$spooldir/spam") if $cleanup;
+    rmtree("$spooldir/cluster", "$spooldir/virus", "$spooldir/spam") if $cleanup;
 
     mkdir "$spooldir/spam";
     mkdir "$spooldir/virus";
@@ -195,6 +195,78 @@ sub check_cert_fingerprint {
     }
 
     return 0;
+}
+
+my $sshglobalknownhosts = "/etc/ssh/ssh_known_hosts2";
+my $rootsshauthkeys = "/root/.ssh/authorized_keys";
+my $ssh_rsa_id = "/root/.ssh/id_rsa.pub";
+
+sub update_ssh_keys {
+    my ($cinfo) = @_;
+
+    my $data = '';
+    foreach my $node (values %{$cinfo->{ids}}) {
+	$data .= "$node->{ip} ssh-rsa $node->{hostrsapubkey}\n";
+	$data .= "$node->{name} ssh-rsa $node->{hostrsapubkey}\n";
+    }
+
+    PVE::Tools::file_set_contents($sshglobalknownhosts, $data);
+
+    $data = '';
+
+    # always add ourself
+    if (-f $ssh_rsa_id) {
+	my $pub = PVE::Tools::file_get_contents($ssh_rsa_id);
+	chomp($pub);
+	$data .= "$pub\n";
+    }
+
+    foreach my $node (values %{$cinfo->{ids}}) {
+	$data .= "ssh-rsa $node->{rootrsapubkey} root\@$node->{name}\n";
+    }
+
+    if (-f $rootsshauthkeys) {
+	$data = PVE::Tools::file_get_contents($rootsshauthkeys, 128*1024);
+	chomp($data);
+	$data .= "\n";
+    }
+
+    my $newdata = "";
+    my $vhash = {};
+    my @lines = split(/\n/, $data);
+    foreach my $line (@lines) {
+	if ($line !~ /^#/ && $line =~ m/(^|\s)ssh-(rsa|dsa)\s+(\S+)\s+\S+$/) {
+            next if $vhash->{$3}++;
+	}
+	$newdata .= "$line\n";
+    }
+
+    PVE::Tools::file_set_contents($rootsshauthkeys, $newdata, 0600);
+}
+
+sub sync_config_from_master {
+    my ($cinfo, $master_ip, $noreload) = @_;
+
+    my $local_ip = $cinfo->{local}->{ip};
+    my $local_name = $cinfo->{local}->{name};
+
+    return if $local_ip eq $master_ip;
+
+    my $cfgdir = '/etc/pmg';
+    my $syncdir = "$cfgdir/master";
+
+    mkdir $syncdir;
+    unlink <$syncdir/*>;
+
+    my $customcf = "/etc/mail/spamassassin/custom.cf";
+
+    my $cmd = ['rsync', '--rsh=ssh -l root -o BatchMode=yes', '-lpgoq',
+	       "${master_ip}:$cfgdir/* $customcf",
+	       "$syncdir/",
+	       '--exclude', '*~' ];
+
+    my $errmsg = "syncing master configuration from '${master_ip}' failed";
+    PVE::Tools::run_command($cmd, errmsg => $errmsg);
 }
 
 1;
