@@ -483,6 +483,24 @@ sub find_local_network_for_ip {
     die "unable to detect local network for ip '$ip'\n";
 }
 
+sub get_full_service_state {
+    my ($service) = @_;
+
+    my $res;
+
+    my $parser = sub {
+	my $line = shift;
+	if ($line =~ m/^([^=\s]+)=(.*)$/) {
+	    $res->{$1} = $2;
+	}
+    };
+
+    $service = 'postfix@-' if $service eq 'postfix';
+    PVE::Tools::run_command(['systemctl', 'show', $service], outfunc => $parser);
+
+    return $res;
+}
+
 sub service_cmd {
     my ($service, $cmd) = @_;
 

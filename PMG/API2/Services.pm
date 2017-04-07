@@ -30,24 +30,6 @@ my $service_name_list = [
     'pmg-daily',
     ];
 
-my $get_full_service_state = sub {
-    my ($service) = @_;
-
-    my $res;
-
-    my $parser = sub {
-	my $line = shift;
-	if ($line =~ m/^([^=\s]+)=(.*)$/) {
-	    $res->{$1} = $2;
-	}
-    };
-
-    $service = 'postfix@-' if $service eq 'postfix';
-    PVE::Tools::run_command(['systemctl', 'show', $service], outfunc => $parser);
-
-    return $res;
-};
-
 my $static_service_list;
 
 sub get_service_list {
@@ -57,7 +39,7 @@ sub get_service_list {
     my $list = {};
     foreach my $name (@$service_name_list) {
 	my $ss;
-	eval { $ss = &$get_full_service_state($name); };
+	eval { $ss = PMG::Utils::get_full_service_state($name); };
 	warn $@ if $@;
 	next if !$ss;
 	next if !defined($ss->{Description});
@@ -80,7 +62,7 @@ my $service_state = sub {
     my ($service) = @_;
 
     my $ss;
-    eval { $ss = &$get_full_service_state($service); };
+    eval { $ss = PMG::Utils::get_full_service_state($service); };
     if (my $err = $@) {
 	return 'unknown';
     }
