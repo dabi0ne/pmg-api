@@ -5,6 +5,7 @@ use warnings;
 use Net::SSLeay;
 use Digest::SHA;
 
+use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::Ticket;
 use PVE::INotify;
@@ -101,44 +102,53 @@ sub generate_auth_key {
     die "unable to generate pmg auth key:\n$@" if $@;
 }
 
-my $pve_auth_priv_key;
-sub get_privkey {
+my $read_rsa_priv_key = sub {
+   my ($filename, $fh) = @_;
 
-    return $pve_auth_priv_key if $pve_auth_priv_key;
+   local $/ = undef; # slurp mode
 
-    my $input = PVE::Tools::file_get_contents($authprivkeyfn);
+   my $input = <$fh>;
 
-    $pve_auth_priv_key = Crypt::OpenSSL::RSA->new_private_key($input);
+   return Crypt::OpenSSL::RSA->new_private_key($input);
 
-    return $pve_auth_priv_key;
-}
-
-my $pve_auth_pub_key;
-sub get_pubkey {
-
-    return $pve_auth_pub_key if $pve_auth_pub_key;
-
-    my $input = PVE::Tools::file_get_contents($authpubkeyfn);
-
-    $pve_auth_pub_key = Crypt::OpenSSL::RSA->new_public_key($input);
-
-    return $pve_auth_pub_key;
-}
-
-my $csrf_prevention_secret;
-my $get_csrfr_secret = sub {
-    if (!$csrf_prevention_secret) {
-	my $input = PVE::Tools::file_get_contents($pmg_csrf_key_fn);
-	$csrf_prevention_secret = Digest::SHA::sha1_base64($input);
-    }
-    return $csrf_prevention_secret;
 };
 
+PVE::INotify::register_file('auth_priv_key', $authprivkeyfn,
+			    $read_rsa_priv_key, undef, undef,
+			    noclone => 1);
+
+my $read_rsa_pub_key = sub {
+   my ($filename, $fh) = @_;
+
+   local $/ = undef; # slurp mode
+
+   my $input = <$fh>;
+
+   return Crypt::OpenSSL::RSA->new_public_key($input);
+};
+
+PVE::INotify::register_file('auth_pub_key', $authpubkeyfn,
+			    $read_rsa_pub_key, undef, undef,
+			    noclone => 1);
+
+my $read_csrfr_secret = sub {
+   my ($filename, $fh) = @_;
+
+   local $/ = undef; # slurp mode
+
+   my $input = <$fh>;
+
+   return Digest::SHA::sha1_base64($input);
+};
+
+PVE::INotify::register_file('csrfr_secret', $pmg_csrf_key_fn,
+			    $read_rsa_pub_key, undef, undef,
+			    noclone => 1);
 
 sub verify_csrf_prevention_token {
     my ($username, $token, $noerr) = @_;
 
-    my $secret =  &$get_csrfr_secret();
+    my $secret = PVE::INotify::read_file('csrfr_secret');
 
     return PVE::Ticket::verify_csrf_prevention_token(
 	$secret, $username, $token, $min_ticket_lifetime,
@@ -148,7 +158,7 @@ sub verify_csrf_prevention_token {
 sub assemble_csrf_prevention_token {
     my ($username) = @_;
 
-    my $secret =  &$get_csrfr_secret();
+    my $secret = PVE::INotify::read_file('csrfr_secret');
 
     return PVE::Ticket::assemble_csrf_prevention_token ($secret, $username);
 }
@@ -156,7 +166,7 @@ sub assemble_csrf_prevention_token {
 sub assemble_ticket {
     my ($username) = @_;
 
-    my $rsa_priv = get_privkey();
+    my $rsa_priv = PVE::INotify::read_file('auth_priv_key');
 
     return PVE::Ticket::assemble_rsa_ticket($rsa_priv, 'PMG', $username);
 }
@@ -164,7 +174,7 @@ sub assemble_ticket {
 sub verify_ticket {
     my ($ticket, $noerr) = @_;
 
-    my $rsa_pub = get_pubkey();
+    my $rsa_pub = PVE::INotify::read_file('auth_pub_key');
 
     return PVE::Ticket::verify_rsa_ticket(
 	$rsa_pub, 'PMG', $ticket, undef,
@@ -177,7 +187,7 @@ sub verify_ticket {
 sub assemble_vnc_ticket {
     my ($username, $path) = @_;
 
-    my $rsa_priv = get_privkey();
+    my $rsa_priv = PVE::INotify::read_file('auth_priv_key');
 
     my $secret_data = "$username:$path";
 
@@ -188,7 +198,7 @@ sub assemble_vnc_ticket {
 sub verify_vnc_ticket {
     my ($ticket, $username, $path, $noerr) = @_;
 
-    my $rsa_pub = get_pubkey();
+    my $rsa_pub = PVE::INotify::read_file('auth_pub_key');
 
     my $secret_data = "$username:$path";
 
