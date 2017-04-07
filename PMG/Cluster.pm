@@ -17,7 +17,10 @@ sub create_needed_dirs {
     my ($lcid, $cleanup) = @_;
 
     # if requested, remove any stale date
-    rmtree("$spooldir/cluster") if $cleanup;
+    rmtree("$spooldir/cluster", "$spooldir/virus" "$spooldir/spam") if $cleanup;
+
+    mkdir "$spooldir/spam";
+    mkdir "$spooldir/virus";
 
     if ($lcid) {
 	mkpath "$spooldir/cluster/$lcid/virus";
@@ -28,7 +31,7 @@ sub create_needed_dirs {
 sub remote_node_ip {
     my ($nodename, $noerr) = @_;
 
-    my $cinfo = PVE::INotify::read_file("cluster.conf");
+    my $cinfo = PMG::ClusterConfig->new();
 
     foreach my $entry (values %{$cinfo->{ids}}) {
 	if ($entry->{name} eq $nodename) {
@@ -46,7 +49,7 @@ sub remote_node_ip {
 sub get_master_node {
     my ($cinfo) = @_;
 
-    $cinfo = PVE::INotify::read_file("cluster.conf") if !$cinfo;
+    $cinfo = PMG::ClusterConfig->new() if !$cinfo;
 
     return $cinfo->{master}->{name} if defined($cinfo->{master});
 
@@ -142,7 +145,7 @@ sub update_cert_cache {
     $cert_cache_fingerprints = {};
     $cert_cache_nodes = {};
 
-    my $cinfo = PVE::INotify::read_file("cluster.conf");
+    my $cinfo = PMG::ClusterConfig->new();
 
     foreach my $entry (values %{$cinfo->{ids}}) {
 	my $node = $entry->{name};
