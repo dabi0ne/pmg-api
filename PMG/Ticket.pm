@@ -130,7 +130,6 @@ my $get_csrfr_secret = sub {
     if (!$csrf_prevention_secret) {
 	my $input = PVE::Tools::file_get_contents($pmg_csrf_key_fn);
 	$csrf_prevention_secret = Digest::SHA::sha1_base64($input);
-	print "SECRET:$csrf_prevention_secret\n";
     }
     return $csrf_prevention_secret;
 };
