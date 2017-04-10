@@ -291,6 +291,7 @@ __PACKAGE__->register_method({
     method => 'POST',
     description => "Join local node to an existing cluster.",
     # alway read local file
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
