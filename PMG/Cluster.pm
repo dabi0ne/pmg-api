@@ -19,7 +19,7 @@ sub create_needed_dirs {
     my ($lcid, $cleanup) = @_;
 
     # if requested, remove any stale date
-    rmtree("$spooldir/cluster", "$spooldir/virus", "$spooldir/spam") if $cleanup;
+    File::Path::remove_tree("$spooldir/cluster", "$spooldir/virus", "$spooldir/spam") if $cleanup;
 
     mkdir "$spooldir/spam";
     mkdir "$spooldir/virus";
