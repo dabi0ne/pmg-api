@@ -1,3 +1,9 @@
+proxmox-mailgateway (5.0-4) unstable; urgency=medium
+
+  * improved cluster management API
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 10 Apr 2017 12:32:30 +0200
+
 proxmox-mailgateway (5.0-3) unstable; urgency=medium
 
   * initial cluster management API
