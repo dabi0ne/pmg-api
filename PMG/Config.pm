@@ -1228,9 +1228,12 @@ sub rewrite_config_postfix {
 }
 
 sub rewrite_config {
-    my ($self, $restart_services) = @_;
+    my ($self, $restart_services, $force_restart) = @_;
 
-    if ($self->rewrite_config_postfix() && $restart_services) {
+    $force_restart = {} if ! $force_restart;
+
+    if (($self->rewrite_config_postfix() && $restart_services) ||
+	$force_restart->{postfix}) {
 	PMG::Utils::service_cmd('postfix', 'restart');
     }
 
@@ -1243,18 +1246,20 @@ sub rewrite_config {
 	# does not happen anyways, because config does not change.
     }
 
-    if ($self->rewrite_config_spam() && $restart_services) {
+    if (($self->rewrite_config_spam() && $restart_services) ||
+	$force_restart->{spam}) {
 	PMG::Utils::service_cmd('pmg-smtp-filter', 'restart');
     }
 
-    if ($self->rewrite_config_clam() && $restart_services) {
+    if (($self->rewrite_config_clam() && $restart_services) ||
+	$force_restart->{clam}) {
 	PMG::Utils::service_cmd('clamav-daemon', 'restart');
     }
 
-    if ($self->rewrite_config_freshclam() && $restart_services) {
+    if (($self->rewrite_config_freshclam() && $restart_services) ||
+	$force_restart->{freshclam}) {
 	PMG::Utils::service_cmd('clamav-freshclam', 'restart');
     }
-
 }
 
 1;
