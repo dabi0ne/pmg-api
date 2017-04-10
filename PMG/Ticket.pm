@@ -131,7 +131,7 @@ PVE::INotify::register_file('auth_pub_key', $authpubkeyfn,
 			    $read_rsa_pub_key, undef, undef,
 			    noclone => 1);
 
-my $read_csrfr_secret = sub {
+my $read_csrf_secret = sub {
    my ($filename, $fh) = @_;
 
    local $/ = undef; # slurp mode
@@ -141,14 +141,14 @@ my $read_csrfr_secret = sub {
    return Digest::SHA::sha1_base64($input);
 };
 
-PVE::INotify::register_file('csrfr_secret', $pmg_csrf_key_fn,
-			    $read_rsa_pub_key, undef, undef,
+PVE::INotify::register_file('csrf_secret', $pmg_csrf_key_fn,
+			    $read_csrf_secret, undef, undef,
 			    noclone => 1);
 
 sub verify_csrf_prevention_token {
     my ($username, $token, $noerr) = @_;
 
-    my $secret = PVE::INotify::read_file('csrfr_secret');
+    my $secret = PVE::INotify::read_file('csrf_secret');
 
     return PVE::Ticket::verify_csrf_prevention_token(
 	$secret, $username, $token, $min_ticket_lifetime,
@@ -158,7 +158,7 @@ sub verify_csrf_prevention_token {
 sub assemble_csrf_prevention_token {
     my ($username) = @_;
 
-    my $secret = PVE::INotify::read_file('csrfr_secret');
+    my $secret = PVE::INotify::read_file('csrf_secret');
 
     return PVE::Ticket::assemble_csrf_prevention_token ($secret, $username);
 }
