@@ -6,9 +6,11 @@ use Data::Dumper;
 use Socket;
 use File::Path;
 
+use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
 
+use PMG::Config;
 use PMG::ClusterConfig;
 
 our $spooldir = "/var/spool/proxmox";
@@ -226,9 +228,9 @@ sub update_ssh_keys {
     }
 
     if (-f $rootsshauthkeys) {
-	$data = PVE::Tools::file_get_contents($rootsshauthkeys, 128*1024);
-	chomp($data);
-	$data .= "\n";
+	my $mykey = PVE::Tools::file_get_contents($rootsshauthkeys, 128*1024);
+	chomp($mykey);
+	$data .= "$mykey\n";
     }
 
     my $newdata = "";
@@ -244,6 +246,35 @@ sub update_ssh_keys {
     PVE::Tools::file_set_contents($rootsshauthkeys, $newdata, 0600);
 }
 
+my $cfgdir = '/etc/pmg';
+my $syncdir = "$cfgdir/master";
+
+my $cond_commit_synced_file = sub {
+    my ($filename, $dstfn) = @_;
+
+    $dstfn = "$cfgdir/$filename" if !defined($dstfn);
+    my $srcfn = "$syncdir/$filename";
+
+    if (! -f $srcfn) {
+	unlink $dstfn;
+	return;
+    }
+
+    my $new = PVE::Tools::file_get_contents($srcfn, 1024*1024);
+
+    if (-f $dstfn) {
+	my $old = PVE::Tools::file_get_contents($dstfn, 1024*1024);
+	return 0 if $new eq $old;
+    }
+
+    rename($srcfn, $dstfn) ||
+	die "cond_rename_file '$filename' failed - $!\n";
+
+    print STDERR "updated $dstfn\n";
+
+    return 1;
+};
+
 sub sync_config_from_master {
     my ($cinfo, $master_ip, $noreload) = @_;
 
@@ -252,21 +283,67 @@ sub sync_config_from_master {
 
     return if $local_ip eq $master_ip;
 
-    my $cfgdir = '/etc/pmg';
-    my $syncdir = "$cfgdir/master";
-
     mkdir $syncdir;
-    unlink <$syncdir/*>;
+    File::Path::remove_tree($syncdir, {keep_root => 1});
 
-    my $customcf = "/etc/mail/spamassassin/custom.cf";
+    my $sa_conf_dir = "/etc/mail/spamassassin";
+    my $sa_custom_cf = "custom.cf";
 
     my $cmd = ['rsync', '--rsh=ssh -l root -o BatchMode=yes', '-lpgoq',
-	       "${master_ip}:$cfgdir/* $customcf",
+	       "${master_ip}:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
 	       "$syncdir/",
-	       '--exclude', '*~' ];
+	       '--exclude', '*~',
+	       '--exclude', '*.db',
+	       '--exclude', 'pmg-api.pem',
+	       '--exclude', 'pmg-tls.pem',
+	];
 
     my $errmsg = "syncing master configuration from '${master_ip}' failed";
     PVE::Tools::run_command($cmd, errmsg => $errmsg);
+
+    # verify that the remote host is cluster master
+    open (my $fh, '<', "$syncdir/cluster.conf") ||
+	die "unable to open synced cluster.conf - $!\n";
+    my $newcinfo = PMG::ClusterConfig::read_cluster_conf('cluster.conf', $fh);
+
+    if (!$newcinfo->{master} || ($newcinfo->{master}->{ip} ne $master_ip)) {
+	die "host '$master_ip' is not cluster master\n";
+    }
+
+    my $role = $newcinfo->{'local'}->{type} // '-';
+    die "local node '$newcinfo->{local}->{name}' not part of cluster\n"
+	if $role eq '-';
+
+    die "local node '$newcinfo->{local}->{name}' is new cluster master\n"
+	if $role eq 'master';
+
+
+    $cond_commit_synced_file->('cluster.conf');
+    $cinfo = $newcinfo;
+
+    my $files = [
+	'pmg-authkey.key',
+	'pmg-authkey.pub',
+	'pmg-csrf.key',
+	'ldap.conf',
+	'user.conf',
+	];
+
+    foreach my $filename (@$files) {
+	$cond_commit_synced_file->($filename);
+    }
+
+    my $force_restart = {};
+
+    if ($cond_commit_synced_file->($sa_custom_cf, "${sa_conf_dir}/${sa_custom_cf}")) {
+	$force_restart->{spam} = 1;
+    }
+
+    $cond_commit_synced_file->('pmg.conf');
+
+    my $cfg = PMG::Config->new();
+
+    $cfg->rewrite_config(1, $force_restart);
 }
 
 1;
