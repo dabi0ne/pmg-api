@@ -20,6 +20,10 @@ use PMG::DBTools;
 
 use base qw(PVE::RESTHandler);
 
+# fixme:
+#my $db_service_list = [ 'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
+my $db_service_list = [ 'pmgpolicy', 'pmg-smtp-filter' ];
+
 sub cluster_join {
     my ($cfg, $conn_setup) = @_;
 
@@ -33,7 +37,46 @@ sub cluster_join {
 	$cfg->{ids}->{$node->{cid}} = $node;
     }
 
-    $cfg->write();
+    eval {
+	print STDERR "stop all services accessing the database\n";
+	# stop all services accessing the database
+	PMG::Utils::service_wait_stopped(40, $db_service_list);
+
+	print STDERR "save new cluster configuration\n";
+	$cfg->write();
+
+	PMG::Cluster::update_ssh_keys($cfg);
+
+	print STDERR "cluster node successfully joined\n";
+
+	$cfg = PMG::ClusterConfig->new(); # reload
+
+	my $role = $cfg->{'local'}->{type} // '-';
+	die "local node '$cfg->{local}->{name}' not part of cluster\n"
+	    if $role eq '-';
+
+	my $cid = $cfg->{'local'}->{cid};
+
+	PMG::Cluster::create_needed_dirs($cid, 1);
+
+	PMG::Cluster::sync_config_from_master($cfg, $cfg->{master}->{ip});
+
+	$cfg = PMG::ClusterConfig->new(); # reload
+
+	PMG::DBTools::init_nodedb($cfg);
+
+	print STDERR "syncing quarantine data\n";
+	# fixme:Proxmox::Cluster::sync_master_quar($cinfo->{master}->{ip});
+	print STDERR "syncing quarantine data finished\n";
+    };
+    my $err = $@;
+
+    foreach my $service (reverse @$db_service_list) {
+	eval { PVE::Tools::run_command(['systemctl', 'start', $service]); };
+	warn $@ if $@;
+    }
+
+    die $err if $err;
 }
 
 __PACKAGE__->register_method({
@@ -168,6 +211,10 @@ __PACKAGE__->register_method({
 
 	    $cfg->write();
 
+	    PMG::DBTools::update_master_clusterinfo($node->{cid});
+
+	    PMG::Cluster::update_ssh_keys($cfg);
+
 	    return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
 	};
 
@@ -207,13 +254,10 @@ __PACKAGE__->register_method({
 
 	    $cfg->{ids}->{$cid} = $info;
 
-	    # fixme:
-	    #my $service_list = [ 'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
-	    my $service_list = [ 'pmgpolicy', 'pmg-smtp-filter' ];
 	    eval {
 		print STDERR "stop all services accessing the database\n";
 		# stop all services accessing the database
-		PMG::Utils::service_wait_stopped(40, $service_list);
+		PMG::Utils::service_wait_stopped(40, $db_service_list);
 
 		print STDERR "save new cluster configuration\n";
 		$cfg->write();
@@ -226,7 +270,7 @@ __PACKAGE__->register_method({
 	    };
 	    my $err = $@;
 
-	    foreach my $service (reverse @$service_list) {
+	    foreach my $service (reverse @$db_service_list) {
 		eval { PVE::Tools::run_command(['systemctl', 'start', $service]); };
 		warn $@ if $@;
 	    }
@@ -266,11 +310,14 @@ __PACKAGE__->register_method({
 	    },
 	},
     },
-    returns => { type => 'null' },
+    returns => { type => 'string' },
     code => sub {
 	my ($param) = @_;
 
-	my $code = sub {
+	my $rpcenv = PMG::RESTEnvironment->get();
+        my $authuser = $rpcenv->get_user();
+
+	my $realcmd = sub {
 	    my $cfg = PMG::ClusterConfig->new();
 
 	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
@@ -288,9 +335,11 @@ __PACKAGE__->register_method({
 	    cluster_join($cfg, $setup);
 	};
 
-	PMG::ClusterConfig::lock_config($code, "cluster join failed");
+	my $code = sub {
+	    return $rpcenv->fork_worker('clusterjoin', undef, $authuser, $realcmd);
+	};
 
-	return undef;
+	return PMG::ClusterConfig::lock_config($code, "cluster join failed");
     }});
 
 
