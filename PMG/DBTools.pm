@@ -11,12 +11,14 @@ use PVE::Tools;
 
 use PMG::RuleDB;
 
+our $default_db_name = "Proxmox_ruledb";
+
 sub open_ruledb {
     my ($database, $host, $port) = @_;
 
     $port = 5432 if !$port;
 
-    $database = "Proxmox_ruledb" if !$database;
+    $database = $default_db_name if !$database;
 
     if ($host) {
 
@@ -331,7 +333,7 @@ sub cond_create_dbtable {
 sub create_ruledb {
     my ($dbname) = @_;
 
-    $dbname = "Proxmox_ruledb" if !$dbname;
+    $dbname = $default_db_name if !$dbname;
 
     # use sql_ascii to avoid any character set conversions, and be compatible with
     # older postgres versions (update from 8.1 must be possible)
@@ -1066,6 +1068,113 @@ sub init_masterdb {
 	$dbh->rollback if $err;
 	$dbh->disconnect();
     }
+
+    die $err if $err;
+}
+
+sub update_master_clusterinfo {
+    my ($clientcid) = @_;
+
+    my $dbh = open_ruledb();
+
+    $dbh->do("DELETE FROM ClusterInfo WHERE CID = $clientcid");
+
+    my @mt = ('CMSReceivers', 'CGreylist', 'UserPrefs', 'DomainStat', 'DailyStat', 'VirusInfo');
+
+    foreach my $table (@mt) {
+	$dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $clientcid, 'lastmt_$table', " .
+		  "EXTRACT(EPOCH FROM now())");
+    }
+}
+
+sub update_client_clusterinfo {
+    my ($mastercid) = @_;
+
+    my $dbh = open_ruledb();
+
+    $dbh->do ("DELETE FROM StatInfo"); # not needed at node
+
+    $dbh->do ("DELETE FROM ClusterInfo WHERE CID = $mastercid");
+
+    $dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $mastercid, 'lastid_CMailStore', " .
+	      "COALESCE (max (rid), -1) FROM CMailStore WHERE cid = $mastercid");
+
+    $dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $mastercid, 'lastid_CStatistic', " .
+	      "COALESCE (max (rid), -1) FROM CStatistic WHERE cid = $mastercid");
+
+    my @mt = ('CMSReceivers', 'CGreylist', 'UserPrefs', 'DomainStat', 'DailyStat', 'VirusInfo');
+
+    foreach my $table (@mt) {
+	$dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $mastercid, 'lastmt_$table', " .
+		  "COALESCE (max (mtime), 0) FROM $table");
+    }
+}
+
+sub init_nodedb {
+    my ($cinfo) = @_;
+
+    my $ni = $cinfo->{master};
+
+    die "no master defined - unable to sync data from master\n" if !$ni;
+
+    my $master_ip = $ni->{ip};
+    my $master_cid = $ni->{cid};
+
+    my $fn = "/tmp/masterdb$$.tar";
+    unlink $fn;
+
+    my $dbname = $default_db_name;
+
+    eval {
+	print STDERR "copying master database from '${master_ip}'\n";
+
+	my $cmd = [['ssh', $master_ip, 'pg_dump', '-U', 'postgres',
+		    $dbname, '-F', 'c', \ ">$fn" ]];
+	PVE::Tools::run_command($cmd);
+
+	my $size = -s $fn;
+
+	print STDERR "copying master database finished (got $size bytes)\n";
+
+	print STDERR "delete local database\n";
+
+	$cmd = [ 'dropdb', '-U', 'postgres', $dbname , '--if-exists'];
+	PVE::Tools::run_command($cmd);
+
+	print STDERR "create new local database\n";
+
+	$cmd = ['createdb', '-U', 'postgres', $dbname];
+	PVE::Tools::run_command($cmd);
+
+	print STDERR "insert received data into local database\n";
+
+	my $mess;
+	my $parser = sub {
+	    my $line = shift;
+
+	    if ($line =~ m/restoring data for table \"(.+)\"/) {
+		print STDERR "restoring table $1\n";
+	    } elsif (!$mess && ($line =~ m/creating (INDEX|CONSTRAINT)/)) {
+		$mess = "creating indexes";
+		print STDERR "$mess\n";
+	    }
+	};
+
+	$cmd = ['pg_restore', '-U',  'postgres', '-d', $dbname, '-v', $fn];
+	PVE::Tools::run_command($cmd, outfunc => $parser, errfunc => $parser,
+				errmsg => "pg_restore failed");
+
+	print STDERR "run analyze to speed up database queries\n";
+
+	$cmd = ['psql', '-U', 'postgres', $dbname];
+	PVE::Tools::run_command($cmd);
+
+	update_client_clusterinfo($master_cid);
+    };
+
+    my $err = $@;
+
+    unlink $fn;
 
     die $err if $err;
 }
