@@ -133,11 +133,44 @@ __PACKAGE__->register_method({
 	return undef;
     }});
 
+__PACKAGE__->register_method({
+    name => 'sync',
+    path => 'sync',
+    method => 'GET',
+    description => "Synchronize cluster configuration.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    master_ip => {
+		description => 'Optional IP address for master node.',
+		type => 'string', format => 'ip',
+		optional => 1,
+	    }
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PVE::INotify::read_file('cluster.conf');
+
+	my $syncip = $param->{master_ip};
+
+	$syncip = $cfg->{master}->{ip} if !$syncip && $cfg->{master};
+
+	die "no master IP specified (use option --master_ip)\n" if !$syncip;
+
+	print STDERR "syncing master configuration from '$syncip'\n";
+
+	PMG::Cluster::sync_config_from_master($cfg, $syncip);
+    }});
+
 our $cmddef = {
     nodes => [ 'PMG::API2::Cluster', 'nodes', [], {}, $format_nodelist],
     create => [ 'PMG::API2::Cluster', 'create', [], {}, $upid_exit],
     join => [ __PACKAGE__, 'join', ['master_ip']],
     join_cmd => [ __PACKAGE__, 'join_cmd', []],
+    sync => [ __PACKAGE__, 'sync', []],
 };
 
 1;
