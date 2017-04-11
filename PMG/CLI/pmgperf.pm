@@ -12,6 +12,14 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::RESTEnvironment;
+
+use base qw(PVE::CLIHandler);
+
+sub setup_environment {
+    PMG::RESTEnvironment->setup_default_cli_env();
+}
+
 sub drop_cache {
 
     # free pagecache,dentries,inode cache
@@ -252,7 +260,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    path => {
-		description => "File system localtion to test.",
+		description => "File system location to test.",
 		type => 'string',
 		optional => 1,
 		default => '/',

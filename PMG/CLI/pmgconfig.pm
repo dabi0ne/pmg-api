@@ -10,6 +10,7 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::RESTEnvironment;
 use PMG::Cluster;
 use PMG::LDAPConfig;
 use PMG::LDAPSet;
@@ -17,6 +18,10 @@ use PMG::Config;
 use PMG::Ticket;
 
 use base qw(PVE::CLIHandler);
+
+sub setup_environment {
+    PMG::RESTEnvironment->setup_default_cli_env();
+}
 
 __PACKAGE__->register_method ({
     name => 'dump',

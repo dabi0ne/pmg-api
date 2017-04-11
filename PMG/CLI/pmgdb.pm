@@ -9,6 +9,7 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::RESTEnvironment;
 use PMG::DBTools;
 use PMG::RuleDB;
 use PMG::Cluster;
@@ -16,6 +17,10 @@ use PMG::ClusterConfig;
 use PMG::Statistic;
 
 use base qw(PVE::CLIHandler);
+
+sub setup_environment {
+    PMG::RESTEnvironment->setup_default_cli_env();
+}
 
 sub print_objects {
     my ($ruledb, $og) = @_;
