@@ -10,6 +10,7 @@ use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
 
+use PMG::Utils;
 use PMG::Config;
 use PMG::ClusterConfig;
 
@@ -117,7 +118,7 @@ sub read_local_cluster_info {
 	unlink $rootrsakey_fn;
 	my $cmd = ['ssh-keygen', '-t', 'rsa', '-N', '', '-b', '2048',
 		   '-f', $rootrsakey_fn];
-	PVE::Tools::run_command($cmd);
+	PMG::Utils::run_silent_cmd($cmd);
     }
 
     my $rootrsapubkey = PVE::Tools::file_read_firstline($rootrsapubkey_fn);
