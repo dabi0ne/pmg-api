@@ -1,0 +1,18 @@
+[Unit]
+Description=Proxmox Mail Gateway Cluster Tunnel Daemon
+ConditionPathExists=/usr/bin/pmgtunnel
+ConditionPathExists=/etc/pmg/cluster.conf
+Wants=ssh.service
+Wants=remote-fs.target
+After=ssh.service
+After=remote-fs.target
+
+[Service]
+ExecStart=/usr/bin/pmgtunnel start
+ExecStop=/usr/bin/pmgtunnel stop
+ExecReload=/usr/bin/pmgtunnel restart
+PIDFile=/var/run/pmgtunnel.pid
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

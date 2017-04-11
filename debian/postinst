@@ -25,6 +25,10 @@ case "$1" in
 	    deb-systemd-invoke reload-or-try-restart pmgpolicy.service
 	fi
 
+	if systemctl --quiet is-active pmgtunnel.service ; then
+	    deb-systemd-invoke reload-or-try-restart pmgtunnel.service
+	fi
+
 	exit 0
     ;;
 

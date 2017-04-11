@@ -175,7 +175,6 @@ sub read_cluster_conf {
     my $localip = PMG::Utils::lookup_node_ip($localname);
 
     $cinfo->{remnodes} = [];
-    $cinfo->{configport}->{0} = 83;
     $cinfo->{dbport}->{0} = 5432;
 
     $cinfo->{local} = {
@@ -211,11 +210,9 @@ sub read_cluster_conf {
     my $ind = 0;
     foreach my $cid (sort keys %{$cinfo->{ids}}) {
 	if ($cinfo->{'local'}->{cid} == $cid) { # local CID
-	    $cinfo->{configport}->{$cid} = 83;
 	    $cinfo->{dbport}->{$cid} = 5432;
 	} else {
 	    my $portid = $ind++;
-	    $cinfo->{configport}->{$cid} = 50000 + $portid;
 	    $cinfo->{dbport}->{$cid} = 50100 + $portid;
 	    push @{$cinfo->{remnodes}}, $cid;
 	}
