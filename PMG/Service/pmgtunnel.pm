@@ -53,9 +53,8 @@ sub start_tunnels {
     my $role = $cinfo->{local}->{type} // '-';
     return if $role eq '-';
 
-    foreach my $cid (@{$cinfo->{remnodes}}) {
+    foreach my $cid (keys %{$cinfo->{ids}}) {
 	my $ni = $cinfo->{ids}->{$cid};
-	next if !$ni; # just to be sure
 	next if $ni->{ip} eq $cinfo->{local}->{ip}; # just to be sure
 
 	my $dbport = $cinfo->{dbport}->{$cid};
