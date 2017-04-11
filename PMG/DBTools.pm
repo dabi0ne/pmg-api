@@ -1037,6 +1037,17 @@ sub init_ruledb {
     cond_create_std_actions ($ruledb);
 }
 
+sub get_remote_time {
+    my ($rdb) = @_;
+
+    my $sth = $rdb->prepare("SELECT EXTRACT (EPOCH FROM TIMESTAMP (0) WITH TIME ZONE 'now') as ctime;");
+    $sth->execute();
+    my $ctinfo = $sth->fetchrow_hashref();
+    $sth->finish ();
+
+    return $ctinfo ? $ctinfo->{ctime} : 0;
+}
+
 sub init_masterdb {
     my ($lcid, $database) = @_;
 
