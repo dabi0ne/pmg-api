@@ -154,15 +154,19 @@ __PACKAGE__->register_method({
 
 	my $cfg = PVE::INotify::read_file('cluster.conf');
 
-	my $syncip = $param->{master_ip};
+        my $master_name = undef;
+	my $master_ip = $param->{master_ip};
 
-	$syncip = $cfg->{master}->{ip} if !$syncip && $cfg->{master};
+	if (!$master_ip && $cfg->{master}) {
+	    $master_ip = $cfg->{master}->{ip};
+	    $master_name = $cfg->{master}->{name};
+	}
 
-	die "no master IP specified (use option --master_ip)\n" if !$syncip;
+	die "no master IP specified (use option --master_ip)\n" if !$master_ip;
 
-	print STDERR "syncing master configuration from '$syncip'\n";
+	print STDERR "syncing master configuration from '${master_ip}'\n";
 
-	PMG::Cluster::sync_config_from_master($cfg, $syncip);
+	PMG::Cluster::sync_config_from_master($cfg, $master_name, $master_ip);
     }});
 
 our $cmddef = {

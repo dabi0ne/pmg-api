@@ -277,7 +277,7 @@ my $cond_commit_synced_file = sub {
 };
 
 sub sync_config_from_master {
-    my ($cinfo, $master_ip, $noreload) = @_;
+    my ($cinfo, $master_name, $master_ip, $noreload) = @_;
 
     my $local_ip = $cinfo->{local}->{ip};
     my $local_name = $cinfo->{local}->{name};
@@ -293,7 +293,10 @@ sub sync_config_from_master {
     my $sa_conf_dir = "/etc/mail/spamassassin";
     my $sa_custom_cf = "custom.cf";
 
-    my $cmd = ['rsync', '--rsh=ssh -l root -o BatchMode=yes', '-lpgoq',
+    my $ssh_cmd = '--rsh=ssh -l root -o BatchMode=yes';
+    $ssh_cmd .=  " -o HostKeyAlias=${master_name}" if $master_name;
+
+    my $cmd = ['rsync', '--rsh=ssh -l root -o BatchMode=yes -o HostKeyAlias=${master_name}', '-lpgoq',
 	       "${master_ip}:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
 	       "$syncdir/",
 	       '--exclude', '*~',
