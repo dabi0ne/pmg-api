@@ -1130,6 +1130,7 @@ sub init_nodedb {
 
     my $master_ip = $ni->{ip};
     my $master_cid = $ni->{cid};
+    my $master_name = $ni->{name};
 
     my $fn = "/tmp/masterdb$$.tar";
     unlink $fn;
@@ -1139,8 +1140,11 @@ sub init_nodedb {
     eval {
 	print STDERR "copying master database from '${master_ip}'\n";
 
-	my $cmd = [['ssh', $master_ip, 'pg_dump', '-U', 'postgres',
+	my $cmd = [['/usr/bin/ssh', '-o', 'BatchMode=yes',
+		    '-o', "HostKeyAlias=${master_name}",
+		    $master_ip, 'pg_dump', '-U', 'postgres',
 		    $dbname, '-F', 'c', \ ">$fn" ]];
+
 	PVE::Tools::run_command($cmd);
 
 	my $size = -s $fn;
