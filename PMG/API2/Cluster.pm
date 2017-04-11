@@ -133,7 +133,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file('cluster.conf');
+	my $cfg = PMG::ClusterConfig->new();
 
 	if (scalar(keys %{$cfg->{ids}})) {
 	    my $role = $cfg->{local}->{type} // '-';
