@@ -282,7 +282,10 @@ sub sync_config_from_master {
     my $local_ip = $cinfo->{local}->{ip};
     my $local_name = $cinfo->{local}->{name};
 
-    return if $local_ip eq $master_ip;
+    if ($local_ip eq $master_ip) {
+	print STDERR "local node is master - nothing to do\n";
+	return;
+    }
 
     mkdir $syncdir;
     File::Path::remove_tree($syncdir, {keep_root => 1});
