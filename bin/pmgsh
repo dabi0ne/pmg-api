@@ -14,8 +14,10 @@ use PVE::INotify;
 
 use PMG::RESTEnvironment;
 
+use PMG::Ticket;
 use PMG::Cluster;
 use PMG::API2;
+
 use JSON;
 
 PVE::INotify::inotify_init();
@@ -23,7 +25,8 @@ PVE::INotify::inotify_init();
 my $rpcenv = PMG::RESTEnvironment->init('cli');
 
 $rpcenv->set_language($ENV{LANG});
-$rpcenv->set_user('root@pam'); 
+$rpcenv->set_user('root@pam');
+my $ticket = PMG::Ticket::assemble_ticket('root@pam');
 
 my $logid = $ENV{PVE_LOG_ID} || 'pmgsh';
 initlog($logid);
@@ -466,6 +469,8 @@ sub pmg_command {
     my ($args, $nooutput) = @_;
 
     $rpcenv->init_request();
+
+    $rpcenv->set_ticket($ticket);
 
     my $cmd = shift @$args;
 

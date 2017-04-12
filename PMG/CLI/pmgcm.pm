@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Term::ReadLine;
+use POSIX qw(strftime);
 use JSON;
 
 use PVE::SafeSyslog;
@@ -11,6 +12,7 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::Ticket;
 use PMG::RESTEnvironment;
 use PMG::DBTools;
 use PMG::Cluster;
@@ -21,6 +23,11 @@ use base qw(PVE::CLIHandler);
 
 sub setup_environment {
     PMG::RESTEnvironment->setup_default_cli_env();
+
+    my $rpcenv = PMG::RESTEnvironment->get();
+    # API /config/cluster/nodes need a ticket to connect to other nodes
+    my $ticket = PMG::Ticket::assemble_ticket('root@pam');
+    $rpcenv->set_ticket($ticket);
 }
 
 my $upid_exit = sub {
@@ -39,11 +46,46 @@ my $format_nodelist = sub {
 
     print "NAME(CID)--------------IPADDRESS----ROLE-STATE---------UPTIME---LOAD----MEM---DISK\n";
     foreach my $ni (@$res) {
-	my $state = '?';
+	my $state = 'A';
+	$state = 'S' if !$ni->{insync};
+
+	if (my $err = $ni->{conn_error}) {
+	    $err =~ s/\n/ /g;
+	    $state = "ERROR: $err";
+	}
+
+	my $uptime = '-';
+	if (my $ut = $ni->{uptime}) {
+	    my $days = int($ut/86400);
+	    $ut -= $days*86400;
+	    my $hours = int($ut/3600);
+	    $ut -= $hours*3600;
+	    my $mins = $ut/60;
+	    if ($days) {
+		my $ds = $days > 1 ? 'days' : 'day';
+		$uptime = sprintf "%d $ds %02d:%02d", $days, $hours, $mins;
+	    } else {
+		$uptime = sprintf "%02d:%02d", $hours, $mins;
+	    }
+	}
+
+	my $loadavg1 = '-';
+	if (my $d = $ni->{loadavg}) {
+	    $loadavg1 = $d->[0];
+	}
+
+	my $mem = '-';
+	if (my $d = $ni->{memory}) {
+	    $mem = int(0.5 + ($d->{used}*100/$d->{total}));
+	}
+	my $disk = '-';
+	if (my $d = $ni->{rootfs}) {
+	    $disk = int(0.5 + ($d->{used}*100/$d->{avail}));
+	}
 
 	printf "%-20s %-15s %-6s %1s %15s %6s %5s%% %5s%%\n",
 	"$ni->{name}($ni->{cid})", $ni->{ip}, $ni->{type},
-	$state, '-', '-', '-', '-';
+	$state, $uptime, $loadavg1, $mem, $disk;
     }
 };
 

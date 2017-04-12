@@ -24,6 +24,7 @@ sub init {
 
     $self->{cinfo} = {};
     $self->{usercfg} = {};
+    $self->{ticket} = undef;
  
     return $self;
 };
@@ -34,8 +35,21 @@ sub init_request {
     
     $self->SUPER::init_request(%params);
     
+    $self->{ticket} = undef;
     $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
     $self->{usercfg} = PVE::INotify::read_file("pmg-user.conf");
+}
+
+sub set_ticket {
+    my ($self, $ticket) = @_;
+
+    $self->{ticket} = $ticket;
+}
+
+sub get_ticket {
+    my ($self) = @_;
+
+    return $self->{ticket};
 }
 
 sub check_node_is_master {

@@ -70,6 +70,7 @@ sub auth_handler {
 	($username, $age) = PMG::Ticket::verify_ticket($ticket);
 
 	$rpcenv->set_user($username);
+	$rpcenv->set_ticket($ticket);
 
 	my $euid = $>;
 	PMG::Ticket::verify_csrf_prevention_token($username, $token)

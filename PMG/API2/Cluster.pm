@@ -18,6 +18,8 @@ use PMG::ClusterConfig;
 use PMG::Cluster;
 use PMG::DBTools;
 
+use PMG::API2::Nodes;
+
 use base qw(PVE::RESTHandler);
 
 # fixme:
@@ -143,7 +145,39 @@ __PACKAGE__->register_method({
 	    }
 	}
 
-	return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
+	my $res = PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+        my $authuser = $rpcenv->get_user();
+	my $ticket = $rpcenv->get_ticket();
+
+	foreach my $ni (@$res) {
+	    my $info;
+	    eval {
+		if ($ni->{cid} eq $cfg->{local}->{cid}) {
+		    $info = PMG::API2::NodeInfo->status({ node => PVE::INotify::nodename()});
+		} else {
+		    my $conn = PVE::APIClient::LWP->new(
+			ticket => $ticket,
+			cookie_name => 'PMGAuthCookie',
+			host => $ni->{ip},
+			cached_fingerprints => {
+			    $ni->{fingerprint} => 1,
+			});
+
+		    $info = $conn->get("/nodes/localhost/status", {});
+		}
+	    };
+	    if (my $err = $@) {
+		$ni->{conn_error} = $err;
+		next;
+	    }
+	    foreach my $k (keys %$info) {
+		$ni->{$k} = $info->{$k} if !defined($ni->{$k});
+	    }
+	}
+
+	return $res;
     }});
 
 my $add_node_schema = PMG::ClusterConfig::Node->createSchema(1);
