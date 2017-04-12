@@ -80,7 +80,7 @@ my $format_nodelist = sub {
 	}
 	my $disk = '-';
 	if (my $d = $ni->{rootfs}) {
-	    $disk = int(0.5 + ($d->{used}*100/$d->{avail}));
+	    $disk = int(0.5 + ($d->{used}*100/$d->{total}));
 	}
 
 	printf "%-20s %-15s %-6s %1s %15s %6s %5s%% %5s%%\n",
