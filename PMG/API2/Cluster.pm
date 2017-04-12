@@ -169,7 +169,7 @@ __PACKAGE__->register_method({
 		}
 	    };
 	    if (my $err = $@) {
-		$ni->{conn_error} = $err;
+		$ni->{conn_error} = "$err"; # convert $err to string
 		next;
 	    }
 	    foreach my $k (keys %$info) {
