@@ -22,7 +22,7 @@ use base qw(PVE::RESTHandler);
 
 # fixme:
 #my $db_service_list = [ 'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
-my $db_service_list = [ 'pmgpolicy', 'pmg-smtp-filter' ];
+my $db_service_list = [ 'pmgpolicy', 'pmgtunnel', 'pmg-smtp-filter' ];
 
 sub cluster_join {
     my ($cfg, $conn_setup) = @_;
