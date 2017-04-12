@@ -505,6 +505,8 @@ use warnings;
 use PVE::RESTHandler;
 use PVE::JSONSchema qw(get_standard_option);
 
+use PMG::RESTEnvironment;
+
 use base qw(PVE::RESTHandler);
 
 __PACKAGE__->register_method ({
@@ -534,9 +536,20 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $nodename =  PVE::INotify::nodename();
-	my $res = [
-	   { node => $nodename },
-	];
+
+	my $res = [ { node => $nodename } ];
+
+	my $done = {};
+
+	$done->{$nodename} = 1;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	foreach my $ni (values %{$cinfo->{ids}}) {
+	    push @$res, { node => $ni->{name} } if !$done->{$ni->{name}};
+	    $done->{$ni->{name}} = 1;
+	}
 
 	return $res;
     }});
