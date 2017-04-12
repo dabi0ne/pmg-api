@@ -11,7 +11,8 @@ use Text::ParseWords;
 use PVE::JSONSchema;
 use PVE::SafeSyslog;
 use PVE::INotify;
-use PVE::RESTEnvironment;
+
+use PMG::RESTEnvironment;
 
 use PMG::Cluster;
 use PMG::API2;
@@ -19,7 +20,7 @@ use JSON;
 
 PVE::INotify::inotify_init();
 
-my $rpcenv = PVE::RESTEnvironment->init('cli');
+my $rpcenv = PMG::RESTEnvironment->init('cli');
 
 $rpcenv->set_language($ENV{LANG});
 $rpcenv->set_user('root@pam'); 
