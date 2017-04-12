@@ -2,15 +2,17 @@ package PMG::API2::NodeInfo;
 
 use strict;
 use warnings;
-
 use Time::Local qw(timegm_nocheck);
+use Filesys::Df;
 
 use PVE::INotify;
 use PVE::RESTHandler;
 use PVE::JSONSchema qw(get_standard_option);
 use PMG::RESTEnvironment;
 use PVE::SafeSyslog;
+use PVE::ProcFSTools;
 
+use PMG::pmgcfg;
 use PMG::Ticket;
 use PMG::API2::Tasks;
 use PMG::API2::Services;
@@ -75,6 +77,7 @@ __PACKAGE__->register_method ({
 	    { name => 'syslog' },
 	    { name => 'tasks' },
 	    { name => 'time' },
+	    { name => 'status' },
 	    { name => 'vncshell' },
 	    { name => 'rrddata' },
 	];
@@ -495,6 +498,101 @@ __PACKAGE__->register_method({
 
 	return undef;
     }});
+
+__PACKAGE__->register_method({
+    name => 'status',
+    path => 'status',
+    method => 'GET',
+    description => "Read server status. This is used by the cluster manager to test the node health.",
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => "object",
+	additionalProperties => 1,
+	properties => {
+	    time => {
+		description => "Seconds since 1970-01-01 00:00:00 UTC.",
+		type => 'integer',
+		minimum => 1297163644,
+	    },
+	    uptime => {
+		description => "The uptime of the system in seconds.",
+		type => 'integer',
+		minimum => 0,
+	    },
+	    insync => {
+		description => "Database is synced with other nodes.",
+		type => 'boolean',
+	    },
+        },
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $ctime = time();
+
+	my $res = { time => $ctime, insync => 1 };
+
+	my $si = PMG::DBTools::cluster_sync_status($cinfo);
+	foreach my $cid (keys %$si) {
+	    my $lastsync = $si->{$cid};
+	    my $sdiff = $ctime - $lastsync;
+	    $sdiff = 0 if $sdiff < 0;
+	    $res->{insync} = 0 if $sdiff > (60*3);
+	}
+
+	my ($uptime, $idle) = PVE::ProcFSTools::read_proc_uptime();
+	$res->{uptime} = $uptime;
+
+	my ($avg1, $avg5, $avg15) = PVE::ProcFSTools::read_loadavg();
+	$res->{loadavg} = [ $avg1, $avg5, $avg15];
+
+	my ($sysname, $nodename, $release, $version, $machine) = POSIX::uname();
+
+	$res->{kversion} = "$sysname $release $version";
+
+	$res->{cpuinfo} = PVE::ProcFSTools::read_cpuinfo();
+
+	my $stat = PVE::ProcFSTools::read_proc_stat();
+	$res->{cpu} = $stat->{cpu};
+	$res->{wait} = $stat->{wait};
+
+	my $meminfo = PVE::ProcFSTools::read_meminfo();
+	$res->{memory} = {
+	    free => $meminfo->{memfree},
+	    total => $meminfo->{memtotal},
+	    used => $meminfo->{memused},
+	};
+
+	$res->{swap} = {
+	    free => $meminfo->{swapfree},
+	    total => $meminfo->{swaptotal},
+	    used => $meminfo->{swapused},
+	};
+
+	$res->{pmgversion} = PMG::pmgcfg::package() . "/" .
+	    PMG::pmgcfg::version_text();
+
+	my $dinfo = df('/', 1); # output is bytes
+
+	$res->{rootfs} = {
+	    total => $dinfo->{blocks},
+	    avail => $dinfo->{bavail},
+	    used => $dinfo->{used},
+	    free => $dinfo->{bavail} - $dinfo->{used},
+	};
+
+	return $res;
+   }});
 
 
 package PMG::API2::Nodes;
