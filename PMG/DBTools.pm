@@ -7,8 +7,10 @@ use POSIX ":sys_wait_h";
 use POSIX ':signal_h';
 use DBI;
 
+use PVE::SafeSyslog;
 use PVE::Tools;
 
+use PMG::Utils;
 use PMG::RuleDB;
 
 our $default_db_name = "Proxmox_ruledb";
@@ -1192,6 +1194,50 @@ sub init_nodedb {
     unlink $fn;
 
     die $err if $err;
+}
+
+sub cluster_sync_status {
+    my ($cinfo) = @_;
+
+    my $dbh;
+
+    my $minmtime;
+
+    foreach my $ni (values %{$cinfo->{ids}}) {
+	next if $cinfo->{local}->{cid} == $ni->{cid}; # skip local CID
+	$minmtime->{$ni->{cid}} = 0;
+    }
+
+    eval {
+	$dbh = open_ruledb();
+
+	my $sth = $dbh->prepare(
+	    "SELECT cid, MIN (ivalue) as minmtime FROM ClusterInfo " .
+	    "WHERE name = 'lastsync' AND ivalue > 0 " .
+	    "GROUP BY cid");
+
+	$sth->execute();
+
+	while (my $info = $sth->fetchrow_hashref()) {
+	    foreach my $ni (values %{$cinfo->{ids}}) {
+		next if $cinfo->{local}->{cid} == $ni->{cid}; # skip local CID
+		if ($ni->{cid} == $info->{cid}) { # node exists
+		    $minmtime->{$ni->{cid}} = $info->{minmtime};
+		}
+	    }
+	}
+
+	$sth->finish ();
+    };
+    my $err = $@;
+
+    $dbh->disconnect() if $dbh;
+
+    if ($err) {
+	syslog('err', PMG::Utils::msgquote($err));
+    }
+
+    return $minmtime;
 }
 
 
