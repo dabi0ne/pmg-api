@@ -97,7 +97,7 @@ sub start_tunnels {
 	    # make sure we use ipv4 127.0.0.1 (instead of ipv6 :::1)
 	    exec('/usr/bin/ssh', '-N', '-o', 'BatchMode=yes',
 		 '-o', "HostKeyAlias=$ni->{name}",
-		 '-L', "$dbport:127.0.0.1:5432",
+		 '-L', "$dbport:/var/run/postgresql/.s.PGSQL.5432",
 		 $ni->{ip});
 	    exit (0);
 	}

@@ -37,7 +37,7 @@ sub open_ruledb {
 
 	eval {
 	    alarm($timeout);
-	    $rdb = DBI->connect($dsn, "postgres", undef,
+	    $rdb = DBI->connect($dsn, "root", undef,
 				{ PrintError => 0, RaiseError => 1 });
 	    alarm(0);
 	};
@@ -50,17 +50,29 @@ sub open_ruledb {
     } else {
 	my $dsn = "DBI:Pg:dbname=$database";
 
-	my $dbh = DBI->connect($dsn, "postgres", undef,
+	my $dbh = DBI->connect($dsn, "root", undef,
 			       { PrintError => 0, RaiseError => 1 });
 
 	return $dbh;
     }
 }
 
+sub postgres_admin_cmd {
+    my ($cmd, $options, @params) = @_;
+
+    $cmd = ref($cmd) ? $cmd : [ $cmd ];
+    my $uid = getpwnam('postgres') || die "getpwnam postgres failed\n";
+
+    local $> = $uid;
+    $! &&  die "setuid postgres ($uid) failed - $!\n";
+
+    PVE::Tools::run_command([@$cmd, '-U', 'postgres', @params], %$options);
+}
+
 sub delete_ruledb {
     my ($dbname) = @_;
 
-    PVE::Tools::run_command(['dropdb', '-U', 'postgres', $dbname]);
+    postgres_admin_cmd('dropdb', undef, $dbname);
 }
 
 sub database_list {
@@ -76,9 +88,7 @@ sub database_list {
 	$database_list->{$name} = { owner => $owner };
     };
 
-    my $cmd = ['psql', '-U', 'postgres', '--list', '--quiet', '--tuples-only'];
-
-    PVE::Tools::run_command($cmd, outfunc => $parser);
+    postgres_admin_cmd('psql', { outfunc => $parser }, '--list', '--quiet', '--tuples-only');
 
     return $database_list;
 }
@@ -337,12 +347,15 @@ sub create_ruledb {
 
     $dbname = $default_db_name if !$dbname;
 
+    my $silent_opts = { outfunc => sub {}, errfunc => sub {} };
+    # make sure we have user 'root'
+    eval { postgres_admin_cmd('createuser',  $silent_opts, '-D', 'root'); };
+
     # use sql_ascii to avoid any character set conversions, and be compatible with
     # older postgres versions (update from 8.1 must be possible)
-    my $cmd = [ 'createdb', '-U', 'postgres', '-E', 'sql_ascii',
-		'-T', 'template0', '--lc-collate=C', '--lc-ctype=C', $dbname ];
 
-    PVE::Tools::run_command($cmd);
+    postgres_admin_cmd('createdb', undef, '-E', 'sql_ascii', '-T', 'template0',
+		       '--lc-collate=C', '--lc-ctype=C', $dbname);
 
     my $dbh = open_ruledb($dbname);
 
@@ -698,15 +711,21 @@ sub upgradedb {
     # database (before analyze can gather statistics)
     $dbh->do("set enable_seqscan = false");
 
-    cond_create_dbtable($dbh, 'DailyStat', $daily_stat_ctablecmd);
-    cond_create_dbtable($dbh, 'DomainStat', $domain_stat_ctablecmd);
-    cond_create_dbtable($dbh, 'StatInfo', $statinfo_ctablecmd);
-    cond_create_dbtable($dbh, 'CMailStore', $cmailstore_ctablecmd);
-    cond_create_dbtable($dbh, 'UserPrefs', $userprefs_ctablecmd);
-    cond_create_dbtable($dbh, 'CGreylist', $cgreylist_ctablecmd);
-    cond_create_dbtable($dbh, 'CStatistic', $cstatistic_ctablecmd);
-    cond_create_dbtable($dbh, 'ClusterInfo', $clusterinfo_ctablecmd);
-    cond_create_dbtable($dbh, 'VirusInfo', $virusinfo_stat_ctablecmd);
+    my $tables = {
+	'DailyStat'=> $daily_stat_ctablecmd,
+	'DomainStat', $domain_stat_ctablecmd,
+	'StatInfo', $statinfo_ctablecmd,
+	'CMailStore', $cmailstore_ctablecmd,
+	'UserPrefs', $userprefs_ctablecmd,
+	'CGreylist', $cgreylist_ctablecmd,
+	'CStatistic', $cstatistic_ctablecmd,
+	'ClusterInfo', $clusterinfo_ctablecmd,
+	'VirusInfo', $virusinfo_stat_ctablecmd,
+    };
+
+    foreach my $table (keys %$tables) {
+	cond_create_dbtable($dbh, $table, $tables->{$tables});
+    }
 
     cond_create_std_actions($ruledb);
 
@@ -730,9 +749,10 @@ sub upgradedb {
 		 "AND value = 'content-type:application/x-java-vm';");
     };
 
-    eval {
-	$dbh->do ("ANALYZE");
-    };
+    foreach my $table (keys %$tables) {
+	eval { $dbh->do("ANALYZE $table"); };
+	warn $@ if $@;
+    }
 }
 
 sub init_ruledb {
@@ -1142,12 +1162,16 @@ sub init_nodedb {
     eval {
 	print STDERR "copying master database from '${master_ip}'\n";
 
-	my $cmd = [['/usr/bin/ssh', '-o', 'BatchMode=yes',
-		    '-o', "HostKeyAlias=${master_name}",
-		    $master_ip, 'pg_dump', '-U', 'postgres',
-		    $dbname, '-F', 'c', \ ">$fn" ]];
+	open (my $fh, ">", $fn) || die "open '$fn' failed - $!\n";
 
-	PVE::Tools::run_command($cmd);
+	postgres_admin_cmd(
+	    ['/usr/bin/ssh', '-o', 'BatchMode=yes',
+	     '-o', "HostKeyAlias=${master_name}",
+	     $master_ip, 'pg_dump'],
+	    { output => '>&' . fileno($fh) },
+	    $dbname, '-F', 'c');
+
+	close($fh);
 
 	my $size = -s $fn;
 
@@ -1155,13 +1179,11 @@ sub init_nodedb {
 
 	print STDERR "delete local database\n";
 
-	$cmd = [ 'dropdb', '-U', 'postgres', $dbname , '--if-exists'];
-	PVE::Tools::run_command($cmd);
+	postgres_admin_cmd('dropdb', undef, $dbname , '--if-exists');
 
 	print STDERR "create new local database\n";
 
-	$cmd = ['createdb', '-U', 'postgres', $dbname];
-	PVE::Tools::run_command($cmd);
+	postgres_admin_cmd('createdb', undef, $dbname);
 
 	print STDERR "insert received data into local database\n";
 
@@ -1177,14 +1199,17 @@ sub init_nodedb {
 	    }
 	};
 
-	$cmd = ['pg_restore', '-U',  'postgres', '-d', $dbname, '-v', $fn];
-	PVE::Tools::run_command($cmd, outfunc => $parser, errfunc => $parser,
-				errmsg => "pg_restore failed");
+	my $opts = {
+	    outfunc => $parser,
+	    errfunc => $parser,
+	    errmsg => "pg_restore failed"
+	};
+
+	postgres_admin_cmd('pg_restore', $opts, '-d', $dbname, '-v', $fn);
 
 	print STDERR "run analyze to speed up database queries\n";
 
-	$cmd = ['psql', '-U', 'postgres', $dbname];
-	PVE::Tools::run_command($cmd);
+	postgres_admin_cmd('psql', { input => 'analyze;' }, $dbname);
 
 	update_client_clusterinfo($master_cid);
     };
