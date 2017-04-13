@@ -26,6 +26,7 @@ my $service_name_list = [
     'ssh',
     'rsyslog',
     'postfix',
+    'postgres',
     'systemd-timesyncd',
     'pmg-hourly',
     'pmg-daily',

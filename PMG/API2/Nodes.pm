@@ -188,9 +188,8 @@ __PACKAGE__->register_method({
 	my $restenv = PMG::RESTEnvironment->get();
 
 	my $service = $param->{service};
-	if ($service && $service eq 'postfix') {
-	    $service = 'postfix@-';
-	}
+	$service = PMG::Utils::lookup_real_service_name($service)
+	    if $service;
 
 	my ($count, $lines) = PVE::Tools::dump_journal(
 	    $param->{start}, $param->{limit},

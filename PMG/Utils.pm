@@ -483,6 +483,17 @@ sub find_local_network_for_ip {
     die "unable to detect local network for ip '$ip'\n";
 }
 
+my $service_aliases = {
+    'postfix' =>  'postfix@-',
+    'postgres' => 'postgresql@9.6-main',
+};
+
+sub lookup_real_service_name {
+    my $alias = shift;
+
+    return $service_aliases->{$alias} // $alias;
+}
+
 sub get_full_service_state {
     my ($service) = @_;
 
@@ -495,7 +506,7 @@ sub get_full_service_state {
 	}
     };
 
-    $service = 'postfix@-' if $service eq 'postfix';
+    $service = $service_aliases->{$service} // $service;
     PVE::Tools::run_command(['systemctl', 'show', $service], outfunc => $parser);
 
     return $res;
@@ -547,7 +558,7 @@ sub service_cmd {
 	}
     }
 
-    $service = 'postfix@-' if $service eq 'postfix';
+    $service = $service_aliases->{$service} // $service;
     PVE::Tools::run_command(['systemctl', $cmd, $service]);
 };
 
