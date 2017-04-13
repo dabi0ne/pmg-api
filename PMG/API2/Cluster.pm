@@ -105,6 +105,7 @@ __PACKAGE__->register_method({
 
 	my $result = [
 	    { name => 'nodes' },
+	    { name => 'status' },
 	    { name => 'create' },
 	    { name => 'join' },
         ];
@@ -128,7 +129,55 @@ __PACKAGE__->register_method({
 	items => {
 	    type => "object",
 	    properties => {
+		type => { type => 'string' },
 		cid => { type => 'integer' },
+		ip => { type => 'string' },
+		name => { type => 'string' },
+		hostrsapubkey => { type => 'string' },
+		rootrsapubkey => { type => 'string' },
+		fingerprint => { type => 'string' },
+	    },
+	},
+	links => [ { rel => 'child', href => "{cid}" } ],
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PMG::ClusterConfig->new();
+
+	if (scalar(keys %{$cfg->{ids}})) {
+	    my $role = $cfg->{local}->{type} // '-';
+	    if ($role eq '-') {
+		die "local node '$cfg->{local}->{name}' not part of cluster\n";
+	    }
+	}
+
+	return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
+    }});
+
+__PACKAGE__->register_method({
+    name => 'status',
+    path => 'status',
+    method => 'GET',
+    description => "Cluster node status.",
+    # alway read local file
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    permissions => { check => [ 'admin' ] },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		type => { type => 'string' },
+		cid => { type => 'integer' },
+		ip => { type => 'string' },
+		name => { type => 'string' },
+		hostrsapubkey => { type => 'string' },
+		rootrsapubkey => { type => 'string' },
+		fingerprint => { type => 'string' },
 	    },
 	},
 	links => [ { rel => 'child', href => "{cid}" } ],

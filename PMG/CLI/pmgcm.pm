@@ -212,7 +212,7 @@ __PACKAGE__->register_method({
     }});
 
 our $cmddef = {
-    nodes => [ 'PMG::API2::Cluster', 'nodes', [], {}, $format_nodelist],
+    status => [ 'PMG::API2::Cluster', 'status', [], {}, $format_nodelist],
     create => [ 'PMG::API2::Cluster', 'create', [], {}, $upid_exit],
     join => [ __PACKAGE__, 'join', ['master_ip']],
     join_cmd => [ __PACKAGE__, 'join_cmd', []],
