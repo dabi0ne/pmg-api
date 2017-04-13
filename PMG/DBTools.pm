@@ -24,6 +24,10 @@ sub open_ruledb {
 
     if ($host) {
 
+	# Note: pmgtunnel uses UDP sockets inside directory '/var/run/pmgtunnel',
+	# and the cluster 'cid' as port number. You can connect to the
+	# socket with: host => /var/run/pmgtunnel, port => $cid
+
 	my $dsn = "dbi:Pg:dbname=$database;host=$host;port=$port;";
 
 	my $timeout = 5;
@@ -48,7 +52,7 @@ sub open_ruledb {
 
 	return $rdb;
     } else {
-	my $dsn = "DBI:Pg:dbname=$database";
+	my $dsn = "DBI:Pg:dbname=$database;host=/var/run/postgresql;port=$port";
 
 	my $dbh = DBI->connect($dsn, "root", undef,
 			       { PrintError => 0, RaiseError => 1 });

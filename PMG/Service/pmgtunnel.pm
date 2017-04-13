@@ -35,12 +35,20 @@ my $workers = {};
 my $delayed_exec = {};
 my $startcount = {};
 
+my $socketdir = "/var/run/pmgtunnel";
+
+my $socketfile = sub {
+    my ($cid) = @_;
+    return "$socketdir/.s.PGSQL.$cid";
+};
+
 sub finish_children {
     while ((my $cpid = waitpid(-1, POSIX::WNOHANG())) > 0) {
 	if (defined($workers->{$cpid})) {
 	    my $ip = $workers->{$cpid}->{ip};
 	    my $cid = $workers->{$cpid}->{cid};
 	    syslog('err', "tunnel finished $cpid $ip");
+	    unlink $socketfile->{$cid};
 	    $delayed_exec->{$cid} = time + ($startcount->{$cid} > 5 ? 60 : 10);
 	    delete $workers->{$cpid};
 	}
@@ -94,10 +102,12 @@ sub start_tunnels {
 
 	    $self->after_fork_cleanup();
 
-	    # make sure we use ipv4 127.0.0.1 (instead of ipv6 :::1)
+	    mkdir $socketdir;
+	    my $sock = $socketfile->($cid);
+	    unlink $sock;
 	    exec('/usr/bin/ssh', '-N', '-o', 'BatchMode=yes',
 		 '-o', "HostKeyAlias=$ni->{name}",
-		 '-L', "$dbport:/var/run/postgresql/.s.PGSQL.5432",
+		 '-L', "$sock:/var/run/postgresql/.s.PGSQL.5432",
 		 $ni->{ip});
 	    exit (0);
 	}
