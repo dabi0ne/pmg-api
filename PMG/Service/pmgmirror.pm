@@ -30,7 +30,7 @@ my $restart_request = 0;
 my $next_update = 0;
 
 my $cycle = 0;
-my $updatetime = 10;
+my $updatetime = 60*2;
 
 my $initial_memory_usage;
 
@@ -44,6 +44,49 @@ sub hup {
     $restart_request = 1;
 }
 
+sub cluster_sync {
+    my ($cinfo) = @_;
+
+    my $rsynctime = 0;
+    my $csynctime = 0;
+
+    my $cinfo = PMG::ClusterConfig->new(); # reload
+    my $role = $cinfo->{local}->{type} // '-';
+
+    return if $role eq '-';
+    return if !$cinfo->{master}; # just to be sure
+
+    my ($ccsec_start, $cusec_start) = gettimeofday ();
+
+    syslog ('info', "starting cluster syncronization");
+
+    my $master_ip = $cinfo->{master}->{ip};
+    my $master_name = $cinfo->{master}->{name};
+
+    PMG::Cluster::sync_config_from_master($cinfo, $master_name, $master_ip);
+
+    my ($ccsec, $cusec) = gettimeofday ();
+    $csynctime += int (($ccsec-$ccsec_start)*1000 + ($cusec - $cusec_start)/1000);
+
+    $cinfo = PMG::ClusterConfig->new(); # reload
+    $role = $cinfo->{local}->{type} // '-';
+
+    return if $role eq '-';
+    return if !$cinfo->{master}; # just to be sure
+
+    ($ccsec, $cusec) = gettimeofday ();
+    my $cptime = int (($ccsec-$ccsec_start) + ($cusec - $cusec_start)/1000000);
+
+    my $rstime = $rsynctime/1000.0;
+    my $cstime = $csynctime/1000.0;
+    my $dbtime = $cptime - $rstime - $cstime;
+
+    syslog('info', sprintf("cluster syncronization finished (%.2f seconds " .
+			   "(files %.2f, database %.2f, config %.2f))",
+			   $cptime, $rstime, $dbtime, $cstime));
+
+}
+
 sub run {
     my ($self) = @_;
 
@@ -51,12 +94,7 @@ sub run {
 
 	$next_update = time() + $updatetime;
 
-	eval {
-	    my $cinfo = PMG::ClusterConfig->new(); # reload
-	    
-	    syslog('info' , "do something");
-	};
-
+	eval { cluster_sync(); };
 	if (my $err = $@) {
 	    syslog('err', PMG::Utils::msgquote ("sync error: $err"));
 	}
