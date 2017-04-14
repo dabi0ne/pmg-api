@@ -86,6 +86,7 @@ __PACKAGE__->register_method ({
     path => 'objects',
     method => 'GET',
     description => "List 'actions' objects.",
+    proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -121,6 +122,8 @@ __PACKAGE__->register_method ({
     path => 'objects/{id}',
     method => 'DELETE',
     description => "Delete 'actions' object.",
+    proxyto => 'master',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => { id => $id_property }
@@ -188,6 +191,7 @@ my $register_action_api = sub {
 	method => 'POST',
 	description => "Create '$otype_text' object.",
 	proxyto => 'master',
+	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $create_properties,
@@ -241,6 +245,7 @@ my $register_action_api = sub {
 	method => 'PUT',
 	description => "Update '$otype_text' object.",
 	proxyto => 'master',
+	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $update_properties,
@@ -277,6 +282,5 @@ my $register_action_api = sub {
 };
 
 $register_action_api->('PMG::RuleDB::BCC', 'bcc');
-
 
 1;
