@@ -65,6 +65,8 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'DELETE',
     description => "Delete rule.",
+    proxyto => 'master',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
