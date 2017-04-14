@@ -18,9 +18,9 @@ our $default_db_name = "Proxmox_ruledb";
 sub open_ruledb {
     my ($database, $host, $port) = @_;
 
-    $port = 5432 if !$port;
+    $port //= 5432;
 
-    $database = $default_db_name if !$database;
+    $database //= $default_db_name;
 
     if ($host) {
 
@@ -41,7 +41,7 @@ sub open_ruledb {
 
 	eval {
 	    alarm($timeout);
-	    $rdb = DBI->connect($dsn, "root", undef,
+	    $rdb = DBI->connect($dsn, 'root', undef,
 				{ PrintError => 0, RaiseError => 1 });
 	    alarm(0);
 	};
@@ -54,7 +54,7 @@ sub open_ruledb {
     } else {
 	my $dsn = "DBI:Pg:dbname=$database;host=/var/run/postgresql;port=$port";
 
-	my $dbh = DBI->connect($dsn, "root", undef,
+	my $dbh = DBI->connect($dsn, $> == 0 ? 'root' : 'www-data', undef,
 			       { PrintError => 0, RaiseError => 1 });
 
 	return $dbh;
@@ -354,6 +354,8 @@ sub create_ruledb {
     my $silent_opts = { outfunc => sub {}, errfunc => sub {} };
     # make sure we have user 'root'
     eval { postgres_admin_cmd('createuser',  $silent_opts, '-D', 'root'); };
+    # also create 'www-data' (and give it read-only access below)
+    eval { postgres_admin_cmd('createuser',  $silent_opts, '-I', '-D', 'www-data'); };
 
     # use sql_ascii to avoid any character set conversions, and be compatible with
     # older postgres versions (update from 8.1 must be possible)
@@ -362,6 +364,9 @@ sub create_ruledb {
 		       '--lc-collate=C', '--lc-ctype=C', $dbname);
 
     my $dbh = open_ruledb($dbname);
+
+    # make sure 'www-data' can read all tables
+    $dbh->do("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO \"www-data\"");
 
     #$dbh->do ($dbloaddrivers_sql);
     #$dbh->do ($dbfunction_update_modtime);
