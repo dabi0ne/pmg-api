@@ -1,3 +1,15 @@
+proxmox-mailgateway (5.0-5) unstable; urgency=medium
+
+  * improved database security
+
+  * implemented cluster tunnel daemon
+
+  * depend on sudo
+
+  * pmgcm: add 'sync' command
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 14 Apr 2017 07:26:53 +0200
+
 proxmox-mailgateway (5.0-4) unstable; urgency=medium
 
   * improved cluster management API
