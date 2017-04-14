@@ -1267,9 +1267,7 @@ sub cluster_sync_status {
 
     $dbh->disconnect() if $dbh;
 
-    if ($err) {
-	syslog('err', PMG::Utils::msgquote($err));
-    }
+    syslog('err', $err) if $err;
 
     return $minmtime;
 }

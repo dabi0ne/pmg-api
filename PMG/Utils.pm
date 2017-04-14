@@ -94,12 +94,6 @@ PVE::JSONSchema::register_standard_option('username', {
     maxLength => 64,
 });
 
-sub msgquote {
-    my $msg = shift || '';
-    $msg =~ s/%/%%/g;
-    return $msg;
-}
-
 sub lastid {
     my ($dbh, $seq) = @_;
 

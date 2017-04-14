@@ -84,7 +84,7 @@ if ($statlifetime && $statlifetime > 0) {
     };
     if (my $err = $@) {
 	$dbh->rollback if $dbh;
-	syslog('err', PMG::Utils::msgquote($err));
+	syslog('err', $err);
     } else {
 	syslog('info', "cleanup removed $srows entries from " .
 	       "statistic database ($srows, $rrows)") if $srows;

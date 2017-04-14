@@ -513,7 +513,7 @@ sub run_dequeue {
 	PMG::Utils::update_node_status_rrd();
     };
     if ($err = $@) {
-	$self->log(0, PMG::Utils::msgquote("ERROR: $err"));
+	$self->log(0, "ERROR: $err");
 	# continue
     }
 
@@ -531,7 +531,7 @@ sub run_dequeue {
 	$dbh = PMG::DBTools::open_ruledb($database);
     };
     if ($err = $@) {
-	$self->log (0, PMG::Utils::msgquote("ERROR: $err"));
+	$self->log (0, "ERROR: $err");
 	return;
     }
 
@@ -544,7 +544,7 @@ sub run_dequeue {
     my $ptime = int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
 
     if ($err) {
-	$self->log (0, PMG::Utils::msgquote($err));
+	$self->log (0, $err);
     } else {
 	$self->log (2, "end database maintainance ($ptime ms)");
     }

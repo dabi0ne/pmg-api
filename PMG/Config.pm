@@ -1129,7 +1129,7 @@ sub rewrite_config_spam {
 		PVE::Tools::run_command(['razor-admin', '-register'], timeout => $timeout);
 	    };
 	    my $err = $@;
-	    syslog('info', msgquote ("registering razor failed: $err")) if $err;
+	    syslog('info', "registering razor failed: $err") if $err;
 	}
     }
 
@@ -1208,7 +1208,7 @@ sub rewrite_config_postfix {
 	eval {
 	    PMG::Utils::gen_proxmox_tls_cert();
 	};
-	syslog ('info', msgquote ("generating certificate failed: $@")) if $@;
+	syslog ('info', "generating certificate failed: $@") if $@;
     }
 
     $changes = 1 if $self->rewrite_config_file(

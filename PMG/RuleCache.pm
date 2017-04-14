@@ -155,7 +155,7 @@ sub new {
 
     $dbh->rollback; # end transaction
 
-    syslog ('err', PMG::Utils::msgquote("unable to load rulecache : $err")) if $err;
+    syslog ('err', "unable to load rulecache : $err") if $err;
 
     $self->{rules} = $rules;
 

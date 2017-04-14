@@ -118,7 +118,7 @@ sub run_dequeue {
     my $err = $@;
 
     if ($err) {
-	$self->log(0, PMG::Utils::msgquote("ERROR: $err"));
+	$self->log(0, "ERROR: $err");
 	return;
     }
 
@@ -209,7 +209,7 @@ sub run_dequeue {
 	    # this produces too much log traffic
 	    # my $targets = join (", ", @rcvrs);
 	    #my $msg = "expire mail $ref->{instance} from $ref->{sender} to $targets";
-	    #$self->log (0, PMG::Utils::msgquote ($msg));
+	    #$self->log (0, $msg);
 	}
 
 	$dbh->do ($cmds) if $cmds;
@@ -233,7 +233,7 @@ sub run_dequeue {
 
     if ($err) {
 	$dbh->rollback if $dbh;
-	$self->log(0, PMG::Utils::msgquote($err));
+	$self->log(0, $err);
     } else {
 	$self->log(2, "end greylist database maintainance ($ptime ms)");
     }
@@ -304,7 +304,7 @@ sub load_config {
 	$self->{rulecache} = PMG::RuleCache->new($self->{ruledb});
     };
     if (my $err = $@) {
-	$self->log(0, PMG::Utils::msgquote("ERROR: unable to load database : $err"));
+	$self->log(0, "ERROR: unable to load database : $err");
     }
 
     $self->{reload_config} = 0;
@@ -344,7 +344,7 @@ sub child_init_hook {
 	    hostname => $self->{fqdn}, dns_resolver => $self->{dns_resolver});
     };
     if (my $err = $@) {
-	$self->log(0, PMG::Utils::msgquote($err));
+	$self->log(0, $err);
 	$self->child_finish_hook;
 	exit(-1);
     }
@@ -482,7 +482,7 @@ sub greylist_value {
 	};
 	my $err = $@;
 	if ($err) {
-	    $self->log(0, PMG::Utils::msgquote("unable to reconnect to database server: $err"));
+	    $self->log(0, "unable to reconnect to database server: $err");
 	    return 'dunno';
 	}
 	$self->{ruledb} = PMG::RuleDB->new($dbh);
@@ -544,7 +544,7 @@ sub greylist_value {
 
 	if ($err) {
             $err = $err->text if UNIVERSAL::isa ($err, 'Mail::SPF::Exception');
-	    $self->log (0, PMG::Utils::msgquote($err));
+	    $self->log (0, $err);
 	} else {
 
 	    if ($result && $result eq 'pass') {
@@ -587,7 +587,7 @@ sub greylist_value {
 		};
 		if (my $err = $@) {
 		    $dbh->rollback;
-		    $self->log(0, PMG::Utils::msgquote($err));
+		    $self->log(0, $err);
 		}
 	    }
 	}
@@ -666,7 +666,7 @@ sub greylist_value {
     };
     if (my $err = $@) {
 	$dbh->rollback;
-	$self->log (0, PMG::Utils::msgquote($err));
+	$self->log (0, $err);
     }
 
     return $res;
@@ -719,7 +719,7 @@ sub mux_input {
 			    lc ($attribute->{instance}));
 		    };
 		    if (my $err = $@) {
-			$self->log(0, PMG::Utils::msgquote($err));
+			$self->log(0, $err);
 		    }
 		}
 
@@ -739,7 +739,7 @@ sub mux_input {
 	$$dataref = '';
     }
 
-    $self->log(0, PMG::Utils::msgquote($err)) if $err;
+    $self->log(0, $err) if $err;
 }
 
 sub restart_close_hook {
@@ -863,7 +863,7 @@ sub run_child {
     # sometimes the socket is not usable, don't know why
     my $flags = fcntl($sock, F_GETFL, 0);
     if (!$flags) {
-	$self->log(0, PMG::Utils::msgquote("socket not ready - $!"));
+	$self->log(0, "socket not ready - $!");
 	exit (-1);
     }
 
@@ -876,7 +876,7 @@ sub run_child {
 	$mux->loop;
     };
     if (my $err = $@) {
-	$self->log(0, PMG::Utils::msgquote("ERROR: $err"));
+	$self->log(0, "ERROR: $err");
     }
 
     $self->child_finish_hook;

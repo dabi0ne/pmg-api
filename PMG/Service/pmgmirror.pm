@@ -96,7 +96,7 @@ sub run {
 
 	eval { cluster_sync(); };
 	if (my $err = $@) {
-	    syslog('err', PMG::Utils::msgquote ("sync error: $err"));
+	    syslog('err', "sync error: $err");
 	}
 
 	$cycle++;
