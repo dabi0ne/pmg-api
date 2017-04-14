@@ -59,7 +59,6 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Get list of rules.",
     proxyto => 'master',
-    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {},
