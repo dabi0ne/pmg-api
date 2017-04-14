@@ -9,29 +9,11 @@ case "$1" in
 	test -e /proxmox_install_mode && exit 0;
 
 	# Note: reload-or-try-restart fails if service is not active
-	if systemctl --quiet is-active pmgdaemon.service ; then
-	    deb-systemd-invoke reload-or-try-restart pmgdaemon.service
-	fi
-
-	if systemctl --quiet is-active pmgproxy.service ; then
-	    deb-systemd-invoke reload-or-try-restart pmgproxy.service
-	fi
-
-	if systemctl --quiet is-active pmg-smtp-filter.service ; then
-	    deb-systemd-invoke reload-or-try-restart pmg-smtp-filter.service
-	fi
-
-	if systemctl --quiet is-active pmgpolicy.service ; then
-	    deb-systemd-invoke reload-or-try-restart pmgpolicy.service
-	fi
-
-	if systemctl --quiet is-active pmgtunnel.service ; then
-	    deb-systemd-invoke reload-or-try-restart pmgtunnel.service
-	fi
-
-	if systemctl --quiet is-active pmgmirror.service ; then
-	    deb-systemd-invoke reload-or-try-restart pmgmirror.service
-	fi
+	for service in pmgdaemon pmgproxy pmg-smtp-filter pmgpolicy pmgtunnel pmgmirror; do
+	    if systemctl --quiet is-active $service.service ; then
+		deb-systemd-invoke reload-or-try-restart $service.service
+	    fi
+	done
 
 	exit 0
     ;;
