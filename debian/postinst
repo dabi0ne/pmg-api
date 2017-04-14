@@ -29,6 +29,10 @@ case "$1" in
 	    deb-systemd-invoke reload-or-try-restart pmgtunnel.service
 	fi
 
+	if systemctl --quiet is-active pmgmirror.service ; then
+	    deb-systemd-invoke reload-or-try-restart pmgmirror.service
+	fi
+
 	exit 0
     ;;
 
