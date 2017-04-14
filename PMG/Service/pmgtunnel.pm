@@ -237,3 +237,5 @@ our $cmddef = {
     stop => [ __PACKAGE__, 'stop', []],
     status => [ __PACKAGE__, 'status', []]
 };
+
+1;
