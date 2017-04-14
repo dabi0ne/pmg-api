@@ -62,7 +62,6 @@ sub register_group_list_api {
 	method => 'GET',
 	description => "Get list of '$oclass' groups.",
 	proxyto => 'master',
-	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {},
@@ -202,6 +201,7 @@ sub register_object_group_config_api {
 	method => 'PUT',
 	description => "Modify '$oclass' group properties",
 	proxyto => 'master',
+	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
