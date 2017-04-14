@@ -9,6 +9,7 @@ use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::Daemon;
+use PVE::ProcFSTools;
 
 use PMG::RESTEnvironment;
 use PMG::DBTools;
@@ -31,9 +32,10 @@ my $next_update = 0;
 my $cycle = 0;
 my $updatetime = 10;
 
+my $initial_memory_usage;
 
 sub init {
-    syslog('INIT');
+    # syslog('INIT');
 }
 
 sub hup {
@@ -57,6 +59,23 @@ sub run {
 
 	if (my $err = $@) {
 	    syslog('err', PMG::Utils::msgquote ("sync error: $err"));
+	}
+
+	$cycle++;
+
+	last if $self->{terminate};
+
+	my $mem = PVE::ProcFSTools::read_memory_usage();
+
+	if (!defined($initial_memory_usage) || ($cycle < 10)) {
+	    $initial_memory_usage = $mem->{resident};
+	} else {
+	    my $diff = $mem->{resident} - $initial_memory_usage;
+	    if ($diff > 5*1024*1024) {
+		syslog ('info', "restarting server after $cycle cycles to " .
+			"reduce memory usage (free $mem->{resident} ($diff) bytes)");
+		$self->restart_daemon();
+	    }
 	}
 
 	my $wcount = 0;
