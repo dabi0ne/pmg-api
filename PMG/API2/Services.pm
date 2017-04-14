@@ -23,6 +23,7 @@ my $service_name_list = [
     'pmgpolicy',
     'pmg-smtp-filter',
     'pmgtunnel',
+    'pmgmirror',
     'ssh',
     'rsyslog',
     'postfix',

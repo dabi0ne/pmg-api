@@ -1,0 +1,19 @@
+[Unit]
+Description=Proxmox Mail Gateway Database Mirror Daemon
+ConditionPathExists=/usr/bin/pmgmirror
+ConditionPathExists=/etc/pmg/cluster.conf
+Wants=ssh.service
+Wants=remote-fs.target
+After=ssh.service
+After=remote-fs.target
+After=pmgtunnel.target
+
+[Service]
+ExecStart=/usr/bin/pmgmirror start
+ExecStop=/usr/bin/pmgmirror stop
+ExecReload=/usr/bin/pmgmirror restart
+PIDFile=/var/run/pmgmirror.pid
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

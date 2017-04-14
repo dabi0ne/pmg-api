@@ -13,6 +13,7 @@ override_dh_installinit:
 	dh_systemd_enable --name=pmg-smtp-filter pmg-smtp-filter.service
 	dh_systemd_enable --name=pmgpolicy pmgpolicy.service
 	dh_systemd_enable --name=pmgtunnel pmgtunnel.service
+	dh_systemd_enable --name=pmgmirror pmgmirror.service
 	dh_systemd_enable --name=pmgnetcommit pmgnetcommit.service
 	dh_systemd_enable --name=pmg-hourly pmg-hourly.service
 	dh_systemd_enable --name=pmg-daily pmg-daily.service
@@ -20,7 +21,7 @@ override_dh_installinit:
 override_dh_systemd_start:
 	dh_systemd_start pmg-hourly.timer pmg-daily.timer
 	dh_systemd_start --no-restart-on-upgrade --no-start pmgnetcommit.service
-	dh_systemd_start pmgdaemon.service pmgproxy.service pmg-smtp-filter.service pmgpolicy.service pmgtunnel.service
+	dh_systemd_start pmgdaemon.service pmgproxy.service pmg-smtp-filter.service pmgpolicy.service pmgtunnel.service pmgmirror.service
 
 override_dh_fixperms:
 	dh_fixperms --exclude /var/log/pmgproxy

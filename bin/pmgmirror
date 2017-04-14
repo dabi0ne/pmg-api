@@ -1,0 +1,22 @@
+#!/usr/bin/perl -T
+
+$ENV{'PATH'} = '/sbin:/bin:/usr/sbin:/usr/bin';
+
+delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
+
+use strict;
+use warnings;
+
+use PVE::SafeSyslog;
+use PMG::Service::pmgmirror;
+
+$SIG{'__WARN__'} = sub {
+    my $err = $@;
+    my $t = $_[0];
+    chomp $t;
+    print STDERR "$t\n";
+    syslog('warning', "%s", $t);
+    $@ = $err;
+};
+
+PMG::Service::pmgmirror->run_cli_handler();
