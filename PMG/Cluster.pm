@@ -13,6 +13,9 @@ use PVE::INotify;
 use PMG::Utils;
 use PMG::Config;
 use PMG::ClusterConfig;
+use PMG::RuleDB;
+use PMG::RuleCache;
+use PVE::APIClient::LWP;
 
 our $spooldir = "/var/spool/proxmox";
 
@@ -296,7 +299,7 @@ sub sync_config_from_master {
     my $ssh_cmd = '--rsh=ssh -l root -o BatchMode=yes';
     $ssh_cmd .=  " -o HostKeyAlias=${master_name}" if $master_name;
 
-    my $cmd = ['rsync', '--rsh=ssh -l root -o BatchMode=yes -o HostKeyAlias=${master_name}', '-lpgoq',
+    my $cmd = ['rsync', "--rsh=ssh -l root -o BatchMode=yes -o HostKeyAlias=${master_name}", '-lpgoq',
 	       "${master_ip}:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
 	       "$syncdir/",
 	       '--exclude', '*~',
@@ -351,6 +354,68 @@ sub sync_config_from_master {
     my $cfg = PMG::Config->new();
 
     $cfg->rewrite_config(1, $force_restart);
+}
+
+sub sync_ruledb_from_master {
+    my ($ldb, $rdb, $ni, $ticket) = @_;
+
+    my $ruledb = PMG::RuleDB->new($ldb);
+    my $rulecache = PMG::RuleCache->new($ruledb);
+
+    my $conn = PVE::APIClient::LWP->new(
+	ticket => $ticket,
+	cookie_name => 'PMGAuthCookie',
+	host => $ni->{ip},
+	cached_fingerprints => {
+	    $ni->{fingerprint} => 1,
+	});
+
+    my $digest = $conn->get("/config/ruledb/digest", {});
+
+    return if $digest eq $rulecache->{digest}; # no changes
+
+    syslog('info', "detected rule database changes - starting sync from '$ni->{ip}'");
+
+    eval {
+	$ldb->begin_work;
+
+	$ldb->do("DELETE FROM Rule");
+	$ldb->do("DELETE FROM RuleGroup");
+	$ldb->do("DELETE FROM ObjectGroup");
+	$ldb->do("DELETE FROM Object");
+	$ldb->do("DELETE FROM Attribut");
+
+	eval {
+	    $rdb->begin_work;
+
+	    # read a consistent snapshot
+	    $rdb->do("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+
+	    PMG::DBTools::copy_table($ldb, $rdb, "Rule");
+	    PMG::DBTools::copy_table($ldb, $rdb, "RuleGroup");
+	    PMG::DBTools::copy_table($ldb, $rdb, "ObjectGroup");
+	    PMG::DBTools::copy_table($ldb, $rdb, "Object", 'value');
+	    PMG::DBTools::copy_table($ldb, $rdb, "Attribut", 'value');
+	};
+
+	$rdb->rollback; # end transaction
+
+	die $@ if $@;
+
+	# update sequences
+
+	$ldb->do("SELECT setval('rule_id_seq', max(id)+1) FROM Rule");
+	$ldb->do("SELECT setval('object_id_seq', max(id)+1) FROM Object");
+	$ldb->do("SELECT setval('objectgroup_id_seq', max(id)+1) FROM ObjectGroup");
+
+	$ldb->commit;
+    };
+    if (my $err = $@) {
+	$ldb->rollback;
+	die $err;
+    }
+
+    syslog('info', "finished rule database sync from host '$ni->{ip}'");
 }
 
 1;
