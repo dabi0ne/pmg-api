@@ -12,6 +12,7 @@ use PVE::Tools qw(extract_param);
 
 use PMG::DBTools;
 use PMG::RuleDB;
+use PMG::RuleCache;
 
 use PMG::API2::ObjectGroupHelpers;
 use PMG::API2::Who;
@@ -43,6 +44,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'digest' },
 	    { name => 'action' },
 	    { name => 'rules' },
 	    { name => 'what' },
@@ -51,6 +53,26 @@ __PACKAGE__->register_method ({
 	];
 
 	return $result;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'ruledb_digest',
+    path => 'digest',
+    method => 'GET',
+    description => "Returns the rule database digest. This is used internally for cluster synchronization.",
+    # always run on local node, root@pam only
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => { type => 'string' },
+    code => sub {
+	my ($param) = @_;
+
+	my $rdb = PMG::RuleDB->new();
+	my $rulecache = PMG::RuleCache->new($rdb);
+
+	return $rulecache->{digest};
     }});
 
 __PACKAGE__->register_method({
