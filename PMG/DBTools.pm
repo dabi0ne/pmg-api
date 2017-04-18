@@ -1114,6 +1114,43 @@ sub init_masterdb {
     die $err if $err;
 }
 
+sub copy_table {
+    my ($ldb, $rdb, $table) = @_;
+
+    $table = lc($table);
+
+    my $sth = $ldb->column_info(undef, undef, $table, undef);
+    my $attrs = $sth->fetchall_arrayref({});
+
+    my @col_arr;
+    foreach my $ref (@$attrs) {
+	push @col_arr, $ref->{COLUMN_NAME};
+    }
+
+    $sth->finish();
+
+    my $cols = join(', ', @col_arr);
+    $cols || die "unable to fetch column definitions of table '$table' : ERROR";
+
+    $rdb->do("COPY $table ($cols) TO STDOUT");
+
+    my $data = '';
+
+    eval {
+	$ldb->do("COPY $table ($cols) FROM stdin");
+
+	while ($rdb->pg_getcopydata($data) >= 0) {
+	    $ldb->pg_putcopydata($data);
+	}
+
+	$ldb->pg_putcopyend();
+    };
+    if (my $err = $@) {
+	$ldb->pg_putcopyend();
+	die $err;
+    }
+}
+
 sub update_master_clusterinfo {
     my ($clientcid) = @_;
 
