@@ -50,7 +50,8 @@ sub new {
 	    $rule->{id} = $ruleid;
 	    push @$rules, $rule;
 
-	    $sha1->add(join (',', values (%$ref)) . "|");
+	    $sha1->add(join(',', $ref->{id}, $ref->{name}, $ref->{priority}, $ref->{active},
+			    $ref->{direction}) . "|");
 
 	    my ($from, $to, $when, $what, $action);
 
@@ -142,7 +143,7 @@ sub new {
 	    } else {
 		push @$grey_excl_sender, $obj;
 	    }
-	    $sha1->add (join (',', values (%$ref2)) . "|");
+	    $sha1->add ($ref2->{'id'}, "|");
 	    $sha1->add ($obj->{digest}, "|");
 	}
 
