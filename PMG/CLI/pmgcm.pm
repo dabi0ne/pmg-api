@@ -206,9 +206,16 @@ __PACKAGE__->register_method({
 
 	die "no master IP specified (use option --master_ip)\n" if !$master_ip;
 
+	if ($cfg->{local}->{ip} eq $master_ip) {
+	    print STDERR "local node is master - nothing to do\n";
+	    return undef;
+	}
+
 	print STDERR "syncing master configuration from '${master_ip}'\n";
 
-	PMG::Cluster::sync_config_from_master($cfg, $master_name, $master_ip);
+	PMG::Cluster::sync_config_from_master($master_name, $master_ip);
+
+	return undef;
     }});
 
 our $cmddef = {

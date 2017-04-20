@@ -332,15 +332,7 @@ sub sync_master_quar {
 }
 
 sub sync_config_from_master {
-    my ($cinfo, $master_name, $master_ip, $noreload) = @_;
-
-    my $local_ip = $cinfo->{local}->{ip};
-    my $local_name = $cinfo->{local}->{name};
-
-    if ($local_ip eq $master_ip) {
-	print STDERR "local node is master - nothing to do\n";
-	return;
-    }
+    my ($master_name, $master_ip, $noreload) = @_;
 
     mkdir $syncdir;
     File::Path::remove_tree($syncdir, {keep_root => 1});
@@ -364,22 +356,21 @@ sub sync_config_from_master {
     # verify that the remote host is cluster master
     open (my $fh, '<', "$syncdir/cluster.conf") ||
 	die "unable to open synced cluster.conf - $!\n";
-    my $newcinfo = PMG::ClusterConfig::read_cluster_conf('cluster.conf', $fh);
 
-    if (!$newcinfo->{master} || ($newcinfo->{master}->{ip} ne $master_ip)) {
+    my $cinfo = PMG::ClusterConfig::read_cluster_conf('cluster.conf', $fh);
+
+    if (!$cinfo->{master} || ($cinfo->{master}->{ip} ne $master_ip)) {
 	die "host '$master_ip' is not cluster master\n";
     }
 
-    my $role = $newcinfo->{'local'}->{type} // '-';
-    die "local node '$newcinfo->{local}->{name}' not part of cluster\n"
+    my $role = $cinfo->{'local'}->{type} // '-';
+    die "local node '$cinfo->{local}->{name}' not part of cluster\n"
 	if $role eq '-';
 
-    die "local node '$newcinfo->{local}->{name}' is new cluster master\n"
+    die "local node '$cinfo->{local}->{name}' is new cluster master\n"
 	if $role eq 'master';
 
-
     $cond_commit_synced_file->('cluster.conf');
-    $cinfo = $newcinfo;
 
     my $files = [
 	'pmg-authkey.key',

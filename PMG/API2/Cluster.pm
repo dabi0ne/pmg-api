@@ -56,12 +56,14 @@ sub cluster_join {
 	die "local node '$cfg->{local}->{name}' not part of cluster\n"
 	    if $role eq '-';
 
+	die "got unexpected role '$role' for local node '$cfg->{local}->{name}'\n"
+	    if $role ne 'node';
+
 	my $cid = $cfg->{'local'}->{cid};
 
 	PMG::Cluster::create_needed_dirs($cid, 1);
 
-	PMG::Cluster::sync_config_from_master(
-	    $cfg, $cfg->{master}->{name}, $cfg->{master}->{ip});
+	PMG::Cluster::sync_config_from_master($cfg->{master}->{name}, $cfg->{master}->{ip});
 
 	$cfg = PMG::ClusterConfig->new(); # reload
 
