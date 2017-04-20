@@ -279,6 +279,58 @@ my $cond_commit_synced_file = sub {
     return 1;
 };
 
+my $rsync_command = sub {
+    my ($host_key_alias, @args) = @_;
+
+    my $ssh_cmd = '--rsh=ssh -l root -o BatchMode=yes';
+    $ssh_cmd .=  " -o HostKeyAlias=${host_key_alias}" if $host_key_alias;
+
+    my $cmd = ['rsync', $ssh_cmd,  '-q', @args];
+
+    return $cmd;
+};
+
+sub sync_quarantine_files {
+    my ($host_ip, $host_name, $flistname) = @_;
+
+    my $cmd = $rsync_command->(
+	$host_name, '--timeout', '10', "${host_ip}:$spooldir", $spooldir,
+	'--files-from', $flistname);
+
+    Proxmox::Utils::run_command($cmd);
+}
+
+sub sync_spooldir {
+    my ($host_ip, $host_name, $rcid) = @_;
+
+    mkdir "$spooldir/cluster/";
+    my $syncdir = "$spooldir/cluster/$rcid";
+    mkdir $syncdir;
+
+    my $cmd = $rsync_command->(
+	$host_name, '-aq', '--timeout', '10', "${host_ip}:$syncdir/", $syncdir);
+
+    foreach my $incl (('spam/', 'spam/*', 'spam/*/*', 'virus/', 'virus/*', 'virus/*/*')) {
+	push @$cmd, '--include', $incl;
+    }
+
+    push @$cmd, '--exclude', '*';
+
+    PVE::Tools::run_command($cmd);
+}
+
+sub sync_master_quar {
+    my ($host_ip, $host_name) = @_;
+
+    my $syncdir = "$spooldir/cluster/";
+    mkdir $syncdir;
+
+    my $cmd = $rsync_command->(
+	$host_name, '-aq', '--timeout', '10', "${host_ip}:$syncdir", $syncdir);
+
+    PVE::Tools::run_command($cmd);
+}
+
 sub sync_config_from_master {
     my ($cinfo, $master_name, $master_ip, $noreload) = @_;
 
@@ -296,17 +348,15 @@ sub sync_config_from_master {
     my $sa_conf_dir = "/etc/mail/spamassassin";
     my $sa_custom_cf = "custom.cf";
 
-    my $ssh_cmd = '--rsh=ssh -l root -o BatchMode=yes';
-    $ssh_cmd .=  " -o HostKeyAlias=${master_name}" if $master_name;
-
-    my $cmd = ['rsync', "--rsh=ssh -l root -o BatchMode=yes -o HostKeyAlias=${master_name}", '-lpgoq',
-	       "${master_ip}:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
-	       "$syncdir/",
-	       '--exclude', '*~',
-	       '--exclude', '*.db',
-	       '--exclude', 'pmg-api.pem',
-	       '--exclude', 'pmg-tls.pem',
-	];
+    my $cmd = $rsync_command->(
+	$master_name, '-lpgoq',
+	"${master_ip}:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
+	"$syncdir/",
+	'--exclude', '*~',
+	'--exclude', '*.db',
+	'--exclude', 'pmg-api.pem',
+	'--exclude', 'pmg-tls.pem',
+	);
 
     my $errmsg = "syncing master configuration from '${master_ip}' failed";
     PVE::Tools::run_command($cmd, errmsg => $errmsg);
