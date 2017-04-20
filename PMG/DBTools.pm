@@ -1189,6 +1189,40 @@ sub update_client_clusterinfo {
     }
 }
 
+sub create_clusterinfo_default {
+    my ($dbh, $rcid, $name, $ivalue, $svalue) = @_;
+
+    my $sth = $dbh->prepare("SELECT * FROM ClusterInfo WHERE CID = ? AND Name = ?");
+    $sth->execute($rcid, $name);
+    if (!$sth->fetchrow_hashref()) {
+	$dbh->do("INSERT INTO ClusterInfo (CID, Name, IValue, SValue) " .
+		 "VALUES (?, ?, ?, ?)", undef,
+		 $rcid, $name, $ivalue, $svalue);
+    }
+    $sth->finish();
+}
+
+sub read_int_clusterinfo {
+    my ($dbh, $rcid, $name) = @_;
+
+    my $sth = $dbh->prepare(
+	"SELECT ivalue as value FROM ClusterInfo " .
+	"WHERE cid = ? AND NAME = ?");
+    $sth->execute($rcid, $name);
+    my $cinfo = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return $cinfo->{value};
+}
+
+sub write_maxint_clusterinfo {
+    my ($dbh, $rcid, $name, $value) = @_;
+
+    $dbh->do("UPDATE ClusterInfo SET ivalue = maxint (ivalue, ?) " .
+	     "WHERE cid = ? AND name = ?", undef,
+	     $value, $rcid, $name);
+}
+
 sub init_nodedb {
     my ($cinfo) = @_;
 
