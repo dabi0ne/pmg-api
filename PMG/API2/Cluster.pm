@@ -68,7 +68,7 @@ sub cluster_join {
 	PMG::DBTools::init_nodedb($cfg);
 
 	print STDERR "syncing quarantine data\n";
-	# fixme:Proxmox::Cluster::sync_master_quar($cinfo->{master}->{ip});
+	PMG::Cluster::sync_master_quar($cfg->{master}->{ip}, $cfg->{master}->{name});
 	print STDERR "syncing quarantine data finished\n";
     };
     my $err = $@;
