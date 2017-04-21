@@ -81,7 +81,7 @@ my $max_spare_servers = 0;
 my $max_requests = 1;
 
 # create spool directories
-PMG::MailQueue::create_sppoldirs();
+PMG::MailQueue::create_spooldirs();
 
 if (!$opt_testmode) {
 

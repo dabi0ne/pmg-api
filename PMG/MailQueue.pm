@@ -19,9 +19,21 @@ our $spooldir = "/var/spool/pmg";
 
 my $fileseq = rand 1000;
 
-sub create_sppoldirs {
+sub create_spooldirs {
+    my ($lcid, $cleanup) = @_;
+
+    # if requested, remove any stale date
+    File::Path::remove_tree(
+	"$spooldir/cluster", "$spooldir/active",
+	"$spooldir/virus", "$spooldir/spam") if $cleanup;
+
     File::Path::make_path(
 	"$spooldir/active", "$spooldir/spam", "$spooldir/virus");
+
+    if ($lcid) {
+	mkpath "$spooldir/cluster/$lcid/virus";
+	mkpath "$spooldir/cluster/$lcid/spam";
+    }
 }
 
 # called on service startup to remove any stale files
@@ -256,12 +268,9 @@ sub quarantine_mail {
 
     eval {
 	if ($lcid) {
-	    if ($qtype eq 'V') {
-		mkpath "$spooldir/cluster/$lcid/virus";
-	    } else {
-		mkpath "$spooldir/cluster/$lcid/spam";
-	    }
-	    ($fh, $uid, $path) = new_fileid ($spooldir, "cluster/$lcid/$subpath");
+	    my $subdir = "cluster/$lcid/$subpath";
+	    mkpath $subdir;
+	    ($fh, $uid, $path) = new_fileid ($spooldir, $subdir);
 	} else {
 	    ($fh, $uid, $path) = new_fileid ($spooldir, $subpath);
 	}
