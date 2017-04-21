@@ -1151,6 +1151,24 @@ sub copy_table {
     }
 }
 
+sub copy_selected_data {
+    my ($dbh, $select_sth, $table, $attrs, $callback) = @_;
+
+    my $count = 0;
+
+    my $insert_sth = $dbh->prepare(
+	'INSERT INTO ${table}(' . join(',', @$attrs) . ') ' .
+	'VALUES (' . join(',', ('?') x scalar(@$attrs)) . ')');
+
+    while (my $ref = $select_sth->fetchrow_hashref()) {
+	$callback->($ref) if $callback;
+	$count++;
+	$insert_sth->execute(map { $ref->{$_} } @$attrs);
+    }
+
+    return $count;
+}
+
 sub update_master_clusterinfo {
     my ($clientcid) = @_;
 
