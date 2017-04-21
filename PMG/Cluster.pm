@@ -5,6 +5,7 @@ use warnings;
 use Data::Dumper;
 use Socket;
 use File::Path;
+use Time::HiRes qw (gettimeofday tv_interval);
 
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -15,24 +16,8 @@ use PMG::Config;
 use PMG::ClusterConfig;
 use PMG::RuleDB;
 use PMG::RuleCache;
+use PMG::MailQueue;
 use PVE::APIClient::LWP;
-
-our $spooldir = "/var/spool/proxmox";
-
-sub create_needed_dirs {
-    my ($lcid, $cleanup) = @_;
-
-    # if requested, remove any stale date
-    File::Path::remove_tree("$spooldir/cluster", "$spooldir/virus", "$spooldir/spam") if $cleanup;
-
-    mkdir "$spooldir/spam";
-    mkdir "$spooldir/virus";
-
-    if ($lcid) {
-	mkpath "$spooldir/cluster/$lcid/virus";
-	mkpath "$spooldir/cluster/$lcid/spam";
-    }
-}
 
 sub remote_node_ip {
     my ($nodename, $noerr) = @_;
@@ -293,15 +278,19 @@ my $rsync_command = sub {
 sub sync_quarantine_files {
     my ($host_ip, $host_name, $flistname) = @_;
 
+    my $spooldir = $PMG::MailQueue::spooldir;
+
     my $cmd = $rsync_command->(
 	$host_name, '--timeout', '10', "${host_ip}:$spooldir", $spooldir,
 	'--files-from', $flistname);
 
-    Proxmox::Utils::run_command($cmd);
+    PVE::Tools::run_command($cmd);
 }
 
 sub sync_spooldir {
     my ($host_ip, $host_name, $rcid) = @_;
+
+    my $spooldir = $PMG::MailQueue::spooldir;
 
     mkdir "$spooldir/cluster/";
     my $syncdir = "$spooldir/cluster/$rcid";
@@ -321,6 +310,8 @@ sub sync_spooldir {
 
 sub sync_master_quar {
     my ($host_ip, $host_name) = @_;
+
+    my $spooldir = $PMG::MailQueue::spooldir;
 
     my $syncdir = "$spooldir/cluster/";
     mkdir $syncdir;
@@ -458,5 +449,485 @@ sub sync_ruledb_from_master {
 
     syslog('info', "finished rule database sync from host '$ni->{ip}'");
 }
+
+sub sync_quarantine_db {
+    my ($ldb, $rdb, $ni, $rsynctime_ref) = @_;
+
+    my $rcid = $ni->{cid};
+
+    my $maxmails = 100000;
+
+    my $mscount = 0;
+
+    my $ctime = PMG::DBTools::get_remote_time($rdb);
+
+    my $maxcount = 1000;
+
+    my $count;
+
+    PMG::DBTools::create_clusterinfo_default($ldb, $rcid, 'lastid_CMailStore', -1, undef);
+
+    do { # get new values
+
+	$count = 0;
+
+	my $flistname = "/tmp/quarantinefilelist.$$";
+
+	eval {
+	    $ldb->begin_work;
+
+	    open(my $flistfh, '>', $flistname) ||
+		die "unable to open file '$flistname' - $!\n";
+
+	    my $lastid = PMG::DBTools::read_int_clusterinfo($ldb, $rcid, 'lastid_CMailStore');
+
+	    # sync CMailStore
+
+	    my $sth = $rdb->prepare(
+		"SELECT * from CMailstore WHERE cid = ? AND rid > ? " .
+		"ORDER BY cid,rid LIMIT ?");
+	    $sth->execute($rcid, $lastid, $maxcount);
+
+	    my $maxid;
+	    my $callback = sub {
+		my $ref = shift;
+		$maxid = $ref->{rid};
+		print $flistfh "$ref->{file}\n";
+	    };
+
+	    my $attrs = [qw(cid rid time qtype bytes spamlevel info sender header file)];
+	    $count += PMG::DBTools::copy_selected_data($ldb, $sth, 'CMailStore', $attrs, $callback);
+
+	    close($flistfh);
+
+	    my $starttime = [ gettimeofday() ];
+	    sync_quarantine_files($ni->{ip}, $ni->{name}, $flistname);
+	    $$rsynctime_ref += tv_interval($starttime);
+
+	    if ($maxid) {
+		# sync CMSReceivers
+
+		$sth = $rdb->prepare(
+		    "SELECT * from CMSReceivers WHERE " .
+		    "CMailStore_CID = ? AND CMailStore_RID > ?  " .
+		    "AND CMailStore_RID <= ?");
+		$sth->execute($rcid, $lastid, $maxid);
+
+		$attrs = [qw(cmailstore_cid cmailstore_rid pmail receiver ticketid status mtime)];
+		PMG::DBTools::copy_selected_data($ldb, $sth, 'CMSReceivers', $attrs);
+
+		PMG::DBTools::write_maxint_clusterinfo($ldb, $rcid, 'lastid_CMailStore', $maxid);
+	    }
+
+	    $ldb->commit;
+	};
+	my $err = $@;
+
+	unlink $flistname;
+
+	if ($err) {
+	    $ldb->rollback;
+	    die $err;
+	}
+
+	$mscount += $count;
+
+	last if $mscount >= $maxmails;
+
+    } while ($count >= $maxcount);
+
+    PMG::DBTools::create_clusterinfo_default($ldb, $rcid, 'lastmt_CMSReceivers', 0, undef);
+
+    eval { # synchronize status updates
+	$ldb->begin_work;
+
+	my $lastmt = PMG::DBTools::read_int_clusterinfo($ldb, $rcid, 'lastmt_CMSReceivers');
+
+	my $sth = $rdb->prepare ("SELECT * from CMSReceivers WHERE mtime >= ? AND status != 'N'");
+	$sth->execute($lastmt);
+
+	my $update_sth = $ldb->prepare(
+	    "UPDATE CMSReceivers SET status = ? WHERE " .
+	    "CMailstore_CID = ? AND CMailstore_RID = ? AND PMail = ?;");
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    $update_sth->execute($ref->{status}, $ref->{cmailstore_cid},
+				 $ref->{cmailstore_rid}, $ref->{pmail});
+	}
+
+	PMG::DBTools::write_maxint_clusterinfo($ldb, $rcid, 'lastmt_CMSReceivers', $ctime);
+
+	$ldb->commit;
+    };
+    if (my $err = $@) {
+	$ldb->rollback;
+	die $err;
+    }
+
+    return $mscount;
+}
+
+sub sync_statistic_db {
+    my ($ldb, $rdb, $ni) = @_;
+
+    my $rcid = $ni->{cid};
+
+    my $maxmails = 100000;
+
+    my $mscount = 0;
+
+    my $maxcount = 1000;
+
+    my $count;
+
+    PMG::DBTools::create_clusterinfo_default(
+	$ldb, $rcid, 'lastid_CStatistic', -1, undef);
+
+    do { # get new values
+
+	$count = 0;
+
+	eval {
+	    $ldb->begin_work;
+
+	    my $lastid = PMG::DBTools::read_int_clusterinfo(
+		$ldb, $rcid, 'lastid_CStatistic');
+
+	    # sync CStatistic
+
+	    my $sth = $rdb->prepare(
+		"SELECT * from CStatistic " .
+		"WHERE cid = ? AND rid > ? " .
+		"ORDER BY cid, rid LIMIT ?");
+	    $sth->execute($rcid, $lastid, $maxcount);
+
+	    my $maxid;
+	    my $callback = sub {
+		my $ref = shift;
+		$maxid = $ref->{rid};
+	    };
+
+	    my $attrs = [qw(cid rid time bytes direction spamlevel ptime virusinfo sender)];
+	    $count += PMG::DBTools::copy_selected_data($ldb, $sth, 'CStatistic', $attrs, $callback);
+
+	    if ($maxid) {
+		# sync CReceivers
+
+		$sth = $rdb->prepare(
+		    "SELECT * from CReceivers WHERE " .
+		    "CStatistic_CID = ? AND CStatistic_RID > ? AND CStatistic_RID <= ?");
+		$sth->execute($rcid, $lastid, $maxid);
+
+		$attrs = [qw(cstatistic_cid cstatistic_rid blocked receiver)];
+		PMG::DBTools::copy_selected_data($ldb, $sth, 'CReceivers', $attrs);
+
+		PMG::DBTools::write_maxint_clusterinfo ($ldb, $rcid, 'lastid_CStatistic', $maxid);
+	    }
+
+	    $ldb->commit;
+	};
+	if (my $err = $@) {
+	    $ldb->rollback;
+	    die $err;
+	}
+
+	$mscount += $count;
+
+	last if $mscount >= $maxmails;
+
+    } while ($count >= $maxcount);
+}
+
+sub sync_generic_mtime_db {
+    my ($ldb, $rdb, $ni, $table, $selectfunc, $mergefunc) = @_;
+
+    my ($cnew, $cold) = (0, 0);
+
+    my $ctime = PMG::DBTools::get_remote_time($rdb);
+
+    PMG::DBTools::create_clusterinfo_default($ldb, $ni->{cid}, "lastmt_$table", 0, undef);
+
+    my $lastmt = PMG::DBTools::read_int_clusterinfo($ldb, $ni->{cid}, "lastmt_$table");
+
+    my $cmd = $selectfunc->($ctime, $lastmt);
+
+    my $sth = $rdb->prepare($cmd);
+
+    $sth->execute();
+
+    my $max = 100; # UPDATE MAX ENTRIES AT ONCE
+
+    my $merge_data = sub {
+	my ($data) = @_;
+	eval {
+	    $ldb->begin_work;
+
+	    # avoid locks
+	    # $ldb->do ("LOCK TABLE $table IN EXCLUSIVE MODE");
+
+	    foreach my $ref1 (@$data) {
+		$mergefunc->($ldb, $ref1, \$cnew, \$cold);
+	    }
+
+	    $ldb->commit;
+	};
+	if (my $err = $@) {
+	    $ldb->rollback;
+	    die $err;
+	}
+    };
+
+    my $data = [];
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+	push @$data, $ref;
+	if (scalar(@$data) >= $max) {
+	    $merge_data->($data);
+	    $data = [];
+	}
+    }
+
+    $merge_data->($data) if scalar(@$data);
+
+    PMG::DBTools::write_maxint_clusterinfo($ldb, $ni->{cid}, "lastmt_$table", $ctime);
+
+    return ($cnew, $cold);
+}
+
+sub sync_greylist_db {
+    my ($dbh, $rdb, $ni) = @_;
+
+    my $selectfunc = sub {
+	my ($ctime, $lastmt) = @_;
+	return "SELECT * from CGreylist WHERE extime >= $ctime AND " .
+	    "mtime >= $lastmt AND CID != 0";
+    };
+
+    my $mergefunc = sub {
+	my ($ldb, $ref, $cnewref, $coldref) = @_;
+
+	my $sth = $ldb->prepare("SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount");
+
+	$sth->execute($ref->{ipnet}, $ref->{host}, $ref->{sender}, $ref->{receiver},
+		      $ref->{instance}, $ref->{rctime}, $ref->{extime}, $ref->{delay}, $ref->{blocked},
+		      $ref->{passed}, 0, $ref->{cid});
+
+	my $res = $sth->fetchrow_hashref();
+
+	$sth->finish();
+
+	if ($res->{newcount}) {
+	    $$cnewref++;
+	} else {
+	    $$coldref++;
+	}
+    };
+
+    return sync_generic_mtime_db($dbh, $rdb, $ni, 'CGreylist', $selectfunc, $mergefunc);
+}
+
+sub sync_userprefs_db {
+    my ($dbh, $rdb, $ni) = @_;
+
+    my $selectfunc = sub {
+	my ($ctime, $lastmt) = @_;
+
+	return "SELECT * from UserPrefs WHERE mtime >= $lastmt";
+    };
+
+    my $mergefunc = sub {
+	my ($ldb, $ref, $cnewref, $coldref) = @_;
+
+	my $sth = $ldb->prepare(
+	    "UPDATE UserPrefs " .
+	    "SET Data = CASE WHEN MTime >= $ref->{mtime} THEN Data ELSE ? END " .
+	    "WHERE PMail = ? AND Name = ?");
+
+	$sth->execute($ref->{data}, $ref->{pmail}, $ref->{name});
+
+	my $rows = $sth->rows;
+
+	$sth->finish();
+
+	if ($rows) {
+	    $$coldref++;
+	} else {
+	    $ldb->do ("INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
+		      "VALUES (?, ?, ?, 0)", undef,
+		      $ref->{pmail}, $ref->{name}, $ref->{data});
+	    $$cnewref++;
+	}
+    };
+
+    return sync_generic_mtime_db($dbh, $rdb, $ni, 'UserPrefs', $selectfunc, $mergefunc);
+}
+
+sub sync_domainstat_db {
+    my ($dbh, $rdb, $ni) = @_;
+
+    my $selectfunc = sub {
+	my ($ctime, $lastmt) = @_;
+	return "SELECT * from DomainStat WHERE mtime >= $lastmt";
+    };
+
+    my $mergefunc = sub {
+	my ($ldb, $ref, $cnewref, $coldref) = @_;
+
+	my $sth = $ldb->prepare (
+	    "UPDATE Domainstat " .
+	    "SET CountIn = $ref->{countin}, CountOut = $ref->{countout}, " .
+	    "BytesIn = $ref->{bytesin}, BytesOut = $ref->{bytesout}, " .
+	    "VirusIn = $ref->{virusin}, VirusOut = $ref->{virusout}, " .
+	    "SpamIn = $ref->{spamin}, SpamOut = $ref->{spamout}, " .
+	    "BouncesIn = $ref->{bouncesin}, BouncesOut = $ref->{bouncesout}, " .
+	    "PTimeSum = $ref->{ptimesum}, MTime = $ref->{mtime} " .
+	    "WHERE Time = ? AND Domain = ?");
+
+	$sth->execute($ref->{time}, $ref->{domain});
+
+	my $rows = $sth->rows;
+
+	$sth->finish();
+
+	if ($rows) {
+	    $$coldref++;
+	} else {
+	    $ldb->do(
+		"INSERT INTO Domainstat " .
+		"(Time,Domain,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut," .
+		"BouncesIn,BouncesOut,PTimeSum,Mtime) " .
+		"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", undef,
+		$ref->{time}, $ref->{domain}, $ref->{countin}, $ref->{countout},
+		$ref->{bytesin}, $ref->{bytesout},
+		$ref->{virusin}, $ref->{virusout}, $ref->{spamin}, $ref->{spamout},
+		$ref->{bouncesin}, $ref->{bouncesout}, $ref->{ptimesum}, $ref->{mtime});
+	    $$cnewref++;
+	}
+    };
+
+    return sync_generic_mtime_db($dbh, $rdb, $ni, 'DomainStat', $selectfunc, $mergefunc);
+}
+
+sub sync_dailystat_db {
+    my ($dbh, $rdb, $ni) = @_;
+
+    my $selectfunc = sub {
+	my ($ctime, $lastmt) = @_;
+	return "SELECT * from DailyStat WHERE mtime >= $lastmt";
+   };
+
+    my $mergefunc = sub {
+	my ($ldb, $ref, $cnewref, $coldref) = @_;
+
+	my $sth = $ldb->prepare(
+	    "UPDATE DailyStat " .
+	    "SET CountIn = $ref->{countin}, CountOut = $ref->{countout}, " .
+	    "BytesIn = $ref->{bytesin}, BytesOut = $ref->{bytesout}, " .
+	    "VirusIn = $ref->{virusin}, VirusOut = $ref->{virusout}, " .
+	    "SpamIn = $ref->{spamin}, SpamOut = $ref->{spamout}, " .
+	    "BouncesIn = $ref->{bouncesin}, BouncesOut = $ref->{bouncesout}, " .
+	    "GreylistCount = $ref->{greylistcount}, SPFCount = $ref->{spfcount}, " .
+	    "RBLCount = $ref->{rblcount}, " .
+	    "PTimeSum = $ref->{ptimesum}, MTime = $ref->{mtime} " .
+	    "WHERE Time = ?");
+
+	$sth->execute($ref->{time});
+
+	my $rows = $sth->rows;
+
+	$sth->finish();
+
+	if ($rows) {
+	    $$coldref++;
+	} else {
+	    $ldb->do (
+		"INSERT INTO DailyStat " .
+		"(Time,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut," .
+		"BouncesIn,BouncesOut,GreylistCount,SPFCount,RBLCount,PTimeSum,Mtime) " .
+		"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", undef,
+		$ref->{time}, $ref->{countin}, $ref->{countout},
+		$ref->{bytesin}, $ref->{bytesout},
+		$ref->{virusin}, $ref->{virusout}, $ref->{spamin}, $ref->{spamout},
+		$ref->{bouncesin}, $ref->{bouncesout}, $ref->{greylistcount},
+		$ref->{spfcount}, $ref->{rblcount}, $ref->{ptimesum}, $ref->{mtime});
+	    $$cnewref++;
+	}
+    };
+
+    return sync_generic_mtime_db($dbh, $rdb, $ni, 'DailyStat', $selectfunc, $mergefunc);
+}
+
+sub sync_virusinfo_db {
+    my ($dbh, $rdb, $ni) = @_;
+
+    my $selectfunc = sub {
+	my ($ctime, $lastmt) = @_;
+	return "SELECT * from VirusInfo WHERE mtime >= $lastmt";
+    };
+
+    my $mergefunc = sub {
+	my ($ldb, $ref, $cnewref, $coldref) = @_;
+
+	my $sth = $ldb->prepare(
+	    "UPDATE VirusInfo SET Count = ? , MTime = ? " .
+	    "WHERE Time = ? AND Name = ?");
+
+	$sth->execute($ref->{count}, $ref->{mtime}, $ref->{time}, $ref->{name});
+
+	my $rows = $sth->rows;
+
+	$sth->finish ();
+
+	if ($rows) {
+	    $$coldref++;
+	} else {
+	    $ldb->do ("INSERT INTO VirusInfo (Time,Name,Count,MTime) " .
+		      "VALUES (?,?,?,?)", undef,
+		      $ref->{time}, $ref->{name}, $ref->{count}, $ref->{mtime});
+	    $$cnewref++;
+	}
+    };
+
+    return sync_generic_mtime_db($dbh, $rdb, $ni, 'VirusInfo', $selectfunc, $mergefunc);
+}
+
+sub sync_deleted_nodes_from_master {
+    my ($ldb, $masterdb, $cinfo, $masterni, $rsynctime_ref) = @_;
+
+    my $rsynctime = 0;
+
+    my $cid_hash = {}; # fast lookup
+    foreach my $ni (@{$cinfo->{nodes}}) {
+	$cid_hash->{$ni->{cid}} = $ni;
+    }
+
+    my $spooldir = $PMG::MailQueue::spooldir;
+
+    for (my $rcid = 1; $rcid <= $cinfo->{maxcid}; $rcid++) {
+	next if $cid_hash->{$rcid};
+
+	my $done_marker = "$spooldir/cluster/$rcid/.synced-deleted-node";
+
+	next if -f $done_marker; # already synced
+
+	syslog('info', "syncing deleted node $rcid from master '$masterni->{ip}'");
+
+	my $starttime = [ gettimeofday() ];
+	sync_spooldir($masterni->{ip}, $masterni->{name}, $rcid);
+	$$rsynctime_ref += tv_interval($starttime);
+
+	my $fake_ni = {
+	    ip => $masterni->{ip},
+	    name => $masterni->{name},
+	    cid => $rcid,
+	};
+
+	sync_quarantine_db($ldb, $masterdb, $fake_ni);
+
+	sync_statistic_db ($ldb, $masterdb, $fake_ni);
+
+	open(my $fh, ">>",  $done_marker);
+   }
+}
+
 
 1;

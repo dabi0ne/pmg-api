@@ -3,7 +3,7 @@ package PMG::Service::pmgmirror;
 use strict;
 use warnings;
 use Data::Dumper;
-use Time::HiRes qw (gettimeofday);
+use Time::HiRes qw (gettimeofday tv_interval);
 
 use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
@@ -11,6 +11,7 @@ use PVE::INotify;
 use PVE::Daemon;
 use PVE::ProcFSTools;
 
+use PMG::Ticket;
 use PMG::RESTEnvironment;
 use PMG::DBTools;
 use PMG::RuleDB;
@@ -31,6 +32,7 @@ my $next_update = 0;
 
 my $cycle = 0;
 my $updatetime = 60*2;
+my $maxtimediff = 5;
 
 my $initial_memory_usage;
 
@@ -44,11 +46,40 @@ sub hup {
     $restart_request = 1;
 }
 
-sub cluster_sync {
-    my ($cinfo) = @_;
+sub sync_data_from_node {
+    my ($dbh, $rdb, $cinfo, $ni, $ticket, $rsynctime_ref) = @_;
 
-    my $rsynctime = 0;
-    my $csynctime = 0;
+    my $ctime = PMG::DBTools::get_remote_time($rdb);
+    my $ltime = time();
+
+    my $timediff = abs($ltime - $ctime);
+    if ($timediff > $maxtimediff) {
+	die "large time difference (> $timediff seconds) - not syncing\n";
+    }
+
+    if ($ni->{type} eq 'master') {
+	PMG::Cluster::sync_ruledb_from_master($dbh, $rdb, $ni, $ticket);
+	PMG::Cluster::sync_deleted_nodes_from_master($dbh, $rdb, $cinfo, $ni, $rsynctime_ref);
+    }
+
+    PMG::Cluster::sync_quarantine_db($dbh, $rdb, $ni, $rsynctime_ref);
+
+    PMG::Cluster::sync_greylist_db($dbh, $rdb, $ni);
+
+    PMG::Cluster::sync_userprefs_db($dbh, $rdb, $ni);
+
+    PMG::Cluster::sync_statistic_db($dbh, $rdb, $ni);
+
+    if ($ni->{type} eq 'master') {
+	PMG::Cluster::sync_domainstat_db($dbh, $rdb, $ni);
+
+	PMG::Cluster::sync_dailystat_db($dbh, $rdb, $ni);
+
+	PMG::Cluster::sync_virusinfo_db($dbh, $rdb, $ni);
+    }
+}
+
+sub cluster_sync {
 
     my $cinfo = PMG::ClusterConfig->new(); # reload
     my $role = $cinfo->{local}->{type} // '-';
@@ -56,17 +87,18 @@ sub cluster_sync {
     return if $role eq '-';
     return if !$cinfo->{master}; # just to be sure
 
-    my ($ccsec_start, $cusec_start) = gettimeofday ();
+    my $start_time = [ gettimeofday() ];
 
     syslog ('info', "starting cluster syncronization");
 
     my $master_ip = $cinfo->{master}->{ip};
     my $master_name = $cinfo->{master}->{name};
 
-    PMG::Cluster::sync_config_from_master($cinfo, $master_name, $master_ip);
+    if ($role ne 'master') {
+	PMG::Cluster::sync_config_from_master($master_name, $master_ip);
+    }
 
-    my ($ccsec, $cusec) = gettimeofday ();
-    $csynctime += int (($ccsec-$ccsec_start)*1000 + ($cusec - $cusec_start)/1000);
+    my $csynctime = tv_interval($start_time);
 
     $cinfo = PMG::ClusterConfig->new(); # reload
     $role = $cinfo->{local}->{type} // '-';
@@ -74,16 +106,52 @@ sub cluster_sync {
     return if $role eq '-';
     return if !$cinfo->{master}; # just to be sure
 
-    ($ccsec, $cusec) = gettimeofday ();
-    my $cptime = int (($ccsec-$ccsec_start) + ($cusec - $cusec_start)/1000000);
+    my $ticket = PMG::Ticket::assemble_ticket('root@pam');
 
-    my $rstime = $rsynctime/1000.0;
-    my $cstime = $csynctime/1000.0;
-    my $dbtime = $cptime - $rstime - $cstime;
+    my $dbh = PMG::DBTools::open_ruledb();
 
-    syslog('info', sprintf("cluster syncronization finished (%.2f seconds " .
+    my $errcount = 0;
+
+    my $rsynctime = 0;
+
+    my $sync_node = sub {
+	my ($ni) = @_;
+
+	my $rdb;
+	eval {
+	    $rdb = PMG::DBTools::open_ruledb(undef, '/var/run/pmgtunnel', $ni->{cid});
+	    sync_data_from_node($dbh, $rdb, $cinfo, $ni, $ticket, \$rsynctime);
+	};
+	my $err = $@;
+
+	$rdb->disconnect() if $rdb;
+
+	if ($err) {
+	    $errcount++;
+	    syslog ('err', "database sync '$ni->{name}' failed - $err");
+	}
+    };
+
+    # sync data from master first
+    if ($cinfo->{master}->{cid} ne $cinfo->{local}->{cid}) {
+	$sync_node->($cinfo->{master});
+    }
+
+    foreach my $ni (values %{$cinfo->{ids}}) {
+	next if $ni->{cid} eq $cinfo->{local}->{cid};
+	next if $ni->{cid} eq $cinfo->{master}->{cid};
+	$sync_node->($ni);
+    }
+
+    $dbh->disconnect();
+
+    my $cptime = tv_interval($start_time);
+
+    my $dbtime = $cptime - $rsynctime - $csynctime;
+
+    syslog('info', sprintf("cluster syncronization finished  (%d errors, %.2f seconds " .
 			   "(files %.2f, database %.2f, config %.2f))",
-			   $cptime, $rstime, $dbtime, $cstime));
+			   $errcount, $cptime, $rsynctime, $dbtime, $csynctime));
 
 }
 
@@ -94,7 +162,10 @@ sub run {
 
 	$next_update = time() + $updatetime;
 
-	eval { cluster_sync(); };
+	eval {
+	    # Note: do nothing in first cycle (give pmgtunnel some time to startup)
+	    cluster_sync() if $cycle > 0;
+	};
 	if (my $err = $@) {
 	    syslog('err', "sync error: $err");
 	}
