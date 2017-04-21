@@ -896,13 +896,15 @@ sub sync_deleted_nodes_from_master {
     my $rsynctime = 0;
 
     my $cid_hash = {}; # fast lookup
-    foreach my $ni (@{$cinfo->{nodes}}) {
+    foreach my $ni (values %{$cinfo->{ids}}) {
 	$cid_hash->{$ni->{cid}} = $ni;
     }
 
     my $spooldir = $PMG::MailQueue::spooldir;
 
-    for (my $rcid = 1; $rcid <= $cinfo->{maxcid}; $rcid++) {
+    my $maxcid = $cinfo->{master}->{maxcid} // 0;
+
+    for (my $rcid = 1; $rcid <= $maxcid; $rcid++) {
 	next if $cid_hash->{$rcid};
 
 	my $done_marker = "$spooldir/cluster/$rcid/.synced-deleted-node";
