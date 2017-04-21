@@ -1157,7 +1157,7 @@ sub copy_selected_data {
     my $count = 0;
 
     my $insert_sth = $dbh->prepare(
-	'INSERT INTO ${table}(' . join(',', @$attrs) . ') ' .
+	"INSERT INTO ${table}(" . join(',', @$attrs) . ') ' .
 	'VALUES (' . join(',', ('?') x scalar(@$attrs)) . ')');
 
     while (my $ref = $select_sth->fetchrow_hashref()) {
