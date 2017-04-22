@@ -778,44 +778,32 @@ sub sync_dailystat_db {
     my $selectfunc = sub {
 	my ($ctime, $lastmt) = @_;
 	return "SELECT * from DailyStat WHERE mtime >= $lastmt";
-   };
+    };
+
+    my $merge_sth = $dbh->prepare(
+	'INSERT INTO DailyStat ' .
+	'(Time,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut,' .
+	'BouncesIn,BouncesOut,GreylistCount,SPFCount,RBLCount,PTimeSum,Mtime) ' .
+	'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' .
+	'ON CONFLICT (Time) DO UPDATE SET ' .
+	'CountIn = excluded.CountIn, CountOut = excluded.CountOut, ' .
+	'BytesIn = excluded.BytesIn, BytesOut = excluded.BytesOut, ' .
+	'VirusIn = excluded.VirusIn, VirusOut = excluded.VirusOut, ' .
+	'SpamIn = excluded.SpamIn, SpamOut = excluded.SpamOut, ' .
+	'BouncesIn = excluded.BouncesIn, BouncesOut = excluded.BouncesOut, ' .
+	'GreylistCount = excluded.GreylistCount, SPFCount = excluded.SpfCount, ' .
+	'RBLCount = excluded.RBLCount, ' .
+	'PTimeSum = excluded.PTimeSum, MTime = excluded.MTime');
 
     my $mergefunc = sub {
 	my ($ldb, $ref, $cnewref, $coldref) = @_;
 
-	my $sth = $ldb->prepare(
-	    "UPDATE DailyStat " .
-	    "SET CountIn = $ref->{countin}, CountOut = $ref->{countout}, " .
-	    "BytesIn = $ref->{bytesin}, BytesOut = $ref->{bytesout}, " .
-	    "VirusIn = $ref->{virusin}, VirusOut = $ref->{virusout}, " .
-	    "SpamIn = $ref->{spamin}, SpamOut = $ref->{spamout}, " .
-	    "BouncesIn = $ref->{bouncesin}, BouncesOut = $ref->{bouncesout}, " .
-	    "GreylistCount = $ref->{greylistcount}, SPFCount = $ref->{spfcount}, " .
-	    "RBLCount = $ref->{rblcount}, " .
-	    "PTimeSum = $ref->{ptimesum}, MTime = $ref->{mtime} " .
-	    "WHERE Time = ?");
-
-	$sth->execute($ref->{time});
-
-	my $rows = $sth->rows;
-
-	$sth->finish();
-
-	if ($rows) {
-	    $$coldref++;
-	} else {
-	    $ldb->do (
-		"INSERT INTO DailyStat " .
-		"(Time,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut," .
-		"BouncesIn,BouncesOut,GreylistCount,SPFCount,RBLCount,PTimeSum,Mtime) " .
-		"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", undef,
-		$ref->{time}, $ref->{countin}, $ref->{countout},
-		$ref->{bytesin}, $ref->{bytesout},
-		$ref->{virusin}, $ref->{virusout}, $ref->{spamin}, $ref->{spamout},
-		$ref->{bouncesin}, $ref->{bouncesout}, $ref->{greylistcount},
-		$ref->{spfcount}, $ref->{rblcount}, $ref->{ptimesum}, $ref->{mtime});
-	    $$cnewref++;
-	}
+	$sth->execute(
+	    $ref->{time}, $ref->{countin}, $ref->{countout},
+	    $ref->{bytesin}, $ref->{bytesout},
+	    $ref->{virusin}, $ref->{virusout}, $ref->{spamin}, $ref->{spamout},
+	    $ref->{bouncesin}, $ref->{bouncesout}, $ref->{greylistcount},
+	    $ref->{spfcount}, $ref->{rblcount}, $ref->{ptimesum}, $ref->{mtime});
     };
 
     return sync_generic_mtime_db($dbh, $rdb, $ni, 'DailyStat', $selectfunc, $mergefunc);
