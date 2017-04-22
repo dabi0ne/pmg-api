@@ -746,39 +746,27 @@ sub sync_domainstat_db {
 	return "SELECT * from DomainStat WHERE mtime >= $lastmt";
     };
 
+    my $merge_sth = $dbh->prepare(
+	'INSERT INTO Domainstat ' .
+	'(Time,Domain,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut,' .
+	'BouncesIn,BouncesOut,PTimeSum,Mtime) ' .
+	'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' .
+	'ON CONFLICT (Time, Domain) DO UPDATE SET ' .
+	'CountIn = excluded.CountIn, CountOut = excluded.CountOut, ' .
+	'BytesIn = excluded.BytesIn, BytesOut = excluded.BytesOut, ' .
+	'VirusIn = excluded.VirusIn, VirusOut = excluded.VirusOut, ' .
+	'SpamIn = excluded.SpamIn, SpamOut = excluded.SpamOut, ' .
+	'BouncesIn = excluded.BouncesIn, BouncesOut = excluded.BouncesOut, ' .
+	'PTimeSum = excluded.PTimeSum, MTime = excluded.MTime');
+
     my $mergefunc = sub {
 	my ($ldb, $ref, $cnewref, $coldref) = @_;
 
-	my $sth = $ldb->prepare (
-	    "UPDATE Domainstat " .
-	    "SET CountIn = $ref->{countin}, CountOut = $ref->{countout}, " .
-	    "BytesIn = $ref->{bytesin}, BytesOut = $ref->{bytesout}, " .
-	    "VirusIn = $ref->{virusin}, VirusOut = $ref->{virusout}, " .
-	    "SpamIn = $ref->{spamin}, SpamOut = $ref->{spamout}, " .
-	    "BouncesIn = $ref->{bouncesin}, BouncesOut = $ref->{bouncesout}, " .
-	    "PTimeSum = $ref->{ptimesum}, MTime = $ref->{mtime} " .
-	    "WHERE Time = ? AND Domain = ?");
-
-	$sth->execute($ref->{time}, $ref->{domain});
-
-	my $rows = $sth->rows;
-
-	$sth->finish();
-
-	if ($rows) {
-	    $$coldref++;
-	} else {
-	    $ldb->do(
-		"INSERT INTO Domainstat " .
-		"(Time,Domain,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut," .
-		"BouncesIn,BouncesOut,PTimeSum,Mtime) " .
-		"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", undef,
-		$ref->{time}, $ref->{domain}, $ref->{countin}, $ref->{countout},
-		$ref->{bytesin}, $ref->{bytesout},
-		$ref->{virusin}, $ref->{virusout}, $ref->{spamin}, $ref->{spamout},
-		$ref->{bouncesin}, $ref->{bouncesout}, $ref->{ptimesum}, $ref->{mtime});
-	    $$cnewref++;
-	}
+	$merge_sth->execute(
+	    $ref->{time}, $ref->{domain}, $ref->{countin}, $ref->{countout},
+	    $ref->{bytesin}, $ref->{bytesout},
+	    $ref->{virusin}, $ref->{virusout}, $ref->{spamin}, $ref->{spamout},
+	    $ref->{bouncesin}, $ref->{bouncesout}, $ref->{ptimesum}, $ref->{mtime});
     };
 
     return sync_generic_mtime_db($dbh, $rdb, $ni, 'DomainStat', $selectfunc, $mergefunc);
