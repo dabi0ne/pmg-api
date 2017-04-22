@@ -15,18 +15,17 @@ use PMG::RuleDB;
 
 our $default_db_name = "Proxmox_ruledb";
 
-# our $cgreylist_merge_sql = 'SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount';
 our $cgreylist_merge_sql =
     'INSERT INTO CGREYLIST (IPNet,Host,Sender,Receiver,Instance,RCTime,' .
     'ExTime,Delay,Blocked,Passed,MTime,CID) ' .
     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' .
     'ON CONFLICT (IPNet,Sender,Receiver) DO UPDATE SET ' .
-    'Host = CASE WHEN MTime >= excluded.MTime THEN Host ELSE excluded.Host END,' .
-    'CID = GREATEST(CID, excluded.CID), RCTime = LEAST(RCTime, excluded.RCTime),' .
-    'ExTime = GREATEST(ExTime, excluded.ExTime),' .
-    'Delay = GREATEST(Delay, excluded.Delay),' .
-    'Blocked = GREATEST(Blocked, excluded.Blocked),' .
-    'Passed = GREATEST(Passed, excluded.Passed)';
+    'Host = CASE WHEN CGREYLIST.MTime >= excluded.MTime THEN CGREYLIST.Host ELSE excluded.Host END,' .
+    'CID = GREATEST(CGREYLIST.CID, excluded.CID), RCTime = LEAST(CGREYLIST.RCTime, excluded.RCTime),' .
+    'ExTime = GREATEST(CGREYLIST.ExTime, excluded.ExTime),' .
+    'Delay = GREATEST(CGREYLIST.Delay, excluded.Delay),' .
+    'Blocked = GREATEST(CGREYLIST.Blocked, excluded.Blocked),' .
+    'Passed = GREATEST(CGREYLIST.Passed, excluded.Passed)';
 
 sub open_ruledb {
     my ($database, $host, $port) = @_;
