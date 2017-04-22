@@ -734,28 +734,18 @@ sub sync_userprefs_db {
 	return "SELECT * from UserPrefs WHERE mtime >= $lastmt";
     };
 
+    my $update_sth = $dbh->prepare(
+	"INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
+	'VALUES ($1, $2, $3, 0) ' .
+	'ON CONFLICT (PMail, Name) DO UPDATE SET ' .
+	'MTime = 0, ' . # this is just a copy from somewhere else, not modified
+	'Data = CASE WHEN excluded.MTime >= UserPrefs.MTime THEN excluded.Data ELSE $3 END');
+
     my $mergefunc = sub {
 	my ($ldb, $ref, $cnewref, $coldref) = @_;
 
-	my $sth = $ldb->prepare(
-	    "UPDATE UserPrefs " .
-	    "SET Data = CASE WHEN MTime >= $ref->{mtime} THEN Data ELSE ? END " .
-	    "WHERE PMail = ? AND Name = ?");
-
-	$sth->execute($ref->{data}, $ref->{pmail}, $ref->{name});
-
-	my $rows = $sth->rows;
-
-	$sth->finish();
-
-	if ($rows) {
-	    $$coldref++;
-	} else {
-	    $ldb->do ("INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
-		      "VALUES (?, ?, ?, 0)", undef,
-		      $ref->{pmail}, $ref->{name}, $ref->{data});
-	    $$cnewref++;
-	}
+	$update_sth->execute($ref->{pmail}, $ref->{name}, $ref->{data});
+	$$coldref++;
     };
 
     return sync_generic_mtime_db($dbh, $rdb, $ni, 'UserPrefs', $selectfunc, $mergefunc);
