@@ -687,18 +687,20 @@ sub sync_greylist_db {
 	    "mtime >= $lastmt AND CID != 0";
     };
 
+    my $merge_sth = $dbh->prepare(
+	"SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount");
+
     my $mergefunc = sub {
 	my ($ldb, $ref, $cnewref, $coldref) = @_;
 
-	my $sth = $ldb->prepare("SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount");
+	$merge_sth->execute(
+	    $ref->{ipnet}, $ref->{host}, $ref->{sender}, $ref->{receiver},
+	    $ref->{instance}, $ref->{rctime}, $ref->{extime}, $ref->{delay},
+	    $ref->{blocked}, $ref->{passed}, 0, $ref->{cid});
 
-	$sth->execute($ref->{ipnet}, $ref->{host}, $ref->{sender}, $ref->{receiver},
-		      $ref->{instance}, $ref->{rctime}, $ref->{extime}, $ref->{delay}, $ref->{blocked},
-		      $ref->{passed}, 0, $ref->{cid});
+	my $res = $merge_sth->fetchrow_hashref();
 
-	my $res = $sth->fetchrow_hashref();
-
-	$sth->finish();
+	$merge_sth->finish();
 
 	if ($res->{newcount}) {
 	    $$cnewref++;
