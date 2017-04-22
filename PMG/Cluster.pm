@@ -721,7 +721,7 @@ sub sync_userprefs_db {
 	return "SELECT * from UserPrefs WHERE mtime >= $lastmt";
     };
 
-    my $update_sth = $dbh->prepare(
+    my $merge_sth = $dbh->prepare(
 	"INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
 	'VALUES ($1, $2, $3, 0) ' .
 	'ON CONFLICT (PMail, Name) DO UPDATE SET ' .
@@ -731,7 +731,7 @@ sub sync_userprefs_db {
     my $mergefunc = sub {
 	my ($ldb, $ref, $cnewref, $coldref) = @_;
 
-	$update_sth->execute($ref->{pmail}, $ref->{name}, $ref->{data});
+	$merge_sth->execute($ref->{pmail}, $ref->{name}, $ref->{data});
 	$$coldref++;
     };
 
