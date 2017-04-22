@@ -726,7 +726,7 @@ sub sync_userprefs_db {
 	'VALUES (?, ?, ?, 0) ' .
 	'ON CONFLICT (PMail, Name) DO UPDATE SET ' .
 	# Note: MTime = 0 ==> this is just a copy from somewhere else, not modified
-	'MTime = CASE WHEN excluded.MTime >= UserPrefs.MTime THEN 0 ELSE UserPrefs.MTime END');
+	'MTime = CASE WHEN excluded.MTime >= UserPrefs.MTime THEN 0 ELSE UserPrefs.MTime END',
 	'Data = CASE WHEN excluded.MTime >= UserPrefs.MTime THEN excluded.Data ELSE UserPrefs.Data END');
 
     my $mergefunc = sub {
