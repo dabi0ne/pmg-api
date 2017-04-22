@@ -637,10 +637,8 @@ sub sync_statistic_db {
     } while ($count >= $maxcount);
 }
 
-sub sync_generic_mtime_db {
+my $sync_generic_mtime_db = sub {
     my ($ldb, $rdb, $ni, $table, $selectfunc, $mergefunc) = @_;
-
-    my ($cnew, $cold) = (0, 0);
 
     my $ctime = PMG::DBTools::get_remote_time($rdb);
 
@@ -654,6 +652,8 @@ sub sync_generic_mtime_db {
 
     $sth->execute();
 
+    my $updates = 0;
+
     eval {
 	# use transaction to speedup things
 	my $max = 1000; # UPDATE MAX ENTRIES AT ONCE
@@ -665,7 +665,8 @@ sub sync_generic_mtime_db {
 		$ldb->commit;
 		$ldb->begin_work;
 	    }
-	    $mergefunc->($ldb, $ref, \$cnew, \$cold);
+	    $mergefunc->($ref);
+	    $updates++;
 	}
     };
     if (my $err = $@) {
@@ -675,8 +676,8 @@ sub sync_generic_mtime_db {
 
     PMG::DBTools::write_maxint_clusterinfo($ldb, $ni->{cid}, "lastmt_$table", $ctime);
 
-    return ($cnew, $cold);
-}
+    return $updates;
+};
 
 sub sync_greylist_db {
     my ($dbh, $rdb, $ni) = @_;
@@ -691,25 +692,15 @@ sub sync_greylist_db {
 	"SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount");
 
     my $mergefunc = sub {
-	my ($ldb, $ref, $cnewref, $coldref) = @_;
+	my ($ref) = @_;
 
 	$merge_sth->execute(
 	    $ref->{ipnet}, $ref->{host}, $ref->{sender}, $ref->{receiver},
 	    $ref->{instance}, $ref->{rctime}, $ref->{extime}, $ref->{delay},
 	    $ref->{blocked}, $ref->{passed}, 0, $ref->{cid});
-
-	my $res = $merge_sth->fetchrow_hashref();
-
-	$merge_sth->finish();
-
-	if ($res->{newcount}) {
-	    $$cnewref++;
-	} else {
-	    $$coldref++;
-	}
     };
 
-    return sync_generic_mtime_db($dbh, $rdb, $ni, 'CGreylist', $selectfunc, $mergefunc);
+    return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'CGreylist', $selectfunc, $mergefunc);
 }
 
 sub sync_userprefs_db {
@@ -730,13 +721,12 @@ sub sync_userprefs_db {
 	'Data = CASE WHEN excluded.MTime >= UserPrefs.MTime THEN excluded.Data ELSE UserPrefs.Data END');
 
     my $mergefunc = sub {
-	my ($ldb, $ref, $cnewref, $coldref) = @_;
+	my ($ref) = @_;
 
 	$merge_sth->execute($ref->{pmail}, $ref->{name}, $ref->{data});
-	$$coldref++;
     };
 
-    return sync_generic_mtime_db($dbh, $rdb, $ni, 'UserPrefs', $selectfunc, $mergefunc);
+    return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'UserPrefs', $selectfunc, $mergefunc);
 }
 
 sub sync_domainstat_db {
@@ -761,7 +751,7 @@ sub sync_domainstat_db {
 	'PTimeSum = excluded.PTimeSum, MTime = excluded.MTime');
 
     my $mergefunc = sub {
-	my ($ldb, $ref, $cnewref, $coldref) = @_;
+	my ($ref) = @_;
 
 	$merge_sth->execute(
 	    $ref->{time}, $ref->{domain}, $ref->{countin}, $ref->{countout},
@@ -770,7 +760,7 @@ sub sync_domainstat_db {
 	    $ref->{bouncesin}, $ref->{bouncesout}, $ref->{ptimesum}, $ref->{mtime});
     };
 
-    return sync_generic_mtime_db($dbh, $rdb, $ni, 'DomainStat', $selectfunc, $mergefunc);
+    return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'DomainStat', $selectfunc, $mergefunc);
 }
 
 sub sync_dailystat_db {
@@ -797,7 +787,7 @@ sub sync_dailystat_db {
 	'PTimeSum = excluded.PTimeSum, MTime = excluded.MTime');
 
     my $mergefunc = sub {
-	my ($ldb, $ref, $cnewref, $coldref) = @_;
+	my ($ref) = @_;
 
 	$merge_sth->execute(
 	    $ref->{time}, $ref->{countin}, $ref->{countout},
@@ -807,7 +797,7 @@ sub sync_dailystat_db {
 	    $ref->{spfcount}, $ref->{rblcount}, $ref->{ptimesum}, $ref->{mtime});
     };
 
-    return sync_generic_mtime_db($dbh, $rdb, $ni, 'DailyStat', $selectfunc, $mergefunc);
+    return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'DailyStat', $selectfunc, $mergefunc);
 }
 
 sub sync_virusinfo_db {
@@ -825,12 +815,12 @@ sub sync_virusinfo_db {
 	'Count = excluded.Count , MTime = excluded.MTime');
 
     my $mergefunc = sub {
-	my ($ldb, $ref, $cnewref, $coldref) = @_;
+	my ($ref) = @_;
 
 	$merge_sth->execute($ref->{time}, $ref->{name}, $ref->{count}, $ref->{mtime});
     };
 
-    return sync_generic_mtime_db($dbh, $rdb, $ni, 'VirusInfo', $selectfunc, $mergefunc);
+    return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'VirusInfo', $selectfunc, $mergefunc);
 }
 
 sub sync_deleted_nodes_from_master {
