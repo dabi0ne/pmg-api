@@ -818,27 +818,16 @@ sub sync_virusinfo_db {
 	return "SELECT * from VirusInfo WHERE mtime >= $lastmt";
     };
 
+    my $merge_sth = $dbh->prepare(
+	'INSERT INTO VirusInfo (Time,Name,Count,MTime) ' .
+	'VALUES (?,?,?,?) ' .
+	'ON CONFLICT (Time,Name) DO UPDATE SET ' .
+	'Count = excluded.Count , MTime = excluded.MTime');
+
     my $mergefunc = sub {
 	my ($ldb, $ref, $cnewref, $coldref) = @_;
 
-	my $sth = $ldb->prepare(
-	    "UPDATE VirusInfo SET Count = ? , MTime = ? " .
-	    "WHERE Time = ? AND Name = ?");
-
-	$sth->execute($ref->{count}, $ref->{mtime}, $ref->{time}, $ref->{name});
-
-	my $rows = $sth->rows;
-
-	$sth->finish ();
-
-	if ($rows) {
-	    $$coldref++;
-	} else {
-	    $ldb->do ("INSERT INTO VirusInfo (Time,Name,Count,MTime) " .
-		      "VALUES (?,?,?,?)", undef,
-		      $ref->{time}, $ref->{name}, $ref->{count}, $ref->{mtime});
-	    $$cnewref++;
-	}
+	$merge_sth->execute($ref->{time}, $ref->{name}, $ref->{count}, $ref->{mtime});
     };
 
     return sync_generic_mtime_db($dbh, $rdb, $ni, 'VirusInfo', $selectfunc, $mergefunc);
