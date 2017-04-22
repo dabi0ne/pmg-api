@@ -648,45 +648,30 @@ sub sync_generic_mtime_db {
 
     my $lastmt = PMG::DBTools::read_int_clusterinfo($ldb, $ni->{cid}, "lastmt_$table");
 
-    my $cmd = $selectfunc->($ctime, $lastmt);
+    my $sql_cmd = $selectfunc->($ctime, $lastmt);
 
-    my $sth = $rdb->prepare($cmd);
+    my $sth = $rdb->prepare($sql_cmd);
 
     $sth->execute();
 
-    my $max = 100; # UPDATE MAX ENTRIES AT ONCE
-
-    my $merge_data = sub {
-	my ($data) = @_;
-	eval {
-	    $ldb->begin_work;
-
-	    # avoid locks
-	    # $ldb->do ("LOCK TABLE $table IN EXCLUSIVE MODE");
-
-	    foreach my $ref1 (@$data) {
-		$mergefunc->($ldb, $ref1, \$cnew, \$cold);
+    eval {
+	# use transaction to speedup things
+	my $max = 1000; # UPDATE MAX ENTRIES AT ONCE
+	$ldb->begin_work;
+	my $count = 0;
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    if (++$count >= $max) {
+		$count = 0;
+		$ldb->commit;
+		$ldb->begin_work;
 	    }
-
-	    $ldb->commit;
-	};
-	if (my $err = $@) {
-	    $ldb->rollback;
-	    die $err;
+	    $mergefunc->($ldb, $ref, \$cnew, \$cold);
 	}
     };
-
-    my $data = [];
-
-    while (my $ref = $sth->fetchrow_hashref()) {
-	push @$data, $ref;
-	if (scalar(@$data) >= $max) {
-	    $merge_data->($data);
-	    $data = [];
-	}
+    if (my $err = $@) {
+	$ldb->rollback;
+	die $err;
     }
-
-    $merge_data->($data) if scalar(@$data);
 
     PMG::DBTools::write_maxint_clusterinfo($ldb, $ni->{cid}, "lastmt_$table", $ctime);
 
