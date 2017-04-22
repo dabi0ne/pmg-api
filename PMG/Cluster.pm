@@ -657,17 +657,18 @@ my $sync_generic_mtime_db = sub {
     eval {
 	# use transaction to speedup things
 	my $max = 1000; # UPDATE MAX ENTRIES AT ONCE
-	$ldb->begin_work;
 	my $count = 0;
 	while (my $ref = $sth->fetchrow_hashref()) {
+	    $ldb->begin_work if !$count;
+	    $mergefunc->($ref);
 	    if (++$count >= $max) {
 		$count = 0;
 		$ldb->commit;
-		$ldb->begin_work;
 	    }
-	    $mergefunc->($ref);
 	    $updates++;
 	}
+
+	$ldb->commit if $count;
     };
     if (my $err = $@) {
 	$ldb->rollback;
