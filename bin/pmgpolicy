@@ -578,7 +578,7 @@ sub greylist_value {
 
 		    if (!defined($ref->{rctime})) {
 
-			$dbh->do("SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", undef,
+			$dbh->do($PMG::DBTools::cgreylist_merge_sql, undef,
 				 $net, $host, $sender, $rcpt, $instance,
 				 $ctime, $ctime + 10, 0, 100000, 0, $ctime, $self->{lcid});
 		    }
@@ -623,9 +623,9 @@ sub greylist_value {
 
 	if (!defined($ref->{rctime})) {
 
-	    $dbh->do ("SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", undef,
-		      $net, $host, $sender, $rcpt, $instance,
-		      $ctime, $ctime + $greylist_lifetime, 0, 1, 0, $ctime, $self->{lcid});
+	    $dbh->do($PMG::DBTools::cgreylist_merge_sql, undef,
+		     $net, $host, $sender, $rcpt, $instance,
+		     $ctime, $ctime + $greylist_lifetime, 0, 1, 0, $ctime, $self->{lcid});
 
 	    $res = $defer_res;
 	    $self->log(3, "defer greylisted mail");

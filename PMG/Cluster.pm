@@ -688,9 +688,7 @@ sub sync_greylist_db {
 	    "mtime >= $lastmt AND CID != 0";
     };
 
-    my $merge_sth = $dbh->prepare(
-	"SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount");
-
+    my $merge_sth = $dbh->prepare($PMG::DBTools::cgreylist_merge_sql);
     my $mergefunc = sub {
 	my ($ref) = @_;
 

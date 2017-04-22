@@ -15,6 +15,19 @@ use PMG::RuleDB;
 
 our $default_db_name = "Proxmox_ruledb";
 
+# our $cgreylist_merge_sql = 'SELECT merge_greylist(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) AS newcount';
+our $cgreylist_merge_sql =
+    'INSERT INTO CGREYLIST (IPNet,Host,Sender,Receiver,Instance,RCTime,' .
+    'ExTime,Delay,Blocked,Passed,MTime,CID) ' .
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' .
+    'ON CONFLICT (IPNet,Sender,Receiver) DO UPDATE SET ' .
+    'Host = CASE WHEN MTime >= excluded.MTime THEN Host ELSE excluded.Host END,' .
+    'CID = GREATEST(CID, excluded.CID), RCTime = LEAST(RCTime, excluded.RCTime),' .
+    'ExTime = GREATEST(ExTime, excluded.ExTime),' .
+    'Delay = GREATEST(Delay, excluded.Delay),' .
+    'Blocked = GREATEST(Blocked, excluded.Blocked),' .
+    'Passed = GREATEST(Passed, excluded.Passed)';
+
 sub open_ruledb {
     my ($database, $host, $port) = @_;
 
@@ -96,50 +109,6 @@ sub database_list {
 
     return $database_list;
 }
-
-my $dbfunction_maxint =  <<__EOD;
-    CREATE OR REPLACE FUNCTION maxint (INTEGER, INTEGER) RETURNS INTEGER AS
-    'BEGIN IF \$1 > \$2 THEN RETURN \$1; ELSE RETURN \$2; END IF; END;' LANGUAGE plpgsql;
-__EOD
-
-my $dbfunction_minint =  <<__EOD;
-    CREATE OR REPLACE FUNCTION minint (INTEGER, INTEGER) RETURNS INTEGER AS
-    'BEGIN IF \$1 < \$2 THEN RETURN \$1; ELSE RETURN \$2; END IF; END;' LANGUAGE plpgsql;
-__EOD
-
-# merge function to avoid update/insert race condition
-# see: http://www.postgresql.org/docs/9.1/static/plpgsql-control-structures.html#PLPGSQL-ERROR-TRAPPING
-my $dbfunction_merge_greylist = <<__EOD;
-    CREATE OR REPLACE FUNCTION merge_greylist (in_ipnet VARCHAR, in_host INTEGER, in_sender VARCHAR,
-					       in_receiver VARCHAR, in_instance VARCHAR,
-					       in_rctime INTEGER, in_extime INTEGER, in_delay INTEGER,
-					       in_blocked INTEGER, in_passed INTEGER, in_mtime INTEGER,
-					       in_cid INTEGER) RETURNS INTEGER AS
-    'BEGIN
-      LOOP
-        UPDATE CGreylist SET Host = CASE WHEN MTime >= in_mtime THEN Host ELSE in_host END,
-                             CID = maxint (CID, in_cid), RCTime = minint (rctime, in_rctime),
-			     ExTime = maxint (extime, in_extime),
-			     Delay = maxint (delay, in_delay),
-			     Blocked = maxint (blocked, in_blocked),
-			     Passed = maxint (passed, in_passed)
-			     WHERE IPNet = in_ipnet AND Sender = in_sender AND Receiver = in_receiver;
-
-        IF found THEN
-          RETURN 0;
-        END IF;
-
-	BEGIN
-	  INSERT INTO CGREYLIST (IPNet, Host, Sender, Receiver, Instance, RCTime, ExTime, Delay, Blocked, Passed, MTime, CID)
-             VALUES (in_ipnet, in_host, in_sender, in_receiver, in_instance, in_rctime, in_extime,
-                     in_delay, in_blocked, in_passed, in_mtime, in_cid);
-	  RETURN 1;
-	  EXCEPTION WHEN unique_violation THEN
-	    -- do nothing - continue loop
-	END;
-      END LOOP;
-    END;'  LANGUAGE plpgsql;
-__EOD
 
 my $cgreylist_ctablecmd =  <<__EOD;
     CREATE TABLE CGreylist
@@ -367,15 +336,6 @@ sub create_ruledb {
 
     # make sure 'www-data' can read all tables
     $dbh->do("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO \"www-data\"");
-
-    #$dbh->do ($dbloaddrivers_sql);
-    #$dbh->do ($dbfunction_update_modtime);
-
-    $dbh->do ($dbfunction_minint);
-
-    $dbh->do ($dbfunction_maxint);
-
-    $dbh->do ($dbfunction_merge_greylist);
 
     $dbh->do (
 <<EOD
@@ -709,12 +669,6 @@ sub upgradedb {
     my ($ruledb) = @_;
 
     my $dbh = $ruledb->{dbh};
-
-    $dbh->do($dbfunction_minint);
-
-    $dbh->do($dbfunction_maxint);
-
-    $dbh->do($dbfunction_merge_greylist);
 
     # make sure we do not use slow sequential scans when upgraing
     # database (before analyze can gather statistics)
@@ -1236,7 +1190,7 @@ sub read_int_clusterinfo {
 sub write_maxint_clusterinfo {
     my ($dbh, $rcid, $name, $value) = @_;
 
-    $dbh->do("UPDATE ClusterInfo SET ivalue = maxint (ivalue, ?) " .
+    $dbh->do("UPDATE ClusterInfo SET ivalue = GREATEST(ivalue, ?) " .
 	     "WHERE cid = ? AND name = ?", undef,
 	     $value, $rcid, $name);
 }
