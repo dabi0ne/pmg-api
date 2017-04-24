@@ -635,6 +635,8 @@ sub sync_statistic_db {
 	last if $mscount >= $maxmails;
 
     } while ($count >= $maxcount);
+
+    return $mscount;
 }
 
 my $sync_generic_mtime_db = sub {
