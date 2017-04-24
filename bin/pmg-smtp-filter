@@ -80,9 +80,6 @@ my $min_spare_servers = 0;
 my $max_spare_servers = 0;
 my $max_requests = 1;
 
-# create spool directories
-PMG::MailQueue::create_spooldirs();
-
 if (!$opt_testmode) {
 
     my $pmg_cfg = PMG::Config->new();
@@ -372,6 +369,9 @@ sub load_config {
 
     $self->{pmg_cfg} = PMG::Config->new();
     $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
+
+    # create spool directories
+    PMG::MailQueue::create_spooldirs($self->{cinfo}->{local}->{cid});
 
     eval {
 	my $dbh = PMG::DBTools::open_ruledb ($database);
@@ -813,6 +813,7 @@ sub handle_smtp {
     die $err if ($err);
 }
 
+my $initial_memory_usage;
 
 sub process_request {
   my $self = shift;
@@ -848,6 +849,9 @@ sub process_request {
   kill(15, $prop->{ppid}) if $opt_testmode;
 
   my $mem = PVE::ProcFSTools::read_memory_usage();
+  if (!defined($initial_memory_usage) || ($prop->{requests} < 10)) {
+      $initial_memory_usage = $mem->{resident};
+  }
 
   if ($opt_testmode) {
       $self->log (0, "memory usage: $mem->{size} bytes");
@@ -855,10 +859,13 @@ sub process_request {
       if ($self->{errors}) {
 	  $self->log (0, "fast exit because of errors (free $mem->{size} bytes)");
 	  $self->done (1);
-      } elsif ($mem->{size} > (400*1024*1024)) {
-	  $self->log (0, "fast exit to reduce server load (free $mem->{size} bytes)");
-	  $self->done (1);
-     }
+      } else {
+	  my $diff = $mem->{resident} - $initial_memory_usage;
+	  if ($diff > 5*1024*1024) {
+	      $self->log (0, "fast exit to reduce server load (free $diff bytes)");
+	      $self->done (1);
+	  }
+      }
   }
 
   $self->done (1) if $err;
