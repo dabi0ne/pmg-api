@@ -65,9 +65,6 @@ sub start_tunnels {
 	my $ni = $cinfo->{ids}->{$cid};
 	next if $ni->{ip} eq $cinfo->{local}->{ip}; # just to be sure
 
-	my $dbport = $cinfo->{dbport}->{$cid};
-	next if !$dbport; # just to be sure
-
 	my $running;
 	foreach my $cpid (keys %$workers) {
 	    $running = 1 if $workers->{$cpid}->{ip} eq  $ni->{ip};
@@ -90,7 +87,6 @@ sub start_tunnels {
 
 	    $workers->{$pid}->{ip} = $ni->{ip};
 	    $workers->{$pid}->{cid} = $cid;
-	    $workers->{$pid}->{dbport} = $dbport;
 
 	    if ($startcount->{$cid} > 1) {
 		syslog('info', "restarting crashed tunnel $pid $ni->{ip}");
@@ -119,13 +115,11 @@ sub purge_tunnels {
 
     foreach my $cpid (keys %$workers) {
 	my $ip = $workers->{$cpid}->{ip};
-	my $dbport = $workers->{$cpid}->{dbport};
 	my $cid = $workers->{$cpid}->{cid};
 
 	my $found;
 	foreach my $ni (values %{$cinfo->{ids}}) {
-	    my $ni_dbport = $cinfo->{dbport}->{$ni->{cid}};
-	    $found = 1 if (($ni->{ip} eq $ip) && ($ni_dbport eq $dbport));
+	    $found = 1 if ($ni->{ip} eq $ip) && ($ni->{cid} eq $cid);
 	}
 
 	my $role = $cinfo->{local}->{type} // '-';
