@@ -766,38 +766,35 @@ sub handle_smtp {
 
     eval {
 	my $dbh = $self->{ruledb}->{dbh};
+
 	my $where = "";
 	foreach my $rid (@$matching_rules) {
 	    $where .= $where ? " OR ID = $rid" : "ID = $rid";
 	}
-	if ($where) {
-	    $dbh->do ("UPDATE Rule " .
-		      "SET Count = Count + 1 " .
-		      "WHERE $where");
-	}
+
+	$dbh->do ("UPDATE Rule SET Count = Count + 1 WHERE $where") if $where;
 
 	my $insert_cmds = "SELECT nextval ('cstatistic_id_seq');INSERT INTO CStatistic " .
 	    "(CID, RID, ID, Time, Bytes, Direction, Spamlevel, VirusInfo, PTime, Sender) VALUES (" .
-	    "$lcid, currval ('cstatistic_id_seq'), currval ('cstatistic_id_seq'),";
+	    "$lcid, currval('cstatistic_id_seq'), currval('cstatistic_id_seq'),";
 
 	$insert_cmds .= $queue->{rtime} . ',';
 	$insert_cmds .= $queue->{bytes} . ',';
-	$insert_cmds .= $dbh->quote ($msginfo->{trusted} ? 0 : 1) . ',';
+	$insert_cmds .= $dbh->quote($msginfo->{trusted} ? 0 : 1) . ',';
 	$insert_cmds .= ($queue->{sa_score} || 0) . ',';
-	$insert_cmds .= $dbh->quote ($queue->{vinfo}) . ',';
+	$insert_cmds .= $dbh->quote($queue->{vinfo}) . ',';
 	$insert_cmds .= $time_total . ',';
-	$insert_cmds .= $dbh->quote ($msginfo->{sender}) . ');';
+	$insert_cmds .= $dbh->quote($msginfo->{sender}) . ');';
 
 	foreach my $r (@{$msginfo->{targets}}) {
-	    my $tmp = $dbh->quote ($r);
+	    my $tmp = $dbh->quote($r);
 	    my $blocked = $queue->{status}->{$r} eq 'blocked' ? 1 : 0;
 	    $insert_cmds .= "INSERT INTO CReceivers (CStatistic_CID, CStatistic_RID, Receiver, Blocked) " .
 		"VALUES ($lcid, currval ('cstatistic_id_seq'), $tmp, '$blocked'); ";
 	}
 
-	$dbh->do ($insert_cmds);
+	$dbh->do($insert_cmds);
     };
-
     # save $err (because log clears $@)
     $err = $@;
 
@@ -806,11 +803,11 @@ sub handle_smtp {
     my $ptspam = ($queue->{ptime_spam} || 0)/1000;
     my $ptclam = ($queue->{ptime_clam} || 0)/1000;
 
-    $self->log (3, "$queue->{logid}: processing time: ${time_total} seconds ($ptspam, $ptclam)");
+    $self->log(3, "$queue->{logid}: processing time: ${time_total} seconds ($ptspam, $ptclam)");
 
     $msginfo->{test_fh}->close if $opt_testmode;
 
-    die $err if ($err);
+    die $err if $err;
 }
 
 my $initial_memory_usage;
