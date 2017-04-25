@@ -135,6 +135,12 @@ sub cluster_sync {
     # sync data from master first
     if ($cinfo->{master}->{cid} ne $cinfo->{local}->{cid}) {
 	$sync_node->($cinfo->{master});
+
+	# rewrite config after sync from master
+	my $cfg = PMG::Config->new();
+	my $ruledb = PMG::RuleDB->new($dbh);
+	my $rulecache = PMG::RuleCache->new($ruledb);
+	$cfg->rewrite_config($rulecache, 1);
     }
 
     foreach my $ni (values %{$cinfo->{ids}}) {
