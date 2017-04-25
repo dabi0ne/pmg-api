@@ -13,9 +13,9 @@ use PMG::RuleDB;
 
 sub new {
     my ($self, $start, $end, $advanced) = @_;
-    
+
     $self = {};
-    
+
     bless($self);
 
     if ((defined($start))&&(defined($end))) {
@@ -25,7 +25,7 @@ sub new {
     }
 
     $self->{adv} = $advanced;
- 
+
     return $self;
 }
 
@@ -34,7 +34,7 @@ sub clear_stats {
 
     eval {
 	$dbh->begin_work;
-	
+
 	$dbh->do ("LOCK TABLE StatInfo");
 	$dbh->do ("LOCK TABLE ClusterInfo");
 
@@ -51,7 +51,7 @@ sub clear_stats {
     if ($@) {
 	$dbh->rollback;
 	die $@;
-    } 
+    }
 }
 
 sub update_stats_generic  {
@@ -114,7 +114,7 @@ sub update_stats_generic  {
 	    $dbh->do("INSERT INTO StatInfo VALUES ('$statinfoid', $endid)");
 	}
 
-      COMMIT: 
+      COMMIT:
 	$dbh->commit;
     };
 
@@ -181,15 +181,15 @@ sub update_stats_dailystat  {
     my $insert = sub {
 	my $ref = shift;
 
-	my $sql = "INSERT INTO dailystat " . 
+	my $sql = "INSERT INTO dailystat " .
 	    "(Time,CountIn,CountOut,BytesIn,BytesOut,VirusIn,VirusOut,SpamIn,SpamOut," .
 	    "BouncesIn,BouncesOut,GreylistCount,SPFCount,RBLCount,PTimeSum,Mtime) " .
-	    "VALUES ($ref->{hour}," . ($ref->{count_in} || 0) . ',' . ($ref->{count_out} || 0) . ',' . 
+	    "VALUES ($ref->{hour}," . ($ref->{count_in} || 0) . ',' . ($ref->{count_out} || 0) . ',' .
 	    ($ref->{bytes_in} || 0) . ',' . ($ref->{bytes_out} || 0) . ',' .
 	    ($ref->{virus_in} || 0) . ',' . ($ref->{virus_out} || 0) . ',' .
 	    ($ref->{spam_in} || 0) . ',' . ($ref->{spam_out} || 0) . ',' .
 	    ($ref->{bounces_in} || 0) . ',' . ($ref->{bounces_out} || 0) . ',' .
-	    ($ref->{glcount} || 0) . ',' . ($ref->{spfcount} || 0) . ',0,' . ($ref->{ptimesum} || 0) . 
+	    ($ref->{glcount} || 0) . ',' . ($ref->{spfcount} || 0) . ',0,' . ($ref->{ptimesum} || 0) .
 	    ",EXTRACT(EPOCH FROM now()));";
 
 	return $sql;
@@ -211,7 +211,7 @@ sub update_stats_domainstat_in  {
 	"from CStatistic, CReceivers where cid = cstatistic_cid AND rid = cstatistic_rid AND " .
 	"id >= __startid__ and id < __endid__ AND direction " .
 	"group by cstatistic_cid, cstatistic_rid, day, domain";
-	
+
 
     my $select = "SELECT sub.*, domainstat.time IS NOT NULL as exists FROM " .
 	"(SELECT day, domain, COUNT (id) as count_in, SUM (bytes) / (1024.0*1024) as bytes_in, " .
@@ -235,7 +235,7 @@ sub update_stats_domainstat_in  {
 	push @values, "BouncesIn = BouncesIn + $ref->{bounces_in}" if $ref->{bounces_in};
 	push @values, "PTimeSum = PTimeSum + $ref->{ptimesum}" if $ref->{ptimesum};
 	push @values, "MTime = EXTRACT(EPOCH FROM now())";
-		
+
 	if (scalar (@values)) {
 	    $sql .= "UPDATE domainstat SET ";
 	    $sql .= join (',', @values);
@@ -247,15 +247,15 @@ sub update_stats_domainstat_in  {
     my $insert = sub {
 	my $ref = shift;
 
-	my $sql .= "INSERT INTO domainstat values ($ref->{day}, " .  $dbh->quote($ref->{domain}) . ',' . 
-		    ($ref->{count_in} || 0) . ',0,' . 
+	my $sql .= "INSERT INTO domainstat values ($ref->{day}, " .  $dbh->quote($ref->{domain}) . ',' .
+		    ($ref->{count_in} || 0) . ',0,' .
 		    ($ref->{bytes_in} || 0) . ',0,' .
 		    ($ref->{virus_in} || 0) . ',0,' .
 		    ($ref->{spam_in} || 0) . ',0,' .
-		    ($ref->{bounces_in} || 0) . ',0,' . 
+		    ($ref->{bounces_in} || 0) . ',0,' .
 		    ($ref->{ptimesum} || 0) .
 		    ",EXTRACT(EPOCH FROM now()));";
-	
+
 	return $sql;
     };
 
@@ -293,7 +293,7 @@ sub update_stats_domainstat_out  {
 	push @values, "BouncesOut = BouncesOut + $ref->{bounces_out}" if $ref->{bounces_out};
 	push @values, "PTimeSum = PTimeSum + $ref->{ptimesum}" if $ref->{ptimesum};
 	push @values, "MTime = EXTRACT(EPOCH FROM now())";
-		
+
 	if (scalar (@values)) {
 	    $sql .= "UPDATE domainstat SET ";
 	    $sql .= join (',', @values);
@@ -306,12 +306,12 @@ sub update_stats_domainstat_out  {
 	my $ref = shift;
 
 	my $sql .= "INSERT INTO domainstat values ($ref->{day}, " .  $dbh->quote($ref->{domain}) .
-	    ',0,' . ($ref->{count_out} || 0) . 
+	    ',0,' . ($ref->{count_out} || 0) .
 	    ',0,' . ($ref->{bytes_out} || 0) .
 	    ',0,' . ($ref->{virus_out} || 0) .
-	    ',0,' . ($ref->{spam_out} || 0) . 
-	    ',0,' . ($ref->{bounces_out} || 0) . 
-	    ','. ($ref->{ptimesum} || 0) . 
+	    ',0,' . ($ref->{spam_out} || 0) .
+	    ',0,' . ($ref->{bounces_out} || 0) .
+	    ','. ($ref->{ptimesum} || 0) .
 	    ",EXTRACT(EPOCH FROM now()));";
 
 	return $sql;
@@ -341,7 +341,7 @@ sub update_stats_virusinfo  {
 
 	push @values, "Count = Count + $ref->{count}" if $ref->{count};
 	push @values, "MTime = EXTRACT(EPOCH FROM now())";
-		
+
 	if (scalar (@values)) {
 	    $sql .= "UPDATE VirusInfo SET ";
 	    $sql .= join (',', @values);
@@ -354,7 +354,7 @@ sub update_stats_virusinfo  {
 	my $ref = shift;
 
 	my $sql .= "INSERT INTO VirusInfo values ($ref->{day}, " .  $dbh->quote($ref->{name}) .
-	    ',' . ($ref->{count} || 0) . 
+	    ',' . ($ref->{count} || 0) .
 	    ",EXTRACT(EPOCH FROM now()));";
 
 	return $sql;
@@ -374,26 +374,64 @@ sub update_stats  {
     while (update_stats_virusinfo ($dbh, $cinfo) > 0) {};
 }
 
+sub cleanup_stats {
+    my ($dbh, $statlifetime) = @_;
+
+    return if $statlifetime <= 0;
+
+    my (undef, undef, undef, $mday, $mon, $year) = localtime (time());
+    my $end = timelocal(0, 0, 0, $mday, $mon, $year);
+    my $start = $end - $statlifetime*86400;
+
+    # delete statistics older than $start
+
+    my $rows = 0;
+
+    eval {
+	$dbh->begin_work;
+
+	my $sth = $dbh->prepare("DELETE FROM CStatistic WHERE time < $start");
+	$sth->execute;
+	$rows = $sth->rows;
+	$sth->finish;
+
+	if ($rows > 0) {
+	    $sth = $dbh->prepare(
+		"DELETE FROM CReceivers WHERE NOT EXISTS " .
+		"(SELECT * FROM CStatistic WHERE CID = CStatistic_CID AND RID = CStatistic_RID)");
+
+	    $sth->execute;
+	}
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback;
+	die $err;
+    }
+
+    return $rows;
+}
+
 sub total_mail_stat {
     my ($self, $rdb) = @_;
 
     my ($from, $to) = $self->localdayspan();
-    
+
     my ($sth, $ref);
     my $glcount = 0;
 
 #    this is to slow for high volume sites
 #    $sth = $rdb->{dbh}->prepare("SELECT COUNT(DISTINCT Instance) AS GL FROM CGreylist " .
 #				"WHERE passed = 0 AND rctime >= ? AND rctime < ? ");
-#    $sth->execute($from, $to); 
+#    $sth->execute($from, $to);
 #    $ref = $sth->fetchrow_hashref();
 #    $glcount = $ref->{gl};
 
     my $cmds = "SELECT sum(CountIn) + $glcount AS count_in, sum(CountOut) AS count_out, " .
-	"sum (VirusIn) AS viruscount_in, sum (VirusOut) AS viruscount_out, " . 
-	"sum (SpamIn) AS spamcount_in, sum (SpamOut) AS spamcount_out, " . 
-	"sum (BytesIn) AS traffic_in, sum (BytesOut) AS traffic_out, " . 
-	"sum (BouncesIn) AS bounces_in, sum (BouncesOut) AS bounces_out, " . 
+	"sum (VirusIn) AS viruscount_in, sum (VirusOut) AS viruscount_out, " .
+	"sum (SpamIn) AS spamcount_in, sum (SpamOut) AS spamcount_out, " .
+	"sum (BytesIn) AS traffic_in, sum (BytesOut) AS traffic_out, " .
+	"sum (BouncesIn) AS bounces_in, sum (BouncesOut) AS bounces_out, " .
 	"sum (GreylistCount) + $glcount as glcount, " .
 	"sum (SPFCount) as spfcount, " .
 	"sum (RBLCount) as rblcount, " .
@@ -401,14 +439,14 @@ sub total_mail_stat {
 	"FROM DailyStat where time >= $from and time < $to";
 
     $sth = $rdb->{dbh}->prepare($cmds);
-    $sth->execute(); 
+    $sth->execute();
     $ref = $sth->fetchrow_hashref();
     $sth->finish();
 
     if (!$ref->{avptime}) {
-	$ref->{count_in} = $ref->{count_out} = $ref->{viruscount_in} = $ref->{viruscount_out} = 
-	    $ref->{spamcount_in} = $ref->{spamcount_out} = $ref->{glcount} = $ref->{spfcount} = 
-	    $ref->{rblcount} = $ref->{bounces_in} = $ref->{bounces_out} = $ref->{traffic_in} = 
+	$ref->{count_in} = $ref->{count_out} = $ref->{viruscount_in} = $ref->{viruscount_out} =
+	    $ref->{spamcount_in} = $ref->{spamcount_out} = $ref->{glcount} = $ref->{spfcount} =
+	    $ref->{rblcount} = $ref->{bounces_in} = $ref->{bounces_out} = $ref->{traffic_in} =
 	    $ref->{traffic_out} = $ref->{avptime} = 0;
     }
 
@@ -430,7 +468,7 @@ sub total_mail_stat {
     $ref->{spfcount_per} =  $ref->{count_in} > 0 ?  ($ref->{spfcount} * 100)/$ref->{count_in} : 0;
     $ref->{rblcount_per} =  $ref->{count_in} > 0 ?  ($ref->{rblcount} * 100)/$ref->{count_in} : 0;
 
-    $ref->{junk_in} = $ref->{viruscount_in} + $ref->{spamcount_in} + $ref->{glcount} + 
+    $ref->{junk_in} = $ref->{viruscount_in} + $ref->{spamcount_in} + $ref->{glcount} +
 	$ref->{spfcount} + $ref->{rblcount};
 
     $ref->{junk_out} = $ref->{viruscount_out} + $ref->{spamcount_out};
@@ -444,11 +482,11 @@ sub total_mail_stat {
 sub total_spam_stat {
     my ($self, $rdb) = @_;
     my ($from, $to) = $self->timespan();
-    
+
     my $sth = $rdb->{dbh}->prepare("SELECT spamlevel, COUNT(spamlevel) AS count FROM CStatistic " .
-				   "WHERE virusinfo IS NULL and time >= ? AND time < ? AND ptime > 0 AND spamlevel > 0 " . 
+				   "WHERE virusinfo IS NULL and time >= ? AND time < ? AND ptime > 0 AND spamlevel > 0 " .
 				   "GROUP BY spamlevel ORDER BY spamlevel LIMIT 10");
-    $sth->execute($from, $to); 
+    $sth->execute($from, $to);
 
     my $res = $sth->fetchall_arrayref({});
 
@@ -461,19 +499,19 @@ sub total_virus_stat {
     my ($self, $rdb, $order) = @_;
 
     my ($from, $to) = $self->localdayspan();
-    
+
     $order = "count" if !$order;
 
     my @oa = split (',', $order);
 
     $order = join (' DESC, ', @oa);
     $order .= ' DESC';
- 
+
     my $sth = $rdb->{dbh}->prepare("SELECT Name, SUM (Count) as count FROM VirusInfo " .
-				   "WHERE time >= ? AND time < ? " . 
+				   "WHERE time >= ? AND time < ? " .
 				   "GROUP BY name ORDER BY $order, name");
 
-    $sth->execute($from, $to); 
+    $sth->execute($from, $to);
 
     my $res = $sth->fetchall_arrayref({});
 
@@ -486,17 +524,17 @@ sub rule_count {
     my ($self, $rdb) = @_;
 
     my $sth = $rdb->{dbh}->prepare("SELECT id, name, count from rule order by count desc, name");
-    $sth->execute(); 
-    
+    $sth->execute();
+
     my $res = $sth->fetchall_arrayref({});
     $sth->finish();
 
-    return $res;   
+    return $res;
 }
 
 sub total_domain_stat {
     my ($self, $rdb, $orderby) = @_;
-    
+
     $orderby || ($orderby = 'domain');
     my $sortdir = sort_dir ($orderby);
 
@@ -510,7 +548,7 @@ sub total_domain_stat {
 	"GROUP BY domain ORDER BY $orderby $sortdir, domain ASC";
 
     my $sth = $rdb->{dbh}->prepare($query);
-    $sth->execute(); 
+    $sth->execute();
 
     my $res = $sth->fetchall_arrayref({});
 
@@ -537,7 +575,7 @@ sub query_cond_good_mail {
 sub query_active_workers {
     my ($self) = @_;
     my ($from, $to) = $self->timespan();
-    
+
     my $start = $from - (3600*24)*90; # from - 90 days
     my $cond_good_mail = $self->query_cond_good_mail ($start, $to);
 
@@ -569,7 +607,7 @@ sub user_stat_contact_details {
 
     $sth = $rdb->{dbh}->prepare($query);
 
-    $sth->execute ($receiver); 
+    $sth->execute ($receiver);
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
@@ -609,7 +647,7 @@ sub user_stat_contact {
 
     $sth = $rdb->{dbh}->prepare($query);
 
-    $sth->execute(); 
+    $sth->execute();
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
@@ -631,10 +669,10 @@ sub user_stat_sender_details {
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
-    $sth = $rdb->{dbh}->prepare("SELECT * FROM CStatistic, CReceivers WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND " . 
+    $sth = $rdb->{dbh}->prepare("SELECT * FROM CStatistic, CReceivers WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND " .
 				"$cond_good_mail AND NOT direction AND sender = ? " .
 				"ORDER BY $orderby $sortdir, receiver limit $limit");
-    $sth->execute($sender); 
+    $sth->execute($sender);
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
@@ -657,14 +695,14 @@ sub user_stat_sender {
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
-    $query = "SELECT sender,count(*) AS count, sum (bytes) AS bytes, " . 
-	"count (virusinfo) as viruscount, " . 
+    $query = "SELECT sender,count(*) AS count, sum (bytes) AS bytes, " .
+	"count (virusinfo) as viruscount, " .
 	"count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
 	"FROM CStatistic WHERE $cond_good_mail AND NOT direction AND sender != '' " .
-	"GROUP BY sender ORDER BY $orderby $sortdir, sender limit $limit";	
-     
+	"GROUP BY sender ORDER BY $orderby $sortdir, sender limit $limit";
+
     $sth = $rdb->{dbh}->prepare($query);
-    $sth->execute(); 
+    $sth->execute();
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
@@ -686,10 +724,10 @@ sub user_stat_receiver_details {
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
-    $sth = $rdb->{dbh}->prepare("SELECT * FROM CStatistic, CReceivers " . 
-				"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND receiver = ? " . 
+    $sth = $rdb->{dbh}->prepare("SELECT * FROM CStatistic, CReceivers " .
+				"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND receiver = ? " .
 				"ORDER BY $orderby $sortdir, sender limit $limit");
-    $sth->execute($receiver); 
+    $sth->execute($receiver);
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
@@ -716,25 +754,25 @@ sub user_stat_receiver {
     if ($self->{adv}) {
 	my $active_workers = $self->query_active_workers ();
 
-	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes, " . 
-	    "count (virusinfo) as viruscount, " . 
+	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes, " .
+	    "count (virusinfo) as viruscount, " .
 	    "count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
-	    "FROM CStatistic, CReceivers, ($active_workers) as workers " .  
-	    "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND direction AND worker=receiver " . 
+	    "FROM CStatistic, CReceivers, ($active_workers) as workers " .
+	    "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND direction AND worker=receiver " .
 	    "GROUP BY receiver " .
 	    "ORDER BY $orderby $sortdir, receiver LIMIT $limit";
     } else {
-	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes, " . 
-	    "count (virusinfo) as viruscount, " . 
+	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes, " .
+	    "count (virusinfo) as viruscount, " .
 	    "count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
-	    "FROM CStatistic, CReceivers " .  
-	    "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail and direction " . 
+	    "FROM CStatistic, CReceivers " .
+	    "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail and direction " .
 	    "GROUP BY receiver " .
 	    "ORDER BY $orderby $sortdir, receiver LIMIT $limit";
     }
 
     $sth = $rdb->{dbh}->prepare($query);
-    $sth->execute(); 
+    $sth->execute();
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
@@ -762,7 +800,7 @@ sub traffic_stat_graph {
 
     my $sth =  $rdb->{dbh}->prepare($cmd);
 
-    $sth->execute (); 
+    $sth->execute ();
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	@$res[$ref->{index}] = $ref;
@@ -793,10 +831,10 @@ sub traffic_stat_day_dist {
 	"sum (Virus$p) as viruscount, $spam as spamcount, sum (Bounces$p) as bounces " .
 	"FROM DailyStat WHERE time >= $from AND time < $to " .
 	"GROUP BY index ORDER BY index";
-   
+
     my $sth =  $rdb->{dbh}->prepare($cmd);
 
-    $sth->execute (); 
+    $sth->execute ();
 
     while (my $ref = $sth->fetchrow_hashref()) {
 	@$res[$ref->{index}] = $ref;
@@ -811,9 +849,9 @@ sub traffic_stat_day_dist {
     return $res;
 }
 
-sub timespan { 
-    my ($self, $from, $to) = @_; 
-    
+sub timespan {
+    my ($self, $from, $to) = @_;
+
     if (defined ($from) && defined ($to)) {
 	$self->{from} = $from;
 	$self->{to} = $to;
@@ -822,9 +860,9 @@ sub timespan {
     return ($self->{from}, $self->{to});
 }
 
-sub localdayspan { 
+sub localdayspan {
     my ($self) = @_;
- 
+
     my ($from, $to) = $self->timespan();
 
     my $timezone = tz_local_offset();;
@@ -836,9 +874,9 @@ sub localdayspan {
     return ($from, $to);
 }
 
-sub localhourspan { 
+sub localhourspan {
     my ($self) = @_;
- 
+
     my ($from, $to) = $self->timespan();
 
     my $timezone = tz_local_offset();;
