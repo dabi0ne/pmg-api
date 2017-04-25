@@ -505,10 +505,7 @@ sub run_dequeue {
 
     # do database maintainance here
 
-    my $ctime = time();
-    my $tdiff = $ctime - $last_dequeue_time;
-    $last_dequeue_time = $ctime;
-
+    # this is called every 30 secends
     eval {
 	PMG::Utils::update_node_status_rrd();
     };
@@ -517,7 +514,13 @@ sub run_dequeue {
 	# continue
     }
 
+    my $ctime = time();
+    my $tdiff = $ctime - $last_dequeue_time;
+
+    # return if tdiff less than 2 minutes
     return if $tdiff < 2*60;
+
+    $last_dequeue_time = $ctime;
 
     $self->log (2, "starting database maintainance");
 
