@@ -1191,9 +1191,82 @@ sub rewrite_dot_forward {
     return 1;
 }
 
+my $write_smtp_whitelist = sub {
+    my ($filename, $data, $action) = @_;
+
+    $action = 'OK' if !$action;
+
+    my $old = PVE::Tools::file_get_contents($filename, 1024*1024)
+	if -f $filename;
+
+    my $new = '';
+    foreach my $k (sort keys %$data) {
+	$new .= "$k $action\n";
+    }
+
+    return 0 if defined($old) && ($old eq $new); # no change
+
+    PVE::Tools::file_set_contents($filename, $new);
+
+    PMG::Utils::run_postmap($filename);
+
+    return 1;
+};
+
+my $rewrite_config_whitelist = sub {
+    my ($rulecache) = @_;
+
+    # see man page for regexp_table for postfix regex table format
+
+    # we use a hash to avoid duplicate entries in regex tables
+    my $tolist = {};
+    my $fromlist = {};
+    my $clientlist = {};
+
+    foreach my $obj (@{$rulecache->{"greylist:receiver"}}) {
+	my $oclass = ref($obj);
+	if ($oclass eq 'PMG::RuleDB::Receiver') {
+	    my $addr = PMG::Utils::quote_regex($obj->{address});
+	    $tolist->{"/^$addr\$/"} = 1;
+	} elsif ($oclass eq 'PMG::RuleDB::ReceiverDomain') {
+	    my $addr = PMG::Utils::quote_regex($obj->{address});
+	    $tolist->{"/^.+\@$addr\$/"} = 1;
+	} elsif ($oclass eq 'PMG::RuleDB::ReceiverRegex') {
+	    my $addr = $obj->{address};
+	    $addr =~ s|/|\\/|g;
+	    $tolist->{"/^$addr\$/"} = 1;
+	}
+    }
+
+    foreach my $obj (@{$rulecache->{"greylist:sender"}}) {
+	my $oclass = ref($obj);
+	my $addr = PMG::Utils::quote_regex($obj->{address});
+	if ($oclass eq 'PMG::RuleDB::EMail') {
+	    my $addr = PMG::Utils::quote_regex($obj->{address});
+	    $fromlist->{"/^$addr\$/"} = 1;
+	} elsif ($oclass eq 'PMG::RuleDB::Domain') {
+	    my $addr = PMG::Utils::quote_regex($obj->{address});
+	    $fromlist->{"/^.+\@$addr\$/"} = 1;
+	} elsif ($oclass eq 'PMG::RuleDB::WhoRegex') {
+	    my $addr = $obj->{address};
+	    $addr =~ s|/|\\/|g;
+	    $fromlist->{"/^$addr\$/"} = 1;
+	} elsif ($oclass eq 'PMG::RuleDB::IPAddress') {
+	    $clientlist->{$obj->{address}} = 1;
+	} elsif ($oclass eq 'PMG::RuleDB::IPNet') {
+	    $clientlist->{$obj->{address}} = 1;
+	}
+    }
+
+    $write_smtp_whitelist->("/etc/postfix/senderaccess", $fromlist);
+    $write_smtp_whitelist->("/etc/postfix/rcptaccess", $tolist);
+    $write_smtp_whitelist->("/etc/postfix/clientaccess", $clientlist);
+    $write_smtp_whitelist->("/etc/postfix/postscreen_access", $clientlist, 'permit');
+};
+
 # rewrite /etc/postfix/*
 sub rewrite_config_postfix {
-    my ($self) = @_;
+    my ($self, $rulecache) = @_;
 
     # make sure we have required files (else postfix start fails)
     postmap_pmg_domains();
@@ -1217,9 +1290,9 @@ sub rewrite_config_postfix {
     $changes = 1 if $self->rewrite_config_file(
 	'master.cf.in', '/etc/postfix/master.cf');
 
-    #rewrite_config_transports ($class);
-    #rewrite_config_whitelist ($class);
-    #rewrite_config_tls_policy ($class);
+    $rewrite_config_whitelist->($rulecache);
+
+    # fixme: rewrite_config_tls_policy ($class);
 
     # make sure aliases.db is up to date
     system('/usr/bin/newaliases');
@@ -1228,11 +1301,11 @@ sub rewrite_config_postfix {
 }
 
 sub rewrite_config {
-    my ($self, $restart_services, $force_restart) = @_;
+    my ($self, $rulecache, $restart_services, $force_restart) = @_;
 
     $force_restart = {} if ! $force_restart;
 
-    if (($self->rewrite_config_postfix() && $restart_services) ||
+    if (($self->rewrite_config_postfix($rulecache) && $restart_services) ||
 	$force_restart->{postfix}) {
 	PMG::Utils::service_cmd('postfix', 'restart');
     }
