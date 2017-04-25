@@ -11,6 +11,8 @@ use PVE::INotify;
 use PVE::CLIHandler;
 
 use PMG::RESTEnvironment;
+use PMG::RuleDB;
+use PMG::RuleCache;
 use PMG::Cluster;
 use PMG::LDAPConfig;
 use PMG::LDAPSet;
@@ -77,7 +79,11 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $cfg = PMG::Config->new();
-	$cfg->rewrite_config($param->{restart});
+
+	my $ruledb = PMG::RuleDB->new();
+	my $rulecache = PMG::RuleCache->new($ruledb);
+
+	$cfg->rewrite_config($rulecache, $param->{restart});
 
 	return undef;
     }});
@@ -169,11 +175,11 @@ __PACKAGE__->register_method ({
 	PMG::Ticket::generate_api_cert();
 	PMG::Ticket::generate_csrf_key();
 	PMG::Ticket::generate_auth_key();
-	
+
 	if ($cfg->get('mail', 'tls')) {
 	    PMG::Utils::gen_proxmox_tls_cert();
 	}
-	
+
 	return undef;
     }});
 
