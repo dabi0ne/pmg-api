@@ -101,6 +101,15 @@ sub lastid {
 	undef, undef, undef, undef, { sequence => $seq});
 }
 
+# quote all regex operators
+sub quote_regex {
+    my $val = shift;
+
+    $val =~ s/([\(\)\[\]\/\}\+\*\?\.\|\^\$\\])/\\$1/g;
+
+    return $val;
+}
+
 sub file_older_than {
     my ($filename, $lasttime) = @_;
 
