@@ -32,67 +32,18 @@ initlog('pmg-daily', 'mail');
 
 my $cfg = PMG::Config->new();
 
-sub get_timespan {
-    
-    my ($sec, $min, $hour, $mday, $mon, $year) = 
-	localtime(time());
-    
-    my $end = timelocal(0, 0, 0, $mday, $mon, $year);
-    my $start = $end - 3600*24;
-
-    return ($start, $end);
-}
-
-my $statlifetime = $cfg->get('admin', 'statlifetime');
-
-if ($statlifetime && $statlifetime > 0) {
-    my ($start, $end) = get_timespan();
-    
-    $statlifetime -= 1;
-
-    my $secs = $statlifetime * 86400;
-
-    $start -= $secs;
-
-    # delete statistics older than $start
-
-    my $dbh;
-
-    my ($srows, $rrows) = (0, 0);
-
+if (my $statlifetime = $cfg->get ('admin', 'statlifetime')) {
+    my $count = 0;
     eval {
 	my $dbh = PMG::DBTools::open_ruledb();
-
-	$dbh->begin_work;
-    
-	my $sth = $dbh->prepare("DELETE FROM CStatistic WHERE time < $start");
-	$sth->execute;
-	$srows = $sth->rows;
-	$sth->finish;
-
-	if ($srows > 0) {
-	    $sth = $dbh->prepare(
-		"DELETE FROM CReceivers WHERE NOT EXISTS " .
-		"(SELECT * FROM CStatistic WHERE CID = CStatistic_CID AND RID = CStatistic_RID)");
-
-	    $sth->execute;
-	    $rrows = $sth->rows;
-	    $sth->finish;
-	}
-
-	$dbh->commit;
+	$count = PMG::Statistic::cleanup_stats($dbh, $statlifetime);
     };
     if (my $err = $@) {
-	$dbh->rollback if $dbh;
 	syslog('err', $err);
     } else {
-	syslog('info', "cleanup removed $srows entries from " .
-	       "statistic database ($srows, $rrows)") if $srows;
+	syslog('info', "cleanup removed $count entries from statistic database") if $count;
     }
-
-    $dbh->disconnect() if $dbh;
 }
-
 
 # fixme: check for available updates
 
