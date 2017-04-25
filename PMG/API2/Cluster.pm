@@ -26,7 +26,7 @@ my $db_service_list = [
     'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
 
 sub cluster_join {
-    my ($cfg, $conn_setup) = @_;
+    my ($cinfo, $conn_setup) = @_;
 
     my $conn = PVE::APIClient::LWP->new(%$conn_setup);
 
@@ -35,7 +35,7 @@ sub cluster_join {
     my $res = $conn->post("/config/cluster/nodes", $info);
 
     foreach my $node (@$res) {
-	$cfg->{ids}->{$node->{cid}} = $node;
+	$cinfo->{ids}->{$node->{cid}} = $node;
     }
 
     eval {
@@ -44,33 +44,37 @@ sub cluster_join {
 	PMG::Utils::service_wait_stopped(40, $db_service_list);
 
 	print STDERR "save new cluster configuration\n";
-	$cfg->write();
+	$cinfo->write();
 
-	PMG::Cluster::update_ssh_keys($cfg);
+	PMG::Cluster::update_ssh_keys($cinfo);
 
 	print STDERR "cluster node successfully joined\n";
 
-	$cfg = PMG::ClusterConfig->new(); # reload
+	$cinfo = PMG::ClusterConfig->new(); # reload
 
-	my $role = $cfg->{'local'}->{type} // '-';
-	die "local node '$cfg->{local}->{name}' not part of cluster\n"
+	my $role = $cinfo->{'local'}->{type} // '-';
+	die "local node '$cinfo->{local}->{name}' not part of cluster\n"
 	    if $role eq '-';
 
-	die "got unexpected role '$role' for local node '$cfg->{local}->{name}'\n"
+	die "got unexpected role '$role' for local node '$cinfo->{local}->{name}'\n"
 	    if $role ne 'node';
 
-	my $cid = $cfg->{'local'}->{cid};
+	my $cid = $cinfo->{'local'}->{cid};
 
 	PMG::Cluster::create_needed_dirs($cid, 1);
 
-	PMG::Cluster::sync_config_from_master($cfg->{master}->{name}, $cfg->{master}->{ip});
+	PMG::Cluster::sync_config_from_master($cinfo->{master}->{name}, $cinfo->{master}->{ip});
 
-	$cfg = PMG::ClusterConfig->new(); # reload
+	PMG::DBTools::init_nodedb($cinfo);
 
-	PMG::DBTools::init_nodedb($cfg);
+	my $cfg = PMG::ClusterConfig->new();
+	my $ruledb = PMG::RuleDB->new();
+	my $rulecache = PMG::RuleCache->new($ruledb);
+
+	$cfg->rewrite_config($rulecache, 1);
 
 	print STDERR "syncing quarantine data\n";
-	PMG::Cluster::sync_master_quar($cfg->{master}->{ip}, $cfg->{master}->{name});
+	PMG::Cluster::sync_master_quar($cinfo->{master}->{ip}, $cinfo->{master}->{name});
 	print STDERR "syncing quarantine data finished\n";
     };
     my $err = $@;
@@ -144,16 +148,16 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PMG::ClusterConfig->new();
+	my $cinfo = PMG::ClusterConfig->new();
 
-	if (scalar(keys %{$cfg->{ids}})) {
-	    my $role = $cfg->{local}->{type} // '-';
+	if (scalar(keys %{$cinfo->{ids}})) {
+	    my $role = $cinfo->{local}->{type} // '-';
 	    if ($role eq '-') {
-		die "local node '$cfg->{local}->{name}' not part of cluster\n";
+		die "local node '$cinfo->{local}->{name}' not part of cluster\n";
 	    }
 	}
 
-	return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
+	return PVE::RESTHandler::hash_to_array($cinfo->{ids}, 'cid');
     }});
 
 __PACKAGE__->register_method({
@@ -186,16 +190,16 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PMG::ClusterConfig->new();
+	my $cinfo = PMG::ClusterConfig->new();
 
-	if (scalar(keys %{$cfg->{ids}})) {
-	    my $role = $cfg->{local}->{type} // '-';
+	if (scalar(keys %{$cinfo->{ids}})) {
+	    my $role = $cinfo->{local}->{type} // '-';
 	    if ($role eq '-') {
-		die "local node '$cfg->{local}->{name}' not part of cluster\n";
+		die "local node '$cinfo->{local}->{name}' not part of cluster\n";
 	    }
 	}
 
-	my $res = PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
+	my $res = PVE::RESTHandler::hash_to_array($cinfo->{ids}, 'cid');
 
 	my $rpcenv = PMG::RESTEnvironment->get();
         my $authuser = $rpcenv->get_user();
@@ -204,7 +208,7 @@ __PACKAGE__->register_method({
 	foreach my $ni (@$res) {
 	    my $info;
 	    eval {
-		if ($ni->{cid} eq $cfg->{local}->{cid}) {
+		if ($ni->{cid} eq $cinfo->{local}->{cid}) {
 		    $info = PMG::API2::NodeInfo->status({ node => PVE::INotify::nodename()});
 		} else {
 		    my $conn = PVE::APIClient::LWP->new(
@@ -255,15 +259,15 @@ __PACKAGE__->register_method({
 	my ($param) = @_;
 
 	my $code = sub {
-	    my $cfg = PMG::ClusterConfig->new();
+	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "no cluster defined\n" if !scalar(keys %{$cfg->{ids}});
+	    die "no cluster defined\n" if !scalar(keys %{$cinfo->{ids}});
 
-	    my $master = $cfg->{master} || die "unable to lookup master node\n";
+	    my $master = $cinfo->{master} || die "unable to lookup master node\n";
 
 	    my $next_cid;
-	    foreach my $cid (keys %{$cfg->{ids}}) {
-		my $d = $cfg->{ids}->{$cid};
+	    foreach my $cid (keys %{$cinfo->{ids}}) {
+		my $d = $cinfo->{ids}->{$cid};
 
 		if ($d->{type} eq 'node' && $d->{ip} eq $param->{ip} && $d->{name} eq $param->{name}) {
 		    $next_cid = $cid; # allow overwrite existing node data
@@ -292,15 +296,15 @@ __PACKAGE__->register_method({
 		$node->{$k} = $param->{$k};
 	    }
 
-	    $cfg->{ids}->{$node->{cid}} = $node;
+	    $cinfo->{ids}->{$node->{cid}} = $node;
 
-	    $cfg->write();
+	    $cinfo->write();
 
 	    PMG::DBTools::update_master_clusterinfo($node->{cid});
 
-	    PMG::Cluster::update_ssh_keys($cfg);
+	    PMG::Cluster::update_ssh_keys($cinfo);
 
-	    return PVE::RESTHandler::hash_to_array($cfg->{ids}, 'cid');
+	    return PVE::RESTHandler::hash_to_array($cinfo->{ids}, 'cid');
 	};
 
 	return PMG::ClusterConfig::lock_config($code, "add node failed");
@@ -325,9 +329,9 @@ __PACKAGE__->register_method({
         my $authuser = $rpcenv->get_user();
 
 	my $realcmd = sub {
-	    my $cfg = PMG::ClusterConfig->new();
+	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
+	    die "cluster alreayd defined\n" if scalar(keys %{$cinfo->{ids}});
 
 	    my $info = PMG::Cluster::read_local_cluster_info();
 
@@ -337,7 +341,7 @@ __PACKAGE__->register_method({
 
 	    $info->{maxcid} = $cid,
 
-	    $cfg->{ids}->{$cid} = $info;
+	    $cinfo->{ids}->{$cid} = $info;
 
 	    eval {
 		print STDERR "stop all services accessing the database\n";
@@ -345,7 +349,7 @@ __PACKAGE__->register_method({
 		PMG::Utils::service_wait_stopped(40, $db_service_list);
 
 		print STDERR "save new cluster configuration\n";
-		$cfg->write();
+		$cinfo->write();
 
 		PMG::DBTools::init_masterdb($cid);
 
@@ -404,9 +408,9 @@ __PACKAGE__->register_method({
         my $authuser = $rpcenv->get_user();
 
 	my $realcmd = sub {
-	    my $cfg = PMG::ClusterConfig->new();
+	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
+	    die "cluster alreayd defined\n" if scalar(keys %{$cinfo->{ids}});
 
 	    my $setup = {
 		username => 'root@pam',
@@ -418,7 +422,7 @@ __PACKAGE__->register_method({
 		}
 	    };
 
-	    cluster_join($cfg, $setup);
+	    cluster_join($cinfo, $setup);
 	};
 
 	my $code = sub {
