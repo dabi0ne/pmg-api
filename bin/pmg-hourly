@@ -61,6 +61,9 @@ PMG::Utils::service_cmd('pmgpolicy', 'restart');
 my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
 PMG::LDAPSet::ldap_resync($ldap_cfg);
 
+# rotate razor log file
+rename('/root/.razor/razor-agent.log', '/root/.razor/razor-agent.log.0');
+
 # sync bayes journal to database
 system('sa-learn --sync >/dev/null 2>&1');
 
