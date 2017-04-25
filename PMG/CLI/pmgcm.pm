@@ -15,6 +15,8 @@ use PVE::CLIHandler;
 use PMG::Ticket;
 use PMG::RESTEnvironment;
 use PMG::DBTools;
+use PMG::RuleDB;
+use PMG::RuleCache;
 use PMG::Cluster;
 use PMG::ClusterConfig;
 use PMG::API2::Cluster;
@@ -194,19 +196,19 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file('cluster.conf');
+	my $cinfo = PVE::INotify::read_file('cluster.conf');
 
         my $master_name = undef;
 	my $master_ip = $param->{master_ip};
 
-	if (!$master_ip && $cfg->{master}) {
-	    $master_ip = $cfg->{master}->{ip};
-	    $master_name = $cfg->{master}->{name};
+	if (!$master_ip && $cinfo->{master}) {
+	    $master_ip = $cinfo->{master}->{ip};
+	    $master_name = $cinfo->{master}->{name};
 	}
 
 	die "no master IP specified (use option --master_ip)\n" if !$master_ip;
 
-	if ($cfg->{local}->{ip} eq $master_ip) {
+	if ($cinfo->{local}->{ip} eq $master_ip) {
 	    print STDERR "local node is master - nothing to do\n";
 	    return undef;
 	}
@@ -214,6 +216,12 @@ __PACKAGE__->register_method({
 	print STDERR "syncing master configuration from '${master_ip}'\n";
 
 	PMG::Cluster::sync_config_from_master($master_name, $master_ip);
+
+	my $cfg = PMG::Config->new();
+	my $ruledb = PMG::RuleDB->new();
+	my $rulecache = PMG::RuleCache->new($ruledb);
+
+	$cfg->rewrite_config($rulecache, 1);
 
 	return undef;
     }});
