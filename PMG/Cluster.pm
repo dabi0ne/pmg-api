@@ -382,10 +382,6 @@ sub sync_config_from_master {
     }
 
     $cond_commit_synced_file->('pmg.conf');
-
-    my $cfg = PMG::Config->new();
-
-    $cfg->rewrite_config(1, $force_restart);
 }
 
 sub sync_ruledb_from_master {
