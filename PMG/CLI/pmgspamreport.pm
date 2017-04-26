@@ -101,7 +101,7 @@ sub get_item_data {
 }
 
 sub finalize_report {
-    my ($tmpl_data, $data, $mailfrom, $receiver) = @_;
+    my ($tmpl_data, $data, $mailfrom, $receiver, $debug) = @_;
 
     my $html = '';
 
@@ -126,8 +126,12 @@ sub finalize_report {
     $top->attach(
 	Data     => $html,
 	Type     => "text/html",
-	Encoding => "quoted-printable");
+	Encoding => $debug ? 'binary' : 'quoted-printable');
 
+    if ($debug) {
+	$top->print();
+	return;
+    }
     # we use an empty envelope sender (we dont want to receive NDRs)
     PMG::Utils::reinject_mail ($top, '', [$receiver], undef, $data->{fqdn});
 }
@@ -153,17 +157,22 @@ __PACKAGE__->register_method ({
 		optional => 1,
 	    },
 	    style => {
-		description => "Spam report style. Defaults to 'none', which just prints the spam counts and does not send any emails.",
+		description => "Spam report style. Value 'none' just prints the spam counts and does not send any emails. Default value is read from spam quarantine configuration.",
 		type => 'string',
 		enum => ['none', 'short', 'verbose', 'outlook', 'custom'],
 		optional => 1,
-		default => 'none',
 	    },
 	    redirect => {
 		description => "Redirect spam report email to this address.",
 		type => 'string', format => 'email',
 		optional => 1,
 	    },
+	    debug => {
+		description => "Debug mode. Print raw email to stdout instead of sending them.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
+	    }
 	},
     },
     returns => { type => 'null'},
@@ -179,7 +188,7 @@ __PACKAGE__->register_method ({
 
 	my $cfg = PMG::Config->new();
 
-	my $reportstyle = $param->{style} // 'none';
+	my $reportstyle = $param->{style} // $cfg->get('spamquar', 'reportstyle');
 
 	my $timespan = $param->{timespan} // 'today';
 
@@ -287,7 +296,7 @@ __PACKAGE__->register_method ({
 		    $data->{mailcount} = $mailcount;
 
 		    my $sendto = $redirect ? $redirect : $creceiver;
-		    finalize_report($tmpl_data, $data, $mailfrom, $sendto);
+		    finalize_report($tmpl_data, $data, $mailfrom, $sendto, $param->{debug});
 		}
 	    } else {
 		my $hint = $extern ? " (external address)" : "";
