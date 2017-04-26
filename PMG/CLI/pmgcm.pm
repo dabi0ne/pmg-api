@@ -104,7 +104,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PVE::INotify::read_file('cluster.conf');
+	my $cfg = PMG::ClusterConfig->new();
 
 	if (scalar(keys %{$cfg->{ids}})) {
 
@@ -196,7 +196,7 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cinfo = PVE::INotify::read_file('cluster.conf');
+	my $cinfo = PMG::ClusterConfig->new();
 
         my $master_name = undef;
 	my $master_ip = $param->{master_ip};
