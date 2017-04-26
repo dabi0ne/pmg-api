@@ -9,7 +9,6 @@ use Time::Local;
 use Clone 'clone';
 use Mail::Header;
 use POSIX qw(strftime);
-use URI::Escape;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -96,7 +95,7 @@ sub get_item_data {
     $title .= sprintf("File: %s", encode_entities($ref->{file}));
 
     # fixme: urlencode?
-    $data->{title} = uri_escape($title);
+    $data->{title} = $title;
 
     return $data;
 }
@@ -294,6 +293,7 @@ __PACKAGE__->register_method ({
 		    # fixme: my $ticket = Proxmox::Utils::create_ticket ($lastref);
 		    my $ticket = "TEST";
 		    $data->{ticket} = $ticket;
+		    $data->{managehref} = "https://$fqdn:$port?ticket=$ticket";
 		    $data->{mailcount} = $mailcount;
 
 		    my $sendto = $redirect ? $redirect : $creceiver;

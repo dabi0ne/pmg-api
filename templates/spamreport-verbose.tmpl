@@ -11,8 +11,8 @@
 
 <div align=center>
 
-<form action='[% actionhref %]' method='POST'>
-<input type=hidden name=ticket value='[% ticket %]'>
+<form action='[% actionhref | uri %]' method='POST'>
+<input type=hidden name=ticket value='[% ticket | uri %]'>
 
 <table width='100%'>
   <tr>
@@ -26,13 +26,13 @@
   <!--start entries-->
   [% FOREACH item IN items %]
   <tr title='[% item.title %]'>
-    <td><input type=checkbox name=cselect value='[% item.ticket %]'></td>
+    <td><input type=checkbox name=cselect value='[% item.ticket | uri %]'></td>
     <td>[% item.from %]</td>
     <td align=right>[% item.date %] [% item.time %]</td>
   </tr>
   <tr title='[% item.title %]'>
     <td></td>
-    <td colspan=2><a style='cursor:pointer;' href='[% item.href %]'>
+    <td colspan=2><a style='cursor:pointer;' href='[% item.href | url %]'>
 	<b>[% item.subject %]</b></a></td>
   </tr>
   <tr><td colspan=3><hr></td></tr>
@@ -52,7 +52,7 @@
   
 </table>
 
-<p>Please use the <a href='[% manage %]?ticket=[% ticket %]'>web interface</a> to manage your spam quarantine.</p>
+<p>Please use the <a href='[% managehref | url %]'>web interface</a> to manage your spam quarantine.</p>
 <p>Powered by <a target=_blank href='http://www.proxmox.com'>Proxmox</a>.</p>
 </div>
 
