@@ -6,6 +6,7 @@ use warnings;
 use POSIX ":sys_wait_h";
 use POSIX ':signal_h';
 use DBI;
+use Time::Local;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -819,6 +820,44 @@ sub init_masterdb {
     }
 
     die $err if $err;
+}
+
+sub purge_statistic_database {
+    my ($dbh, $statlifetime) = @_;
+
+    return if $statlifetime <= 0;
+
+    my (undef, undef, undef, $mday, $mon, $year) = localtime(time());
+    my $end = timelocal(0, 0, 0, $mday, $mon, $year);
+    my $start = $end - $statlifetime*86400;
+
+    # delete statistics older than $start
+
+    my $rows = 0;
+
+    eval {
+	$dbh->begin_work;
+
+	my $sth = $dbh->prepare("DELETE FROM CStatistic WHERE time < $start");
+	$sth->execute;
+	$rows = $sth->rows;
+	$sth->finish;
+
+	if ($rows > 0) {
+	    $sth = $dbh->prepare(
+		"DELETE FROM CReceivers WHERE NOT EXISTS " .
+		"(SELECT * FROM CStatistic WHERE CID = CStatistic_CID AND RID = CStatistic_RID)");
+
+	    $sth->execute;
+	}
+	$dbh->commit;
+    };
+    if (my $err = $@) {
+	$dbh->rollback;
+	die $err;
+    }
+
+    return $rows;
 }
 
 sub copy_table {

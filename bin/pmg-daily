@@ -36,7 +36,7 @@ if (my $statlifetime = $cfg->get ('admin', 'statlifetime')) {
     my $count = 0;
     eval {
 	my $dbh = PMG::DBTools::open_ruledb();
-	$count = PMG::Statistic::cleanup_stats($dbh, $statlifetime);
+	$count = PMG::DBTools::purge_statistic_database($dbh, $statlifetime);
     };
     if (my $err = $@) {
 	syslog('err', $err);
