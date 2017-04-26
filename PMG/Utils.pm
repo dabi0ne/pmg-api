@@ -881,4 +881,29 @@ sub rfc1522_to_html {
     return $res;
 }
 
+# RFC 2047 B-ENCODING http://rfc.net/rfc2047.html
+# (Q-Encoding is complex and error prone)
+sub bencode_header {
+    my $txt = shift;
+
+    my $CRLF = "\015\012";
+
+    # Nonprintables (controls + x7F + 8bit):
+    my $NONPRINT = "\\x00-\\x1F\\x7F-\\xFF";
+
+    # always use utf-8 (work with japanese character sets)
+    $txt = encode("UTF-8", $txt);
+
+    return $txt if $txt !~ /[$NONPRINT]/o;
+
+    my $res = '';
+
+    while ($txt =~ s/^(.{1,42})//sm) {
+	my $t = MIME::Words::encode_mimeword ($1, 'B', 'UTF-8');
+	$res .= $res ? "\015\012\t$t" : $t;
+    }
+
+    return $res;
+}
+
 1;
