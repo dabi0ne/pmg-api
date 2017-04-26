@@ -1,0 +1,8 @@
+#!/usr/bin/perl -T
+
+use strict;
+use warnings;
+
+use PMG::CLI::pmgspamreport;
+
+PMG::CLI::pmgspamreport->run_cli_handler();

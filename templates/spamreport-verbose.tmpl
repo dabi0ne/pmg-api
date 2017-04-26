@@ -1,0 +1,61 @@
+[%- IF timespan == 'week' -%]
+[%- SET title = "Weekly Spam Report for '${pmail}' - ${date}'" -%]
+[%- ELSE %]
+[%- SET title = "Daily Spam Report for '${pmail}' - ${date}" -%]
+[%- END -%]
+<html>
+<head>
+<title>[% title %]</title>
+</head>
+<body>
+
+<div align=center>
+
+<form action='[% actionhref %]' method='POST'>
+<input type=hidden name=ticket value='[% ticket %]'>
+
+<table width='100%'>
+  <tr>
+    <td colspan=3>
+      <div style='width:600px;'><h2>[% title %]</h2></div>
+    </td>
+  </tr>
+
+  <tr><td colspan=3><hr></td></tr>	
+
+  <!--start entries-->
+  [% FOREACH item IN items %]
+  <tr title='[% item.title %]'>
+    <td><input type=checkbox name=cselect value='[% item.ticket %]'></td>
+    <td>[% item.from %]</td>
+    <td align=right>[% item.data %] [% item.time %]</td>
+  </tr>
+  <tr title='[% item.title %]'>
+    <td></td>
+    <td colspan=2><a style='cursor:pointer;' href='[% item.href %]'>
+	<b>[% item.subject %]</b></a></td>
+  </tr>
+  <tr><td colspan=3><hr></td></tr>
+  [% END %]
+  <!--end entries-->
+
+  <tr>
+    <td colspan=3>
+      <div align=center>
+      <input type=submit name=whitelist>
+      <input type=submit name=blacklist>
+      <input type=submit name=deliver>
+      <input type=submit name=delete>
+      </div>
+    </td>
+  </tr>
+  
+</table>
+
+<p>Please use the <a href='[% manage %]?ticket=[% ticket %]'>web interface</a> to manage your spam quarantine.</p>
+<p>Powered by <a target=_blank href='http://www.proxmox.com'>Proxmox</a>.</p>
+</div>
+
+</form>
+</body>
+</html>

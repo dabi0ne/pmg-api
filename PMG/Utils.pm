@@ -21,6 +21,7 @@ use Socket;
 use RRDs;
 use Filesys::Df;
 use Encode;
+use HTML::Entities;
 
 use PVE::ProcFSTools;
 use PVE::Network;
@@ -851,6 +852,31 @@ sub create_rrd_data {
 	}
 	push @$res, $entry;
     }
+
+    return $res;
+}
+
+sub rfc1522_to_html {
+    my ($enc) = @_;
+
+    my $res = '';
+
+    return '' if !$enc;
+
+    eval {
+	foreach my $r (MIME::Words::decode_mimewords($enc)) {
+	    my ($d, $cs) = @$r;
+	    if ($d) {
+		if ($cs) {
+		    $res .= encode_entities(decode($cs, $d));
+		} else {
+		    $res .= encode_entities($d);
+		}
+	    }
+	}
+    };
+
+    $res = $enc if $@;
 
     return $res;
 }

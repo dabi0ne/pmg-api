@@ -18,7 +18,7 @@ BASHCOMPLDIR=${DESTDIR}/usr/share/bash-completion/completions/
 REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy pmgtunnel pmgmirror
-CLITOOLS = pmgdb pmgconfig pmgperf pmgcm
+CLITOOLS = pmgdb pmgconfig pmgperf pmgcm pmgspamreport
 CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy
 CRONSCRIPTS = pmg-hourly pmg-daily
 
@@ -35,6 +35,7 @@ SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8 pmgpolicy.8
 CONF_MANS= pmg.conf.5 cluster.conf.5
 
 TEMPLATES =				\
+	spamreport-verbose.tmpl		\
 	main.cf.in			\
 	main.cf.in.demo			\
 	master.cf.in			\
