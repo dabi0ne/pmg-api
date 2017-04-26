@@ -9,6 +9,7 @@ use Time::Local;
 use Clone 'clone';
 use Mail::Header;
 use POSIX qw(strftime);
+use URI::Escape;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -79,7 +80,7 @@ sub get_item_data {
     $data->{receiver} = $ref->{receiver} || $ref->{pmail};
 
     $data->{date} = strftime("%F", localtime($ref->{time}));
-    $data->{time} = strftime("%H%M%S", localtime($ref->{time}));
+    $data->{time} = strftime("%H:%M:%S", localtime($ref->{time}));
  
     # fixme: $data->{ticket} = Proxmox::Utils::create_ticket ($ref);
     $data->{bytes} = $ref->{bytes};
@@ -95,8 +96,8 @@ sub get_item_data {
     $title .= sprintf("File: %s", encode_entities($ref->{file}));
 
     # fixme: urlencode?
-    $ref->{title} = $title;
-    
+    $data->{title} = uri_escape($title);
+
     return $data;
 }
 
