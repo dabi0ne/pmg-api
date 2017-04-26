@@ -875,9 +875,11 @@ sub purge_quarantine_database {
 
     $sth->execute();
 
+    my $count = 0;
+
     while (my $ref = $sth->fetchrow_hashref()) {
 	my $filename = "$spooldir/$ref->{file}";
-	unlink $filename;
+	$count++ if unlink($filename);
     }
 
     $sth->finish();
@@ -886,6 +888,8 @@ sub purge_quarantine_database {
 	"DELETE FROM CMailStore WHERE time < $start AND QType = '$qtype';" .
 	"DELETE FROM CMSReceivers WHERE NOT EXISTS " .
 	"(SELECT * FROM CMailStore WHERE CID = CMailStore_CID AND RID = CMailStore_RID)");
+
+    return $count;
 }
 
 sub copy_table {
