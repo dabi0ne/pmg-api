@@ -104,11 +104,11 @@ __PACKAGE__->register_method({
     code => sub {
 	my ($param) = @_;
 
-	my $cfg = PMG::ClusterConfig->new();
+	my $cinfo = PMG::ClusterConfig->new();
 
-	if (scalar(keys %{$cfg->{ids}})) {
+	if (scalar(keys %{$cinfo->{ids}})) {
 
-	    my $master = $cfg->{master} ||
+	    my $master = $cinfo->{master} ||
 		die "no master found\n";
 
 	    print "pmgcm join $master->{ip} --fingerprint $master->{fingerprint}\n";
@@ -145,9 +145,9 @@ __PACKAGE__->register_method({
 	my ($param) = @_;
 
 	my $code = sub {
-	    my $cfg = PMG::ClusterConfig->new();
+	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "cluster alreayd defined\n" if scalar(keys %{$cfg->{ids}});
+	    die "cluster alreayd defined\n" if scalar(keys %{$cinfo->{ids}});
 
 	    my $term = new Term::ReadLine ('pmgcm');
 	    my $attribs = $term->Attribs;
@@ -169,7 +169,7 @@ __PACKAGE__->register_method({
 		$setup->{manual_verification} = 1;
 	    }
 
-	    PMG::API2::Cluster::cluster_join($cfg, $setup);
+	    PMG::API2::Cluster::cluster_join($cinfo, $setup);
 	};
 
 	PMG::ClusterConfig::lock_config($code, "cluster join failed");
