@@ -13,6 +13,7 @@ use PVE::Tools;
 
 use PMG::Utils;
 use PMG::RuleDB;
+use PMG::MailQueue;
 
 our $default_db_name = "Proxmox_ruledb";
 
@@ -858,6 +859,33 @@ sub purge_statistic_database {
     }
 
     return $rows;
+}
+
+sub purge_quarantine_database {
+    my ($dbh, $qtype, $lifetime) = @_;
+
+    my $spooldir = $PMG::MailQueue::spooldir;
+
+    my (undef, undef, undef, $mday, $mon, $year) = localtime(time());
+    my $end = timelocal(0, 0, 0, $mday, $mon, $year);
+    my $start = $end - $lifetime*86400;
+
+    my $sth = $dbh->prepare(
+	"SELECT file FROM CMailStore WHERE time < $start AND QType = '$qtype'");
+
+    $sth->execute();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+	my $filename = "$spooldir/$ref->{file}";
+	unlink $filename;
+    }
+
+    $sth->finish();
+
+    $dbh->do(
+	"DELETE FROM CMailStore WHERE time < $start AND QType = '$qtype';" .
+	"DELETE FROM CMSReceivers WHERE NOT EXISTS " .
+	"(SELECT * FROM CMailStore WHERE CID = CMailStore_CID AND RID = CMailStore_RID)");
 }
 
 sub copy_table {
