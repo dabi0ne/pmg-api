@@ -4,58 +4,50 @@
 [%- SET title = "Daily Spam Report for '${pmail}' - ${date}" -%]
 [%- END -%]
 <html>
-<head>
-<title>[% title %]</title>
-</head>
-<body>
+  <head>
+    <title>[% title %]</title>
+  </head>
+  <body>
 
-<div align=center>
+    <div align=center>
 
-<form action='[% actionhref | uri %]' method='POST'>
-<input type=hidden name=ticket value='[% ticket | uri %]'>
 
-<table width='100%'>
-  <tr>
-    <td colspan=3>
-      <div style='width:600px;'><h2>[% title %]</h2></div>
-    </td>
-  </tr>
+      <table width='100%'>
+	<tr>
+	  <td colspan=2>
+	    <div style='width:600px;'><h2>[% title %]</h2></div>
+	  </td>
+	</tr>
 
-  <tr><td colspan=3><hr></td></tr>	
+	<tr><td colspan=2><hr></td></tr>
 
-  <!--start entries-->
-  [% FOREACH item IN items %]
-  <tr title='[% item.title %]'>
-    <td><input type=checkbox name=cselect value='[% item.ticket | uri %]'></td>
-    <td>[% item.from %]</td>
-    <td align=right>[% item.date %] [% item.time %]</td>
-  </tr>
-  <tr title='[% item.title %]'>
-    <td></td>
-    <td colspan=2><a style='cursor:pointer;' href='[% item.href | url %]'>
-	<b>[% item.subject %]</b></a></td>
-  </tr>
-  <tr><td colspan=3><hr></td></tr>
-  [% END %]
-  <!--end entries-->
+	<!--start entries-->
+	[% FOREACH item IN items %]
+	<tr title='[% item.title %]'>
+	  <td>[% item.from %]</td>
+	  <td align=right nowrap>[% item.date %] [% item.time %]</td>
+	</tr>
+	<tr title='[% item.title %]'>
+	  <td><a style='cursor:pointer;' href='[% item.href | url %]'><b>[% item.subject %]</b></a></td>
+	  <td align=right nowrap>
+	    <div style='font-size:xx-small;'>
+	      <a href='[% item.wlhref | url %]'>Whitelist</a>&nbsp;
+	      <a href='[% item.blhref | url %]'>Blacklist</a>&nbsp;
+	      <a href='[% item.deliverhref | url %]'>Deliver</a>&nbsp;
+	      <a href='[% item.deletehref | url %]'>Delete</a>
+	    </div>
+	  </td>
+	</tr>
+	<tr><td colspan=2><hr></td></tr>
+	[% END %]
+	<!--end entries-->
 
-  <tr>
-    <td colspan=3>
-      <div align=center>
-      <button type=submit name=whitelist>Whitelist</button>
-      <button type=submit name=blacklist>Blacklist</button>
-      <button type=submit name=deliver>Deliver</button>
-      <button type=submit name=delete>Delete</button>
-      </div>
-    </td>
-  </tr>
-  
-</table>
+      </table>
 
-<p>Please use the <a href='[% managehref | url %]'>web interface</a> to manage your spam quarantine.</p>
-<p>Powered by <a target=_blank href='http://www.proxmox.com'>Proxmox</a>.</p>
-</div>
+      <p>Please use the <a href='[% managehref | url %]'>web interface</a> to manage your spam quarantine.</p>
+      <p>Powered by <a target=_blank href='http://www.proxmox.com'>Proxmox</a>.</p>
 
-</form>
-</body>
+    </div>
+
+  </body>
 </html>

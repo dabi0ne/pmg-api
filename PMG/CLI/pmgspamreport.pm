@@ -55,14 +55,14 @@ sub domain_regex {
 }
 
 sub get_item_data {
-    my ($ref) = @_;
+    my ($data, $ref) = @_;
 
     my @lines = split ('\n', $ref->{header});
     my $head = new Mail::Header(\@lines);
 
-    my $data = {};
+    my $item = {};
     
-    $data->{subject} = PMG::Utils::rfc1522_to_html(
+    $item->{subject} = PMG::Utils::rfc1522_to_html(
 	PVE::Tools::trim($head->get('subject')) || 'No Subject');
 
     my @fromarray = split('\s*,\s*', $head->get('from') || $ref->{sender});
@@ -70,23 +70,23 @@ sub get_item_data {
     my $sender = PMG::Utils::rfc1522_to_html(PVE::Tools::trim($head->get('sender')));
 
     if ($sender) {
-	$data->{sender} = $sender;
-	$data->{from} = sprintf ("%s on behalf of %s", $sender, $from);
+	$item->{sender} = $sender;
+	$item->{from} = sprintf ("%s on behalf of %s", $sender, $from);
     } else {
-	$data->{from} = $from;
+	$item->{from} = $from;
     }
 
-    $data->{pmail} = $ref->{pmail};
-    $data->{receiver} = $ref->{receiver} || $ref->{pmail};
+    $item->{pmail} = $ref->{pmail};
+    $item->{receiver} = $ref->{receiver} || $ref->{pmail};
 
-    $data->{date} = strftime("%F", localtime($ref->{time}));
-    $data->{time} = strftime("%H:%M:%S", localtime($ref->{time}));
+    $item->{date} = strftime("%F", localtime($ref->{time}));
+    $item->{time} = strftime("%H:%M:%S", localtime($ref->{time}));
  
-    $data->{bytes} = $ref->{bytes};
-    $data->{spamlevel} = $ref->{spamlevel};
-    $data->{spaminfo} = $ref->{info};
+    $item->{bytes} = $ref->{bytes};
+    $item->{spamlevel} = $ref->{spamlevel};
+    $item->{spaminfo} = $ref->{info};
       
-    my $title = "Received: $data->{date} $data->{time}\n";
+    my $title = "Received: $item->{date} $item->{time}\n";
     $title .= "From: $ref->{sender}\n";
     $title .= "To: $ref->{receiver}\n" if $ref->{receiver};
     $title .= sprintf("Size: %d KB\n", int (($ref->{bytes} + 1023) / 1024 ));
@@ -94,11 +94,18 @@ sub get_item_data {
     $title .= sprintf("Virus info: %s\n", encode_entities ($ref->{info})) if $ref->{qtype} eq 'V';
     $title .= sprintf("File: %s", encode_entities($ref->{file}));
 
-    $data->{title} = $title;
+    $item->{title} = $title;
 
-    $data->{ticket} = PMG::Ticket::assemble_quarantine_ticket($ref);
+    $item->{ticket} = PMG::Ticket::assemble_quarantine_ticket($ref);
 
-    return $data;
+    my $basehref = "https://$data->{fqdn}:$data->{port}/userquar";
+
+    $item->{wlhref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&whitelist=1";
+    $item->{blhref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&blacklist=1";
+    $item->{deliverhref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&deliver=1";
+    $item->{deletehref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&delete=1";
+
+    return $item;
 }
 
 sub finalize_report {
@@ -222,7 +229,6 @@ __PACKAGE__->register_method ({
 	    port => $port,
 	    fqdn => $fqdn,
 	    hostname => $hostname,
-	    actionhref => "https://$fqdn:$port/userquar/",
 	    date => strftime("%F", localtime($end - 1)),
 	    timespan => $timespan,
 	    items => [],
@@ -313,7 +319,7 @@ __PACKAGE__->register_method ({
 	    }
 
 	    if ($template) {
-		push @{$data->{items}}, get_item_data($ref);
+		push @{$data->{items}}, get_item_data($data, $ref);
 	    }
 	    
 	    $mailcount++;
