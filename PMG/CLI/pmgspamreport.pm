@@ -244,13 +244,11 @@ __PACKAGE__->register_method ({
 
 	my $template;
 
-	my $include_path = ['/etc/pmg/templates' ,'/var/lib/pmg/templates' ];
-	
 	if ($reportstyle ne 'none') {
 
 	    $template = "spamreport-${reportstyle}.tmpl";
 	    my $found = 0;
-	    foreach my $path (@$include_path) {
+	    foreach my $path (@$PMG::Config::tt_include_path) {
 		if (-f "$path/$template") { $found = 1; last; }
 	    }
 	    if (!$found) {
@@ -278,8 +276,8 @@ __PACKAGE__->register_method ({
 	my $creceiver = '';
 	my $data;
 
-	my $tt = Template->new({ INCLUDE_PATH => $include_path });
-	
+	my $tt = PMG::Config::get_template_toolkit();
+
 	my $finalize = sub {
 	    
 	    my $extern = ($domainregex && $creceiver !~ $domainregex);

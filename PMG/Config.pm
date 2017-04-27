@@ -1025,6 +1025,20 @@ sub get_template_vars {
     return $vars;
 }
 
+# use one global TT cache
+our $tt_include_path = ['/etc/pmg/templates' ,'/var/lib/pmg/templates' ];
+
+my $template_toolkit;
+
+sub get_template_toolkit {
+
+    return $template_toolkit if $template_toolkit;
+
+    $template_toolkit = Template->new({ INCLUDE_PATH => $tt_include_path });
+
+    return $template_toolkit;
+}
+
 # rewrite file from template
 # return true if file has changed
 sub rewrite_config_file {
@@ -1032,18 +1046,12 @@ sub rewrite_config_file {
 
     my $demo = $self->get('admin', 'demo');
 
-    my $srcfn = ($tmplname =~ m|^.?/|) ?
-	$tmplname : "/var/lib/pmg/templates/$tmplname";
-
     if ($demo) {
-	my $demosrc = "$srcfn.demo";
-	$srcfn = $demosrc if -f $demosrc;
+	my $demosrc = "$tmplname.demo";
+	$tmplname = $demosrc if -f "/var/lib/pmg/templates/$demosrc";
     }
 
     my ($perm, $uid, $gid);
-
-    my $srcfd = IO::File->new ($srcfn, "r")
-	|| die "cant read template '$srcfn' - $!: ERROR";
 
     if ($dstfn eq '/etc/fetchmailrc') {
 	(undef, undef, $uid, $gid) = getpwnam('fetchmail');
@@ -1056,16 +1064,14 @@ sub rewrite_config_file {
 	$perm = 0600;
     }
 
-    my $template = Template->new({});
+    my $tt = get_template_toolkit();
 
     my $vars = $self->get_template_vars();
 
     my $output = '';
 
-    $template->process($srcfd, $vars, \$output) ||
-	die $template->error();
-
-    $srcfd->close();
+    $tt->process($tmplname, $vars, \$output) ||
+	die $tt->error();
 
     my $old = PVE::Tools::file_get_contents($dstfn, 128*1024) if -f $dstfn;
 

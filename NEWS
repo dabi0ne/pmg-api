@@ -13,6 +13,8 @@ Proxmox Mail Gateway 5.0 News
 
 - templates moved to /var/lib/pmg/templates/
 
+- user can overwrite all templates in /etc/pmg/templates/
+
 - use extra file to store mail/networks /etc/pmg/mynetworks
 
 - removed option spam/use_ocr
