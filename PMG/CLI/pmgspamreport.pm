@@ -434,32 +434,8 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
-__PACKAGE__->register_method ({
-    name => 'check',
-    path => 'check',
-    method => 'GET',
-    description => "Search Quarantine database for entries older than configured quarantine lifetime.",
-    parameters => {
-	additionalProperties => 0,
-    },
-    returns => { type => 'null'},
-    code => sub {
-	my ($param) = @_;
-
-	my $cfg = PMG::Config->new();
-
-	my $spamlifetime = $cfg->get('spamquar', 'lifetime');
-	my $viruslifetime = $cfg->get ('virusquar', 'lifetime');
-
-	test_quarantine_files($spamlifetime, $viruslifetime, 0);
-
-	return undef;
-    }});
-
-
 
 our $cmddef = {
-    'check' => [ __PACKAGE__, 'check', []],
     'purge' => [ __PACKAGE__, 'purge', []],
     'send' => [ __PACKAGE__, 'send', []],
 };
