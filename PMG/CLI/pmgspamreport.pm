@@ -246,14 +246,14 @@ __PACKAGE__->register_method ({
 
 	if ($reportstyle ne 'none') {
 
-	    $template = "spamreport-${reportstyle}.tmpl";
+	    $template = "spamreport-${reportstyle}.tt";
 	    my $found = 0;
 	    foreach my $path (@$PMG::Config::tt_include_path) {
 		if (-f "$path/$template") { $found = 1; last; }
 	    }
 	    if (!$found) {
 		warn "unable to find template '$template' - using default\n";
-		$template = "spamreport-verbose.tmpl";
+		$template = "spamreport-verbose.tt";
 	    }
 	}
 

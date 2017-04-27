@@ -35,7 +35,7 @@ SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8 pmgpolicy.8
 CONF_MANS= pmg.conf.5 cluster.conf.5
 
 TEMPLATES =				\
-	spamreport-verbose.tmpl		\
+	spamreport-verbose.tt		\
 	main.cf.in			\
 	main.cf.in.demo			\
 	master.cf.in			\
