@@ -215,7 +215,7 @@ sub properties {
 	reportstyle => {
 	    description => "Spam report style.",
 	    type => 'string',
-	    enum => [qw(none short verbose outlook custom)],
+	    enum => [qw(none short verbose custom)],
 	    default => 'verbose',
 	},
 	viewimages => {

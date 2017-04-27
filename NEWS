@@ -28,6 +28,9 @@ Proxmox Mail Gateway 5.0 News
 - new LDAP configuration - Users need to reconfigure LDAP and all LDAP
   Rule objects on update.
 
+- remove spamreport style outlook - this style is now called 'verbose'
+  and is the default.
+
 
 Incompatible changes:
 ---------------------

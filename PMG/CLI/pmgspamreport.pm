@@ -165,7 +165,7 @@ __PACKAGE__->register_method ({
 	    style => {
 		description => "Spam report style. Value 'none' just prints the spam counts and does not send any emails. Default value is read from spam quarantine configuration.",
 		type => 'string',
-		enum => ['none', 'short', 'verbose', 'outlook', 'custom'],
+		enum => ['none', 'short', 'verbose', 'custom'],
 		optional => 1,
 	    },
 	    redirect => {
