@@ -235,7 +235,7 @@ __PACKAGE__->register_method ({
 	my $target = $param->{receiver};
 	my $redirect = $param->{redirect};
 	
-	if (defined($redirect)) {
+	if (defined($redirect) && !defined($target)) {
 	    die "can't redirect mails for all users\n";
 	}
 	
