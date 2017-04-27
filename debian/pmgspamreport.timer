@@ -1,0 +1,9 @@
+[Unit]
+Description=Send Daily Spam Report Mails
+
+[Timer]
+OnCalendar=00:05
+Persistent=true  
+
+[Install]
+WantedBy=timers.target

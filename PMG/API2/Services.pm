@@ -31,6 +31,7 @@ my $service_name_list = [
     'systemd-timesyncd',
     'pmg-hourly',
     'pmg-daily',
+    'pmgspamreport',
     ];
 
 my $static_service_list;

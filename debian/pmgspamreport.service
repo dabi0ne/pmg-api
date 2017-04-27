@@ -1,0 +1,9 @@
+[Unit]
+Description=Send Daily Spam Report Mails
+ConditionPathExists=/usr/bin/pmgspamreport
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pmgspamreport send --timespan yesterday
+ExecStartPost=/usr/bin/pmgspamreport purge
+
