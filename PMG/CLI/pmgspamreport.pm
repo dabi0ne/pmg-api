@@ -9,6 +9,7 @@ use Time::Local;
 use Clone 'clone';
 use Mail::Header;
 use POSIX qw(strftime);
+use File::Find;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -340,7 +341,9 @@ __PACKAGE__->register_method ({
 sub find_stale_files {
     my ($path, $lifetime, $purge) = @_;
 
-    my $cmd = ['find', $path, '-daystart', '-mtime', '+$lifetime',
+    return if ! -d $path;
+
+    my $cmd = ['find', $path, '-daystart', '-mtime', "+$lifetime",
 	       '-type', 'f'];
 
     if ($purge) {
@@ -357,11 +360,21 @@ sub test_quarantine_files {
     
     print STDERR "searching for stale files\n" if !$purge; 
 
-    find_stale_files ("/var/spool/proxmox/spam", $spamlifetime, $purge);
-    find_stale_files ("/var/spool/proxmox/cluster/*/spam", $spamlifetime, $purge);
+    my $spooldir = $PMG::MailQueue::spooldir;
 
-    find_stale_files ("/var/spool/proxmox/virus", $viruslifetime, $purge);
-    find_stale_files ("/var/spool/proxmox/cluster/*/virus", $viruslifetime, $purge);
+    find_stale_files ("$spooldir/spam", $spamlifetime, $purge);
+    foreach my $dir (<"/var/spool/pmg/cluster/*/spam">) {
+	next if $dir !~ m|^(/var/spool/pmg/cluster/\d+/spam)$|;
+	$dir = $1; # untaint
+	find_stale_files ($dir, $spamlifetime, $purge);
+    }
+
+    find_stale_files ("$spooldir/virus", $viruslifetime, $purge);
+    foreach my $dir (<"/var/spool/pmg/cluster/*/virus">) {
+	next if $dir !~ m|^(/var/spool/pmg/cluster/\d+/virus)$|;
+	$dir = $1; # untaint
+	find_stale_files ($dir, $viruslifetime, $purge);
+    }
 }
 
 __PACKAGE__->register_method ({
