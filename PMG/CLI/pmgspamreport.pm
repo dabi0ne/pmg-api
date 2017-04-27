@@ -106,7 +106,7 @@ sub finalize_report {
     my $html = '';
 
     $tt->process($template, $data, \$html) ||
-	die $tt->error();
+	die $tt->error() . "\n";
 
     my $title;
     if ($html =~ m|^\s*<title>(.*)</title>|m) {

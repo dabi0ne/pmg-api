@@ -1071,7 +1071,7 @@ sub rewrite_config_file {
     my $output = '';
 
     $tt->process($tmplname, $vars, \$output) ||
-	die $tt->error();
+	die $tt->error() . "\n";
 
     my $old = PVE::Tools::file_get_contents($dstfn, 128*1024) if -f $dstfn;
 
