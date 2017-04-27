@@ -343,16 +343,27 @@ sub find_stale_files {
 
     return if ! -d $path;
 
-    my $cmd = ['find', $path, '-daystart', '-mtime', "+$lifetime",
-	       '-type', 'f'];
+    my (undef, undef, undef, $mday, $mon, $year) = localtime(time());
+    my $daystart = timelocal(0, 0, 0, $mday, $mon, $year);
+    my $expire = $daystart - $lifetime*86400;
 
-    if ($purge) {
-	push @$cmd, '-exec', 'rm', '-vf', '{}', ';';
-    } else {
-	push @$cmd, '-print';
-    }
-    
-    PVE::Tools::run_command($cmd);
+    my $wanted = sub {
+	my $name = $File::Find::name;
+	return if $name !~ m|^($path/.*)$|;
+	$name = $1; # untaint
+	my $stat = stat($name);
+	return if ! -f _;
+	return if $stat->mtime <= $expire;
+	if ($purge) {
+	    if (unlink($name)) {
+		print "removed: $name\n";
+	    }
+	} else {
+	    print "$name\n";
+	}
+    };
+
+    find({ wanted => $wanted, no_chdir => 1 }, $path);
 }
 
 sub test_quarantine_files {
@@ -384,6 +395,14 @@ __PACKAGE__->register_method ({
     description => "Cleanup Quarantine database. Remove entries older than configured quarantine lifetime.",
     parameters => {
 	additionalProperties => 0,
+	properties => {
+	    check => {
+		description => "Only search for quarantine files older than configured quarantine lifetime. Just print found files, but does not remove them.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
+	    }
+	}
     },
     returns => { type => 'null'},
     code => sub {
@@ -394,19 +413,23 @@ __PACKAGE__->register_method ({
 	my $spamlifetime = $cfg->get('spamquar', 'lifetime');
 	my $viruslifetime = $cfg->get ('virusquar', 'lifetime');
 
-	print STDERR "purging database\n"; 
+	my $purge = !$param->{check};
 
-	my $dbh = PMG::DBTools::open_ruledb();
+	if ($purge) {
+	    print STDERR "purging database\n"; 
 
-	if (my $count = PMG::DBTools::purge_quarantine_database($dbh, 'S', $spamlifetime)) {
-	    print STDERR "removed $count spam quarantine files\n"; 
+	    my $dbh = PMG::DBTools::open_ruledb();
+
+	    if (my $count = PMG::DBTools::purge_quarantine_database($dbh, 'S', $spamlifetime)) {
+		print STDERR "removed $count spam quarantine files\n"; 
+	    }
+
+	    if (my $count = PMG::DBTools::purge_quarantine_database($dbh, 'V', $viruslifetime)) {
+		print STDERR "removed $count virus quarantine files\n"; 
+	    }
 	}
 
-	if (my $count = PMG::DBTools::purge_quarantine_database($dbh, 'V', $viruslifetime)) {
-	    print STDERR "removed $count virus quarantine files\n"; 
-	}
-
-	test_quarantine_files($spamlifetime, $viruslifetime, 1);
+	test_quarantine_files($spamlifetime, $viruslifetime, $purge);
 
 	return undef;
     }});
