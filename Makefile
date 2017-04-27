@@ -36,6 +36,7 @@ CONF_MANS= pmg.conf.5 cluster.conf.5
 
 TEMPLATES =				\
 	spamreport-verbose.tt		\
+	spamreport-short.tt		\
 	main.cf.in			\
 	main.cf.in.demo			\
 	master.cf.in			\

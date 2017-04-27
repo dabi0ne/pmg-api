@@ -1,0 +1,20 @@
+[%- IF timespan == 'week' -%]
+[%- SET title = "Weekly Spam Report for '${pmail}' - ${date}'" -%]
+[%- ELSE %]
+[%- SET title = "Daily Spam Report for '${pmail}' - ${date}" -%]
+[%- END -%]
+<html>
+  <head>
+    <title>[% title %]</title>
+  </head>
+  <body>
+
+    <p>You received [% mailcount %] spam mail(s). Please use the
+      <a href='[% managehref | url %]'>web interface</a>
+      to manage your spam quarantine.
+    </p>
+
+    <p>Powered by <a target=_blank href='http://www.proxmox.com'>Proxmox</a>.</p>
+
+  </body>
+</html>
