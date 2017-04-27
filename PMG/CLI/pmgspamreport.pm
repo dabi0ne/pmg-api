@@ -101,14 +101,12 @@ sub get_item_data {
 }
 
 sub finalize_report {
-    my ($tmpl_data, $data, $mailfrom, $receiver, $debug) = @_;
+    my ($tt, $template, $data, $mailfrom, $receiver, $debug) = @_;
 
     my $html = '';
 
-    my $template = Template->new({});
-
-    $template->process(\$tmpl_data, $data, \$html) ||
-	die $template->error();
+    $tt->process($template, $data, \$html) ||
+	die $tt->error();
 
     my $title;
     if ($html =~ m|^\s*<title>(.*)</title>|m) {
@@ -244,27 +242,23 @@ __PACKAGE__->register_method ({
 	my $domains = PVE::INotify::read_file('domains');
 	my $domainregex = domain_regex([keys %$domains]);
 
-	my $tmpl_data;
+	my $template;
+
+	my $include_path = ['/etc/pmg/templates' ,'/var/lib/pmg/templates' ];
 	
 	if ($reportstyle ne 'none') {
 
-	    my $template_filename;
-
-	    my $customtmpl =  "/etc/pmg/spamreport.tmpl";
-	    if ($reportstyle eq 'verbose') {
-		$template_filename = "/var/lib/pmg/templates/spamreport-verbose.tmpl";
-	    } elsif ($reportstyle eq 'outlook') {
-		$template_filename = "/var/lib/pmg/templates/spamreport-verbose-noform.tmpl";
-	    } elsif (($reportstyle eq 'custom') && (-f $customtmpl)) {
-		$template_filename = $customtmpl;
-	    } else {
-		$template_filename = "/var/lib/pmg/templates/spamreport-short.tmpl";
+	    $template = "spamreport-${reportstyle}.tmpl";
+	    my $found = 0;
+	    foreach my $path (@$include_path) {
+		if (-f "$path/$template") { $found = 1; last; }
 	    }
-
-	    $tmpl_data = PVE::Tools::file_get_contents($template_filename);
+	    if (!$found) {
+		warn "unable to find template '$template' - using default\n";
+		$template = "spamreport-verbose.tmpl";
+	    }
 	}
-	
-	    
+
 	my $sth = $dbh->prepare(
 	    "SELECT * FROM CMailStore, CMSReceivers " . 
 	    "WHERE time >= $start AND time < $end AND " . 
@@ -283,12 +277,14 @@ __PACKAGE__->register_method ({
 	my $mailcount = 0;
 	my $creceiver = '';
 	my $data;
+
+	my $tt = Template->new({ INCLUDE_PATH => $include_path });
 	
 	my $finalize = sub {
 	    
 	    my $extern = ($domainregex && $creceiver !~ $domainregex);
 		
-	    if ($tmpl_data) {
+	    if ($template) {
 		if (!$extern) {
 		    # fixme: my $ticket = Proxmox::Utils::create_ticket ($lastref);
 		    my $ticket = "TEST";
@@ -297,7 +293,7 @@ __PACKAGE__->register_method ({
 		    $data->{mailcount} = $mailcount;
 
 		    my $sendto = $redirect ? $redirect : $creceiver;
-		    finalize_report($tmpl_data, $data, $mailfrom, $sendto, $param->{debug});
+		    finalize_report($tt, $template, $data, $mailfrom, $sendto, $param->{debug});
 		}
 	    } else {
 		my $hint = $extern ? " (external address)" : "";
@@ -318,7 +314,7 @@ __PACKAGE__->register_method ({
 		$data->{pmail} = $creceiver;
 	    }
 
-	    if ($tmpl_data) {
+	    if ($template) {
 		push @{$data->{items}}, get_item_data($ref);
 	    }
 	    
