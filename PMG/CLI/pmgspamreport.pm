@@ -17,6 +17,7 @@ use PVE::CLIHandler;
 
 use PMG::RESTEnvironment;
 use PMG::Utils;
+use PMG::Ticket;
 use PMG::DBTools;
 use PMG::RuleDB;
 use PMG::Config;
@@ -81,7 +82,6 @@ sub get_item_data {
     $data->{date} = strftime("%F", localtime($ref->{time}));
     $data->{time} = strftime("%H:%M:%S", localtime($ref->{time}));
  
-    # fixme: $data->{ticket} = Proxmox::Utils::create_ticket ($ref);
     $data->{bytes} = $ref->{bytes};
     $data->{spamlevel} = $ref->{spamlevel};
     $data->{spaminfo} = $ref->{info};
@@ -94,8 +94,9 @@ sub get_item_data {
     $title .= sprintf("Virus info: %s\n", encode_entities ($ref->{info})) if $ref->{qtype} eq 'V';
     $title .= sprintf("File: %s", encode_entities($ref->{file}));
 
-    # fixme: urlencode?
     $data->{title} = $title;
+
+    $data->{ticket} = PMG::Ticket::assemble_quarantine_ticket($ref);
 
     return $data;
 }
@@ -284,8 +285,7 @@ __PACKAGE__->register_method ({
 		
 	    if ($template) {
 		if (!$extern) {
-		    # fixme: my $ticket = Proxmox::Utils::create_ticket ($lastref);
-		    my $ticket = "TEST";
+		    my $ticket = PMG::Ticket::assemble_quarantine_ticket($lastref);
 		    $data->{ticket} = $ticket;
 		    $data->{managehref} = "https://$fqdn:$port?ticket=$ticket";
 		    $data->{mailcount} = $mailcount;

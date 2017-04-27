@@ -206,4 +206,28 @@ sub verify_vnc_ticket {
 	$rsa_pub, 'PMGVNC', $ticket, $secret_data, -20, 40, $noerr);
 }
 
+sub assemble_quarantine_ticket {
+    my ($ref) = @_;
+
+    my $rsa_priv = PVE::INotify::read_file('auth_priv_key');
+
+    my $data = "$ref->{cid}:$ref->{rid}";
+
+    my $secret_data = "$ref->{cid}:$ref->{rid}:$ref->{time}:$ref->{ticketid}";
+
+    return PVE::Ticket::assemble_rsa_ticket(
+	$rsa_priv, 'PMGQUAR', $data, $secret_data);
+}
+
+sub verify_quarantine_ticket {
+    my ($ticket, $ref, $lifetime, $noerr) = @_;
+
+    my $rsa_pub = PVE::INotify::read_file('auth_pub_key');
+
+    my $secret_data = "$ref->{cid}:$ref->{rid}:$ref->{time}:$ref->{ticketid}";
+
+    return PVE::Ticket::verify_rsa_ticket(
+	$rsa_pub, 'PMGQUAR', $ticket, $secret_data, -20, $lifetime*60, $noerr);
+}
+
 1;
