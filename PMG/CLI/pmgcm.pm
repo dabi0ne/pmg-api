@@ -218,10 +218,8 @@ __PACKAGE__->register_method({
 	PMG::Cluster::sync_config_from_master($master_name, $master_ip);
 
 	my $cfg = PMG::Config->new();
-	my $ruledb = PMG::RuleDB->new();
-	my $rulecache = PMG::RuleCache->new($ruledb);
 
-	$cfg->rewrite_config($rulecache, 1);
+	$cfg->rewrite_config(undef, 1);
 
 	return undef;
     }});
