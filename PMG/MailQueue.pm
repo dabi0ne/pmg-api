@@ -168,8 +168,6 @@ sub quarantinedb_insert {
 	$insert_cmds .= $dbh->quote ($sender) . ',';
 	$insert_cmds .= $dbh->quote ($file) . ');';
 
-	my $tid = int (rand (0x0fffffff));
-
 	my $now = time();
 
 	foreach my $r (@$targets) {
@@ -184,11 +182,8 @@ sub quarantinedb_insert {
 
 	    $pmail = $dbh->quote ($pmail);
 	    $insert_cmds .= "INSERT INTO CMSReceivers " .
-		"(CMailStore_CID, CMailStore_RID, PMail, Receiver, TicketID, Status, MTime) " .
-		"VALUES ($lcid, currval ('cmailstore_id_seq'), $pmail, $receiver, $tid, 'N', $now); ";
-
-	    # (Mailstore_ID, TicketID) must be unique
-	    $tid = ($tid + 1) & 0x0fffffff;
+		"(CMailStore_CID, CMailStore_RID, PMail, Receiver, Status, MTime) " .
+		"VALUES ($lcid, currval ('cmailstore_id_seq'), $pmail, $receiver, 'N', $now); ";
 	}
 
 	$dbh->do ($insert_cmds);

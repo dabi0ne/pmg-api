@@ -538,7 +538,7 @@ sub sync_quarantine_db {
 		    "AND CMailStore_RID <= ?");
 		$sth->execute($rcid, $lastid, $maxid);
 
-		$attrs = [qw(cmailstore_cid cmailstore_rid pmail receiver ticketid status mtime)];
+		$attrs = [qw(cmailstore_cid cmailstore_rid pmail receiver status mtime)];
 		PMG::DBTools::copy_selected_data($ldb, $sth, 'CMSReceivers', $attrs);
 
 		PMG::DBTools::write_maxint_clusterinfo($ldb, $rcid, 'lastid_CMailStore', $maxid);

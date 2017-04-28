@@ -239,7 +239,6 @@ my $cmailstore_ctablecmd =  <<__EOD;
      CMailStore_RID INTEGER NOT NULL,
      PMail VARCHAR(255) NOT NULL,
      Receiver VARCHAR(255),
-     TicketID INTEGER NOT NULL,
      Status "char" NOT NULL,
      MTime INTEGER NOT NULL);
 
