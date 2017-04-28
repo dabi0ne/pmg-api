@@ -1296,7 +1296,7 @@ sub rewrite_config_postfix {
     $changes = 1 if $self->rewrite_config_file(
 	'master.cf.in', '/etc/postfix/master.cf');
 
-    $rewrite_config_whitelist->($rulecache);
+    $rewrite_config_whitelist->($rulecache) if $rulecache;
 
     # fixme: rewrite_config_tls_policy ($class);
 

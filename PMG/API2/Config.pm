@@ -138,7 +138,7 @@ my $api_update_config_section = sub {
 
        $cfg->write();
 
-       $cfg->rewrite_config(1);
+       $cfg->rewrite_config(undef, 1);
    };
 
    PMG::Config::lock_config($code, "update config section '$section' failed");
