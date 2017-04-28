@@ -9,6 +9,7 @@ use PVE::JSONSchema;
 use PMG::API2::AccessControl;
 use PMG::API2::Nodes;
 use PMG::API2::Config;
+use PMG::API2::Quarantine;
 use PMG::pmgcfg;
 
 use base qw(PVE::RESTHandler);
@@ -26,6 +27,11 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::AccessControl",
     path => 'access',
+			      });
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Quarantine",
+    path => 'quarantine',
 });
 
 __PACKAGE__->register_method ({
@@ -52,9 +58,11 @@ __PACKAGE__->register_method ({
 	my ($resp, $param) = @_;
 
 	my $res = [
+	    { subdir => 'access' },
 	    { subdir => 'config' },
 	    { subdir => 'nodes' },
 	    { subdir => 'version' },
+	    { subdir => 'quarantine' },
 	    ];
 
 	return $res;

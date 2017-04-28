@@ -24,6 +24,7 @@ use PMG::DBTools;
 use PMG::RuleDB;
 use PMG::Config;
 use PMG::ClusterConfig;
+use PMG::API2::Quarantine;
 
 use base qw(PVE::CLIHandler);
 
@@ -396,7 +397,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    check => {
-		description => "Only search for quarantine files older than configured quarantine lifetime. Just print found files, but does not remove them.",
+		description => "Only search for quarantine files older than configured quarantine lifetime. Just print found files, but do not remove them.",
 		type => 'boolean',
 		optional => 1,
 		default => 0,
@@ -437,6 +438,15 @@ __PACKAGE__->register_method ({
 our $cmddef = {
     'purge' => [ __PACKAGE__, 'purge', []],
     'send' => [ __PACKAGE__, 'send', []],
+    'spam' => [ 'PMG::API2::Quarantine', 'spam', [], undef, sub {
+	my $res = shift;
+	print "Day          Count  AVG(Spam)\n";
+	foreach my $ref (@$res) {
+	    print sprintf("%-12s %5d %10.2f\n",
+			  strftime("%F", localtime($ref->{day})),
+			  $ref->{count}, $ref->{spamavg});
+	}
+     }],
 };
 
 1;
