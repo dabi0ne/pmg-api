@@ -62,6 +62,8 @@ sub get_item_data {
     my $head = new Mail::Header(\@lines);
 
     my $item = {};
+
+    $item->{id} = sprintf("C%dR%d", $ref->{cid}, $ref->{rid});
     
     $item->{subject} = PMG::Utils::rfc1522_to_html(
 	PVE::Tools::trim($head->get('subject')) || 'No Subject');
@@ -97,14 +99,12 @@ sub get_item_data {
 
     $item->{title} = $title;
 
-    $item->{ticket} = PMG::Ticket::assemble_quarantine_ticket($ref);
-
     my $basehref = "https://$data->{fqdn}:$data->{port}/userquar";
 
-    $item->{wlhref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&whitelist=1";
-    $item->{blhref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&blacklist=1";
-    $item->{deliverhref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&deliver=1";
-    $item->{deletehref} = "$basehref?ticket=$item->{ticket}&cselect=$item->{ticket}&delete=1";
+    $item->{wlhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&whitelist=1";
+    $item->{blhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&blacklist=1";
+    $item->{deliverhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&deliver=1";
+    $item->{deletehref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&delete=1";
 
     return $item;
 }
@@ -292,11 +292,7 @@ __PACKAGE__->register_method ({
 		
 	    if ($template) {
 		if (!$extern) {
-		    my $ticket = PMG::Ticket::assemble_quarantine_ticket($lastref);
-		    $data->{ticket} = $ticket;
-		    $data->{managehref} = "https://$fqdn:$port?ticket=$ticket";
 		    $data->{mailcount} = $mailcount;
-
 		    my $sendto = $redirect ? $redirect : $creceiver;
 		    finalize_report($tt, $template, $data, $mailfrom, $sendto, $param->{debug});
 		}
@@ -317,6 +313,8 @@ __PACKAGE__->register_method ({
 		$mailcount = 0;
 
 		$data->{pmail} = $creceiver;
+		$data->{ticket} = PMG::Ticket::assemble_quarantine_ticket($data->{pmail});
+		$data->{managehref} = "https://$fqdn:$port?ticket=$data->{ticket}";
 	    }
 
 	    if ($template) {
