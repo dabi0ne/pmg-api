@@ -352,7 +352,7 @@ sub find_stale_files {
 	$name = $1; # untaint
 	my $stat = stat($name);
 	return if ! -f _;
-	return if $stat->mtime <= $expire;
+	return if $stat->mtime >= $expire;
 	if ($purge) {
 	    if (unlink($name)) {
 		print "removed: $name\n";
