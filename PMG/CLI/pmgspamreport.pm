@@ -10,6 +10,7 @@ use Clone 'clone';
 use Mail::Header;
 use POSIX qw(strftime);
 use File::Find;
+use File::stat;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
