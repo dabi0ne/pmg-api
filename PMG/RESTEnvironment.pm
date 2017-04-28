@@ -36,8 +36,18 @@ sub init_request {
     $self->SUPER::init_request(%params);
     
     $self->{ticket} = undef;
+    $self->{role} = undef;
     $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
     $self->{usercfg} = PVE::INotify::read_file("pmg-user.conf");
+}
+
+sub setup_default_cli_env {
+    my ($class, $username) = @_;
+
+    $class->SUPER::setup_default_cli_env($username);
+
+    my $rest_env = $class->get();
+    $rest_env->set_role('root');
 }
 
 sub set_ticket {
@@ -50,6 +60,18 @@ sub get_ticket {
     my ($self) = @_;
 
     return $self->{ticket};
+}
+
+sub set_role {
+    my ($self, $user) = @_;
+
+    $self->{role} = $user;
+}
+
+sub get_role {
+    my ($self) = @_;
+
+    return $self->{role};
 }
 
 sub check_node_is_master {
@@ -65,7 +87,9 @@ sub check_node_is_master {
 }
 
 sub check_api2_permissions {
-    my ($self, $perm, $username, $uri_param) = @_;
+    my ($self, $perm, $uri_param) = @_;
+
+    my $username = $self->get_user();
 
     return 1 if !$username && $perm->{user} && $perm->{user} eq 'world';
 
@@ -77,7 +101,7 @@ sub check_api2_permissions {
 
     return 1 if $perm->{user} && $perm->{user} eq 'all';
 
-    my $role = PMG::AccessControl::check_user_enabled($self->{usercfg}, $username);
+    my $role = $self->{role};
 
     if (my $allowed_roles = $perm->{check}) {
 	return 1 if grep { $_ eq $role } @$allowed_roles;

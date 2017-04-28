@@ -48,6 +48,7 @@ sub auth_handler {
 
     # set environment variables
     $rpcenv->set_user(undef);
+    $rpcenv->set_role(undef);
     $rpcenv->set_language('C');
     $rpcenv->set_client_ip($peer_host);
 
@@ -67,9 +68,17 @@ sub auth_handler {
 
 	die "No ticket\n" if !$ticket;
 
-	($username, $age) = PMG::Ticket::verify_ticket($ticket);
+	if ($ticket =~ m/^PMGQUAR:/) {
+	    ($username, $age) = PMG::Ticket::verify_quarantine_ticket($ticket);
+	    $rpcenv->set_user($username);
+	    $rpcenv->set_role('quser');
+	} else {
+	    ($username, $age) = PMG::Ticket::verify_ticket($ticket);
+	    my $role = PMG::AccessControl::check_user_enabled($self->{usercfg}, $username);
+	    $rpcenv->set_user($username);
+	    $rpcenv->set_role($role);
+	}
 
-	$rpcenv->set_user($username);
 	$rpcenv->set_ticket($ticket);
 
 	my $euid = $>;
@@ -111,7 +120,7 @@ sub rest_handler {
 	}
 
 	# check access permissions
-	$rpcenv->check_api2_permissions($info->{permissions}, $auth->{userid}, $uri_param);
+	$rpcenv->check_api2_permissions($info->{permissions}, $uri_param);
 
 	if (my $pn = $info->{proxyto}) {
 
@@ -160,6 +169,7 @@ sub rest_handler {
     my $err = $@;
 
     $rpcenv->set_user(undef); # clear after request
+    $rpcenv->set_role(undef); # clear after request
 
     if ($err) {
 	$resp = { info => $info };
