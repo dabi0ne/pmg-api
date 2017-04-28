@@ -1,4 +1,4 @@
-package PMG::CLI::pmgspamreport;
+package PMG::CLI::pmgqm;
 
 use strict;
 use Data::Dumper;

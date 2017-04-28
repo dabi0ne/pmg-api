@@ -1,9 +1,9 @@
 [Unit]
 Description=Send Daily Spam Report Mails
-ConditionPathExists=/usr/bin/pmgspamreport
+ConditionPathExists=/usr/bin/pmgqm
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/pmgspamreport send --timespan yesterday
-ExecStartPost=/usr/bin/pmgspamreport purge
+ExecStart=/usr/bin/pmgqm send --timespan yesterday
+ExecStartPost=/usr/bin/pmgqm purge
 
