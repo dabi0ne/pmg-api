@@ -20,12 +20,12 @@ REPOID=`./repoid.pl .git`
 SERVICES = pmgdaemon pmgproxy pmgtunnel pmgmirror
 CLITOOLS = pmgdb pmgconfig pmgperf pmgcm pmgqm
 CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy
-CRONSCRIPTS = pmg-hourly pmg-daily pmgspamreport
+CRONSCRIPTS = pmg-hourly pmg-daily
 
 CLI_CLASSES = $(addprefix PMG/CLI/, $(addsuffix .pm, ${CLITOOLS}))
 SERVICE_CLASSES = $(addprefix PMG/Service/, $(addsuffix .pm, ${SERVICES}))
 SERVICE_UNITS = $(addprefix debian/, $(addsuffix .service, ${SERVICES}))
-TIMER_UNITS = $(addprefix debian/, $(addsuffix .timer, ${CRONSCRIPTS}))
+TIMER_UNITS = $(addprefix debian/, $(addsuffix .timer, ${CRONSCRIPTS} pmgspamreport))
 
 CLI_BINARIES = $(addprefix bin/, ${CLITOOLS} ${CLISCRIPTS} ${CRONSCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
@@ -135,7 +135,7 @@ LIBSOURCES =				\
 	PMG/API2/Action.pm		\
 	PMG/API2.pm
 
-SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS} 
+SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS}
 
 all: ${SOURCES}
 
@@ -159,7 +159,7 @@ PMG/pmgcfg.pm: PMG/pmgcfg.pm.in
 	perl -I. -T -e "use PMG::Service::$*; PMG::Service::$*->generate_bash_completions();" >$@.tmp
 	mv $@.tmp $@
 
-install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuffix .bash-completion, ${CLITOOLS})
+install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuffix .bash-completion, ${CLITOOLS}) 
 	for i in ${SERVICES}; do perl -I. -T -e "use PMG::Service::$$i; PMG::Service::$$i->verify_api();"; done
 	for i in ${CLITOOLS}; do perl -I. -T -e "use PMG::CLI::$$i; PMG::CLI::$$i->verify_api();"; done
 	perl -I. bin/pmgsh verifyapi
@@ -181,7 +181,8 @@ install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuff
 	for i in ${CONF_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man5/$$i; done
 	for i in ${SERVICE_MANS}; do install -D -m 0644 $$i ${DESTDIR}/usr/share/man/man8/$$i; done
 	for i in ${CRONSCRIPTS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/lib/pmg/bin/$$i; done
-	for i in ${CRONSCRIPTS}; do install -D -m 0644 debian/$$i.timer ${DESTDIR}/lib/systemd/system/$$i.timer; done
+	install -d -m 0755 ${DESTDIR}/lib/systemd/system
+	for i in ${TIMER_UNITS}; do install -m 0644 $$i ${DESTDIR}/lib/systemd/system/; done
 
 .PHONY: upload
 upload: ${DEB}
