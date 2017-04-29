@@ -89,7 +89,7 @@ sub check_node_is_master {
 sub check_api2_permissions {
     my ($self, $perm, $uri_param) = @_;
 
-    my $username = $self->get_user();
+    my $username = $self->get_user(1);
 
     return 1 if !$username && $perm->{user} && $perm->{user} eq 'world';
 
