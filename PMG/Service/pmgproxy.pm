@@ -128,6 +128,18 @@ our $cmddef = {
     status => [ __PACKAGE__, 'status', [], undef, sub { print shift . "\n";} ],
 };
 
+my $template_toolkit;
+
+sub get_template_toolkit {
+
+    return $template_toolkit if $template_toolkit;
+
+    $template_toolkit = Template->new(
+	{ INCLUDE_PATH => [$gui_base_dir, $novnc_dir]});
+
+    return $template_toolkit;
+}
+
 sub get_index {
     my ($nodename, $server, $r, $args) = @_;
 
@@ -162,17 +174,8 @@ sub get_index {
 
     $username = '' if !$username;
 
-    my $config = {};
-
-    if (defined($args->{console}) && $args->{novnc}) {
-	$config->{INCLUDE_PATH} = $novnc_dir;
-    } else {
-	$config->{INCLUDE_PATH} = $gui_base_dir;
-    };
-
     my $page = '';
 
-    my $template = Template->new($config);
     my $vars = {
 	lang => $lang,
 	langfile => $langfile,
@@ -183,8 +186,17 @@ sub get_index {
 	debug => $args->{debug} || $server->{debug},
     };
 
-    $template->process("index.html.tpl", $vars, \$page) ||
-	die $template->error();
+    my $template_name;
+    if (defined($args->{console}) && $args->{novnc}) {
+	$template_name = "index.html.tpl"; # fixme: use better name
+    } else {
+	$template_name = "pmg-index.html.tt";
+    }
+
+    my $tt = get_template_toolkit();
+
+    $tt->process($template_name, $vars, \$page) ||
+	die $tt->error() . "\n";
 
     my $headers = HTTP::Headers->new(Content_Type => "text/html; charset=utf-8");
     my $resp = HTTP::Response->new(200, "OK", $headers, $page);
