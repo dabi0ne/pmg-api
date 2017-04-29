@@ -7,6 +7,8 @@ use PVE::SafeSyslog;
 use PVE::Daemon;
 use HTTP::Response;
 use URI;
+use URI::Escape;
+
 use URI::QueryParam;
 use Data::Dumper;
 
@@ -94,6 +96,7 @@ sub init {
 	# Note: there is no authentication for those pages and dirs!
 	pages => {
 	    '/' => sub { get_index($self->{nodename}, @_) },
+	    '/quarantine' => sub { get_index($self->{nodename}, @_) },
 	    # avoid authentication when accessing favicon
 	    '/favicon.ico' => {
 		file => '/usr/share/doc/proxmox-mailgateway/favicon.ico',
@@ -139,10 +142,21 @@ sub get_index {
 	    }
 	}
 	my $ticket = PVE::APIServer::Formatter::extract_auth_cookie($cookie, $server->{cookie_name});
-	if ($username = PMG::Ticket::verify_ticket($ticket, 1)) {
-	    $token = PMG::Ticket::assemble_csrf_prevention_token($username);
+
+	if ($ticket =~ m/^PMGQUAR:/) {
+	    $username = PMG::Ticket::verify_quarantine_ticket($ticket, 1);
+	} else {
+	    $username = PMG::Ticket::verify_ticket($ticket, 1);
+	}
+    } else {
+	if (defined($args->{ticket})) {
+	    my $ticket = uri_unescape($args->{ticket});
+	    $username = PMG::Ticket::verify_quarantine_ticket($ticket, 1);
 	}
     }
+
+    $token = PMG::Ticket::assemble_csrf_prevention_token($username)
+	if defined($username);
 
     my $langfile = 0; # fixme:
 
