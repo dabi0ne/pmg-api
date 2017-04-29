@@ -62,6 +62,22 @@ my $create_ticket = sub {
     my ($rpcenv, $username, $pw_or_ticket, $otp) = @_;
 
     my $ticketuser;
+
+    if ($pw_or_ticket =~ m/^PMGQUAR:/) {
+	PMG::Ticket::verify_quarantine_ticket($pw_or_ticket);
+
+	my $csrftoken = PMG::Ticket::assemble_csrf_prevention_token($username);
+
+	return {
+	    role => 'quser',
+	    ticket => $pw_or_ticket,
+	    username => $username,
+	    CSRFPreventionToken => $csrftoken,
+	};
+    }
+
+    my $role = PMG::AccessControl::check_user_enabled($rpcenv->{usercfg}, $username);
+
     if (($ticketuser = PMG::Ticket::verify_ticket($pw_or_ticket, 1)) &&
 	($ticketuser eq 'root@pam' || $ticketuser eq $username)) {
 	# valid ticket. Note: root@pam can create tickets for other users
@@ -73,6 +89,7 @@ my $create_ticket = sub {
     my $csrftoken = PMG::Ticket::assemble_csrf_prevention_token($username);
 
     return {
+	role => $role,
 	ticket => $ticket,
 	username => $username,
 	CSRFPreventionToken => $csrftoken,
@@ -144,9 +161,7 @@ __PACKAGE__->register_method ({
 
 	my $res;
 	eval {
-	    my $role = PMG::AccessControl::check_user_enabled($rpcenv->{usercfg}, $username);
 	    $res = &$create_ticket($rpcenv, $username, $param->{password}, $param->{otp});
-	    $res->{role} = $role;
 	};
 	if (my $err = $@) {
 	    my $clientip = $rpcenv->get_client_ip() || '';
