@@ -11,6 +11,7 @@ use Mail::Header;
 use POSIX qw(strftime);
 use File::Find;
 use File::stat;
+use URI::Escape;
 
 use PVE::SafeSyslog;
 use PVE::Tools;
@@ -102,11 +103,11 @@ sub get_item_data {
     $item->{title} = $title;
 
     my $basehref = "https://$data->{fqdn}:$data->{port}/quarantine";
-
-    $item->{wlhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&whitelist=1";
-    $item->{blhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&blacklist=1";
-    $item->{deliverhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&deliver=1";
-    $item->{deletehref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&delete=1";
+    my $ticket = uri_escape($data->{ticket});
+    $item->{wlhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&whitelist=1";
+    $item->{blhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&blacklist=1";
+    $item->{deliverhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&deliver=1";
+    $item->{deletehref} = "$basehref?ticket=$ticket&cselect=$item->{id}&delete=1";
 
     return $item;
 }
@@ -316,7 +317,8 @@ __PACKAGE__->register_method ({
 
 		$data->{pmail} = $creceiver;
 		$data->{ticket} = PMG::Ticket::assemble_quarantine_ticket($data->{pmail});
-		$data->{managehref} = "https://$fqdn:$port/quarantine?ticket=$data->{ticket}";
+		my $esc_ticket = uri_escape($data->{ticket});
+		$data->{managehref} = "https://$fqdn:$port/quarantine?ticket=${esc_ticket}";
 	    }
 
 	    if ($template) {
