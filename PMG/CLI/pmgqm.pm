@@ -101,7 +101,7 @@ sub get_item_data {
 
     $item->{title} = $title;
 
-    my $basehref = "https://$data->{fqdn}:$data->{port}/userquar";
+    my $basehref = "https://$data->{fqdn}:$data->{port}/quarantine";
 
     $item->{wlhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&whitelist=1";
     $item->{blhref} = "$basehref?ticket=$data->{ticket}&cselect=$item->{id}&blacklist=1";
@@ -316,7 +316,7 @@ __PACKAGE__->register_method ({
 
 		$data->{pmail} = $creceiver;
 		$data->{ticket} = PMG::Ticket::assemble_quarantine_ticket($data->{pmail});
-		$data->{managehref} = "https://$fqdn:$port?ticket=$data->{ticket}";
+		$data->{managehref} = "https://$fqdn:$port/quarantine?ticket=$data->{ticket}";
 	    }
 
 	    if ($template) {
