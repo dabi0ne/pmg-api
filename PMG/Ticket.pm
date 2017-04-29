@@ -13,6 +13,7 @@ use PVE::INotify;
 use Crypt::OpenSSL::RSA;
 
 use PMG::Utils;
+use PMG::Config;
 
 my $min_ticket_lifetime = -60*5; # allow 5 minutes time drift
 my $max_ticket_lifetime = 60*60*2; # 2 hours
@@ -214,10 +215,25 @@ sub assemble_quarantine_ticket {
     return PVE::Ticket::assemble_rsa_ticket($rsa_priv, 'PMGQUAR', $pmail);
 }
 
+my $quarantine_lifetime;
+
+my $get_quarantine_lifetime = sub {
+
+    return $quarantine_lifetime if defined($quarantine_lifetime);
+
+    my $cfg = PMG::Config->new();
+
+    $quarantine_lifetime = $cfg->get('spamquar', 'lifetime');
+
+    return $quarantine_lifetime;
+};
+
 sub verify_quarantine_ticket {
-    my ($ticket, $lifetime, $noerr) = @_;
+    my ($ticket, $noerr) = @_;
 
     my $rsa_pub = PVE::INotify::read_file('auth_pub_key');
+
+    my $lifetime = $get_quarantine_lifetime->();
 
     return PVE::Ticket::verify_rsa_ticket(
 	$rsa_pub, 'PMGQUAR', $ticket, undef, -20, $lifetime*86400, $noerr);
