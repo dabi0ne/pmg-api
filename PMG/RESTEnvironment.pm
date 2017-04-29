@@ -5,6 +5,7 @@ use warnings;
 
 use PVE::INotify;
 use PVE::RESTEnvironment;
+use PVE::Exception qw(raise_perm_exc);
 
 use PMG::Cluster;
 use PMG::ClusterConfig;
