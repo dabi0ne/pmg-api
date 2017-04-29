@@ -23,6 +23,7 @@ case "$1" in
 	test -e /proxmox_install_mode && exit 0;
 
 	pmgconfig init
+	pmgdb init
 
 	if [ -n "$2" ]; then
 	    pmgconfig sync
@@ -33,7 +34,6 @@ case "$1" in
 	    pmgconfig sync --restart
 	fi
 
-	pmgdb init
 	pmgdb update  >/dev/null 2>&1 &
 
 	update-mime-database /usr/share/mime

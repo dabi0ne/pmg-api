@@ -86,14 +86,14 @@ __PACKAGE__->register_method ({
 		    description => "Day (as unix epoch).",
 		    type => 'integer',
 		},
-		count => { 
+		count => {
 		    description => "Number of quarantine entries.",
 		    type => 'integer',
 		},
 		spamavg => {
 		    description => "Average spam level.",
 		    type => 'number',
-		},		    
+		},
 	    },
 	},
     },
@@ -113,7 +113,7 @@ __PACKAGE__->register_method ({
 	}
 
 	my $res = [];
-	
+
 	my $dbh = PMG::DBTools::open_ruledb();
 
 	my $start = $param->{starttime} // 0;
