@@ -129,6 +129,9 @@ sub cluster_sync {
 	if ($err) {
 	    $errcount++;
 	    syslog ('err', "database sync '$ni->{name}' failed - $err");
+	} else {
+	    PMG::DBTools::create_clusterinfo_default($dbh, $ni->{cid}, 'lastsync', 0, undef);
+	    PMG::DBTools::write_maxint_clusterinfo($dbh, $ni->{cid}, 'lastsync', time());
 	}
     };
 
