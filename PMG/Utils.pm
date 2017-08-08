@@ -856,6 +856,31 @@ sub create_rrd_data {
     return $res;
 }
 
+sub decode_rfc1522 {
+    my ($enc) = @_;
+
+    my $res = '';
+
+    return '' if !$enc;
+
+    eval {
+	foreach my $r (MIME::Words::decode_mimewords($enc)) {
+	    my ($d, $cs) = @$r;
+	    if ($d) {
+		if ($cs) {
+		    $res .= decode($cs, $d);
+		} else {
+		    $res .= $d;
+		}
+	    }
+	}
+    };
+
+    $res = $enc if $@;
+
+    return $res;
+}
+
 sub rfc1522_to_html {
     my ($enc) = @_;
 
