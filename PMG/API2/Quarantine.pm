@@ -9,7 +9,7 @@ use Data::Dumper;
 use  Mail::Header;
 
 use PVE::SafeSyslog;
-use PVE::Exception qw(raise_param_exc);
+use PVE::Exception qw(raise_param_exc raise_perm_exc);
 use PVE::Tools qw(extract_param);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
@@ -41,12 +41,47 @@ my $parse_header_info = sub {
 
     $res->{envelope_sender} = $ref->{sender};
     $res->{receiver} = $ref->{receiver};
-    $res->{id} = $ref->{cid} . '_' . $ref->{rid};
+    $res->{id} = 'C' . $ref->{cid} . 'R' . $ref->{rid};
     $res->{time} = $ref->{time};
     $res->{bytes} = $ref->{bytes};
 
     return $res;
 };
+
+my $read_email_raw = sub {
+    my ($path) = @_;
+
+    open (my $fh, '<', $path) || die "unable to open '$path' - $!\n";
+
+    my $data = '';
+    my $raw_header = '';
+
+    # read header
+    my $header;
+    while (defined(my $line = <$fh>)) {
+	$raw_header .= $line;
+	chomp $line;
+	push @$header, $line;
+	last if $line =~ m/^\s*$/;
+    }
+
+    my $head = MIME::Head->new($header);
+
+    my $cs = $head->mime_attr("content-type.charset");
+
+    while (defined(my $line = <$fh>)) {
+	if ($cs) {
+	    $data .= decode($cs, $line);
+	} else {
+	    $data .= $line;
+	}
+    }
+
+    close($fh);
+
+    return ($raw_header, $data);
+};
+
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -71,6 +106,7 @@ __PACKAGE__->register_method ({
 
 	my $result = [
 	    { name => 'deliver' },
+	    { name => 'content' },
 	    { name => 'spam' },
 	    { name => 'virus' },
 	];
@@ -243,6 +279,7 @@ __PACKAGE__->register_method ({
 		},
 	    },
 	},
+	links => [ { rel => 'child', href => "{day}" } ],
     },
     code => sub {
 	my ($param) = @_;
@@ -284,6 +321,67 @@ __PACKAGE__->register_method ({
 	}
 
 	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'content',
+    path => 'content',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    description => "Get email data.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    id => {
+		description => 'Unique ID',
+		type => 'string',
+		pattern => 'C\d+R\d+',
+		maxLength => 40,
+	    },
+	},
+    },
+    returns => {
+	type => "object",
+	properties => {},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
+	my ($cid, $rid) = $param->{id} =~ m/^C(\d+)R(\d+)$/;
+	$cid = int($cid);
+	$rid = int($rid);
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid);
+
+	if ($role eq 'quser') {
+	    raise_perm_exc("mail does not belong to user '$authuser'")
+		if $authuser ne $ref->{pmail};
+	}
+
+	my $res = $parse_header_info->($ref);
+
+	foreach my $k (qw(info file spamlevel)) {
+	    $res->{$k} = $ref->{$k} if defined($ref->{$k});
+	}
+
+	my $filename = $ref->{file};
+	my $spooldir = $PMG::MailQueue::spooldir;
+
+	my $path = "$spooldir/$filename";
+
+	my ($header, $content) = $read_email_raw->($path);
+
+	$res->{header} = $header;
+	$res->{content} = $content;
+
+	return $res;
+
     }});
 
 1;
