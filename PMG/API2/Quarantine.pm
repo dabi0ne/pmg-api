@@ -71,7 +71,7 @@ __PACKAGE__->register_method ({
 		optional => 1,
 	    },
 	    pmail => {
-		description => "List entries for the user with this primary email address.",
+		description => "List entries for the user with this primary email address. Quarantine users cannot speficy this parameter, but it is required for all other roles.",
 		type => 'string', format => 'email',
 		optional => 1,
 	    },
@@ -96,6 +96,7 @@ __PACKAGE__->register_method ({
 		},
 	    },
 	},
+	links => [ { rel => 'child', href => "{day}" } ],
     },
     code => sub {
 	my ($param) = @_;
@@ -110,6 +111,9 @@ __PACKAGE__->register_method ({
 	    raise_param_exc({ pmail => "paramater not allwed with role '$role'"})
 		if defined($pmail);
 	    $pmail = $authuser;
+	} else {
+	    raise_param_exc({ pmail => "paramater required with role '$role'"})
+		if !defined($pmail);
 	}
 
 	my $res = [];
@@ -128,17 +132,88 @@ __PACKAGE__->register_method ({
 	    "FROM CMailStore, CMSReceivers WHERE " .
 	    (defined($start) ? "time >= $start AND " : '') .
 	    (defined($end) ? "time < $end AND " : '') .
-	    (defined($pmail) ? "pmail = ? AND " : '') .
+	    "pmail = ? AND " .
 	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
 	    "AND Status = 'N' " .
 	    "GROUP BY day " .
 	    "ORDER BY day DESC");
 
-	if (defined($pmail)) {
-	    $sth->execute($pmail);
-	} else {
-	    $sth->execute();
+	$sth->execute($pmail);
+
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    push @$res, $ref;
 	}
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'spamlist',
+    path => 'spam/{starttime}',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    description => "Show spam mails distribution (per day).",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => {
+		description => "Only consider entries newer than 'starttime' (unix epoch).",
+		type => 'integer',
+		minimum => 0,
+	    },
+	    endtime => {
+		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
+		type => 'integer',
+		minimum => 1,
+		optional => 1,
+	    },
+	    pmail => {
+		description => "List entries for the user with this primary email address. Quarantine users cannot speficy this parameter, but it is required for all other roles.",
+		type => 'string', format => 'email',
+		optional => 1,
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {},
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
+	my $pmail = $param->{pmail};
+
+	if ($role eq 'quser') {
+	    raise_param_exc({ pmail => "paramater not allwed with role '$role'"})
+		if defined($pmail);
+	    $pmail = $authuser;
+	} else {
+	    raise_param_exc({ pmail => "paramater required with role '$role'"})
+		if !defined($pmail);
+	}
+
+	my $res = [];
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $start = $param->{starttime};
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $sth = $dbh->prepare(
+	    "SELECT * " .
+	    "FROM CMailStore, CMSReceivers WHERE " .
+	    "pmail = ? AND time >= $start AND time < $end AND " .
+	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
+	    "AND Status = 'N' ORDER BY pmail, time, receiver");
+
+	$sth->execute($pmail);
 
 	while (my $ref = $sth->fetchrow_hashref()) {
 	    push @$res, $ref;
