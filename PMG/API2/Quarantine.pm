@@ -6,6 +6,8 @@ use Time::Local;
 use Time::Zone;
 use Data::Dumper;
 
+use  Mail::Header;
+
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise_param_exc);
 use PVE::Tools qw(extract_param);
@@ -13,11 +15,38 @@ use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
 
+use PMG::Utils;
 use PMG::AccessControl;
 use PMG::DBTools;
 
 use base qw(PVE::RESTHandler);
 
+
+my $parse_header_info = sub {
+    my ($ref) = @_;
+
+    my $res = { subject => '', from => '' };
+
+    my @lines = split('\n', $ref->{header});
+    my $head = Mail::Header->new(\@lines);
+
+    $res->{subject} = PMG::Utils::decode_rfc1522(PVE::Tools::trim($head->get('subject'))) // '';
+
+    my @fromarray = split('\s*,\s*', $head->get('from') || $ref->{sender});
+
+    $res->{from} = PMG::Utils::decode_rfc1522(PVE::Tools::trim ($fromarray[0])) // '';
+
+    my $sender = PMG::Utils::decode_rfc1522(PVE::Tools::trim($head->get('sender')));
+    $res->{sender} = $sender if $sender;
+
+    $res->{envelope_sender} = $ref->{sender};
+    $res->{receiver} = $ref->{receiver};
+    $res->{id} = $ref->{cid} . '_' . $ref->{rid};
+    $res->{time} = $ref->{time};
+    $res->{bytes} = $ref->{bytes};
+
+    return $res;
+};
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -178,7 +207,41 @@ __PACKAGE__->register_method ({
 	type => 'array',
 	items => {
 	    type => "object",
-	    properties => {},
+	    properties => {
+		id => {
+		    description => 'Unique ID',
+		    type => 'string',
+		},
+		bytes => {
+		    description => "Size of raw email.",
+		    type => 'integer' ,
+		},
+		envelope_sender => {
+		    description => "SMTP envelope sender.",
+		    type => 'string',
+		},
+		from => {
+		    description => "Header 'From' field.",
+		    type => 'string',
+		},
+		sender => {
+		    description => "Header 'Sender' field.",
+		    type => 'string',
+		    optional => 1,
+		},
+		receiver => {
+		    description => "Receiver email address",
+		    type => 'string',
+		},
+		subject => {
+		    description => "Header 'Subject' field.",
+		    type => 'string',
+		},
+		time => {
+		    description => "Receive time stamp",
+		    type => 'integer',
+		},
+	    },
 	},
     },
     code => sub {
@@ -216,7 +279,8 @@ __PACKAGE__->register_method ({
 	$sth->execute($pmail);
 
 	while (my $ref = $sth->fetchrow_hashref()) {
-	    push @$res, $ref;
+	    my $data = $parse_header_info->($ref);
+	    push @$res, $data;
 	}
 
 	return $res;
