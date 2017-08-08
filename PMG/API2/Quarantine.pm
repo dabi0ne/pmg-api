@@ -116,7 +116,7 @@ __PACKAGE__->register_method ({
 
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $start = $param->{starttime} // 0;
+	my $start = $param->{starttime};
 	my $end = $param->{endtime};
 
 	my $timezone = tz_local_offset();
@@ -126,8 +126,8 @@ __PACKAGE__->register_method ({
 	    "((time + $timezone) / 86400) * 86400 - $timezone as day, " .
 	    "count (ID) as count, avg (Spamlevel) as spamavg " .
 	    "FROM CMailStore, CMSReceivers WHERE " .
-	    ($start ? "time >= $start AND " : '') .
-	    ($end ? "time < $end AND " : '') .
+	    (defined($start) ? "time >= $start AND " : '') .
+	    (defined($end) ? "time < $end AND " : '') .
 	    (defined($pmail) ? "pmail = ? AND " : '') .
 	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
 	    "AND Status = 'N' " .
