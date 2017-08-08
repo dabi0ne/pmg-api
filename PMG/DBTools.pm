@@ -1127,7 +1127,7 @@ sub cluster_sync_status {
 	    }
 	}
 
-	$sth->finish ();
+	$sth->finish();
     };
     my $err = $@;
 
@@ -1136,6 +1136,24 @@ sub cluster_sync_status {
     syslog('err', $err) if $err;
 
     return $minmtime;
+}
+
+sub load_mail_data {
+    my ($dbh, $cid, $rid) = @_;
+
+    my $sth = $dbh->prepare(
+	"SELECT * FROM CMailStore, CMSReceivers WHERE " .
+	"CID = $cid and RID = $rid AND " .
+	"CID = CMailStore_CID AND RID = CMailStore_RID");
+    $sth->execute ();
+
+    my $res = $sth->fetchrow_hashref();
+
+    $sth->finish();
+
+    die "no such mail (C${cid}R${rid})\n" if !defined($res);
+
+    return $res;
 }
 
 
