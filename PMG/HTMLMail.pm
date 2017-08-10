@@ -169,7 +169,7 @@ sub getscrubber {
 }
 
 sub read_raw_email {
-    my ($path) = @_;
+    my ($path, $maxbytes) = @_;
 
     open (my $fh, '<', $path) || die "unable to open '$path' - $!\n";
 
@@ -189,11 +189,18 @@ sub read_raw_email {
 
     my $cs = $head->mime_attr("content-type.charset");
 
+    my $bytes = 0;
+
     while (defined(my $line = <$fh>)) {
+	$bytes += length ($line);
 	if ($cs) {
 	    $data .= decode($cs, $line);
 	} else {
 	    $data .= $line;
+	}
+	if (defined($maxbytes) && ($bytes >= $maxbytes)) {
+	    $data .= "\n... mail truncated (> $maxbytes bytes)\n";
+	    last;
 	}
     }
 
