@@ -96,9 +96,10 @@ sub auth_handler {
 }
 
 sub rest_handler {
-    my ($self, $clientip, $method, $rel_uri, $auth, $params) = @_;
+    my ($self, $clientip, $method, $rel_uri, $auth, $params, $format) = @_;
 
     my $rpcenv = $self->{rpcenv};
+    $rpcenv->set_format($format);
 
     my $resp = {
 	status => HTTP_NOT_IMPLEMENTED,
@@ -170,6 +171,7 @@ sub rest_handler {
 
     $rpcenv->set_user(undef); # clear after request
     $rpcenv->set_role(undef); # clear after request
+    $rpcenv->set_format(undef); # clear after request
 
     if ($err) {
 	$resp = { info => $info };

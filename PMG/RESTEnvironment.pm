@@ -38,6 +38,7 @@ sub init_request {
     
     $self->{ticket} = undef;
     $self->{role} = undef;
+    $self->{format} = undef;
     $self->{cinfo} = PVE::INotify::read_file("cluster.conf");
     $self->{usercfg} = PVE::INotify::read_file("pmg-user.conf");
 }
@@ -49,6 +50,18 @@ sub setup_default_cli_env {
 
     my $rest_env = $class->get();
     $rest_env->set_role('root');
+}
+
+sub set_format {
+    my ($self, $ticket) = @_;
+
+    $self->{format} = $ticket;
+}
+
+sub get_format {
+    my ($self) = @_;
+
+    return $self->{format} // 'json';
 }
 
 sub set_ticket {
