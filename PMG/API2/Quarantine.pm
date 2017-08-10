@@ -5,8 +5,9 @@ use warnings;
 use Time::Local;
 use Time::Zone;
 use Data::Dumper;
+use Encode;
 
-use  Mail::Header;
+use Mail::Header;
 
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise_param_exc raise_perm_exc);
@@ -14,10 +15,13 @@ use PVE::Tools qw(extract_param);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
+use PVE::APIServer::Formatter;
 
 use PMG::Utils;
 use PMG::AccessControl;
+use PMG::Config;
 use PMG::DBTools;
+use PMG::HTMLMail;
 
 use base qw(PVE::RESTHandler);
 
@@ -46,40 +50,6 @@ my $parse_header_info = sub {
     $res->{bytes} = $ref->{bytes};
 
     return $res;
-};
-
-my $read_email_raw = sub {
-    my ($path) = @_;
-
-    open (my $fh, '<', $path) || die "unable to open '$path' - $!\n";
-
-    my $data = '';
-    my $raw_header = '';
-
-    # read header
-    my $header;
-    while (defined(my $line = <$fh>)) {
-	$raw_header .= $line;
-	chomp $line;
-	push @$header, $line;
-	last if $line =~ m/^\s*$/;
-    }
-
-    my $head = MIME::Head->new($header);
-
-    my $cs = $head->mime_attr("content-type.charset");
-
-    while (defined(my $line = <$fh>)) {
-	if ($cs) {
-	    $data .= decode($cs, $line);
-	} else {
-	    $data .= $line;
-	}
-    }
-
-    close($fh);
-
-    return ($raw_header, $data);
 };
 
 
@@ -279,7 +249,6 @@ __PACKAGE__->register_method ({
 		},
 	    },
 	},
-	links => [ { rel => 'child', href => "{day}" } ],
     },
     code => sub {
 	my ($param) = @_;
@@ -328,7 +297,7 @@ __PACKAGE__->register_method ({
     path => 'content',
     method => 'GET',
     permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
-    description => "Get email data.",
+    description => "Get email data. There is a special formatter called 'htmlmail' to get sanitized html view of the mail content (use the '/api2/htmlmail/quarantine/content' url).",
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -337,6 +306,12 @@ __PACKAGE__->register_method ({
 		type => 'string',
 		pattern => 'C\d+R\d+',
 		maxLength => 40,
+	    },
+	    raw => {
+		description => "Display 'raw' eml data. This is only used with the 'htmlmail' formatter.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
 	    },
 	},
     },
@@ -350,6 +325,7 @@ __PACKAGE__->register_method ({
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
 	my $role = $rpcenv->get_role();
+	my $format = $rpcenv->get_format();
 
 	my ($cid, $rid) = $param->{id} =~ m/^C(\d+)R(\d+)$/;
 	$cid = int($cid);
@@ -375,13 +351,43 @@ __PACKAGE__->register_method ({
 
 	my $path = "$spooldir/$filename";
 
-	my ($header, $content) = $read_email_raw->($path);
+	if ($format eq 'htmlmail') {
 
-	$res->{header} = $header;
-	$res->{content} = $content;
+	    my $cfg = PMG::Config->new();
+	    my $viewimages = $cfg->get('spamquar', 'viewimages');
+	    my $allowhref = $cfg->get('spamquar', 'allowhrefs');
+
+	    $res->{header} = ''; # not required
+	    $res->{content} = PMG::HTMLMail::email_to_html($path, $param->{raw}, $viewimages, $allowhref);
+
+	} else {
+	    my ($header, $content) = PMG::HTMLMail::read_raw_email($path, 4096);
+
+	    $res->{header} = $header;
+	    $res->{content} = $content;
+	}
+
 
 	return $res;
 
     }});
+
+PVE::APIServer::Formatter::register_page_formatter(
+    'format' => 'htmlmail',
+    method => 'GET',
+    path => '/quarantine/content',
+    code => sub {
+        my ($res, $data, $param, $path, $auth, $config) = @_;
+
+	if(!HTTP::Status::is_success($res->{status})) {
+	    return ("Error $res->{status}: $res->{message}", "text/plain");
+	}
+
+	my $ct = "text/html;charset=UTF-8";
+
+	my $raw = $data->{content};
+
+	return (encode('UTF-8', $raw), $ct, 1);
+});
 
 1;
