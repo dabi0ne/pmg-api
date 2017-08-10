@@ -856,6 +856,16 @@ sub create_rrd_data {
     return $res;
 }
 
+sub decode_to_html {
+    my ($charset, $data) = @_;
+
+    my $res = $data;
+
+    eval { $res = encode_entities(decode($charset, $data)); };
+
+    return $res;
+}
+
 sub decode_rfc1522 {
     my ($enc) = @_;
 
