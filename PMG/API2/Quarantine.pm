@@ -25,6 +25,28 @@ use PMG::HTMLMail;
 
 use base qw(PVE::RESTHandler);
 
+my $spamdesc;
+
+sub decode_spaminfo {
+    my ($info) = @_;
+
+    $spamdesc = PMG::Utils::load_sa_descriptions() if !$spamdesc;
+
+    my $res = [];
+
+    foreach my $test (split (',', $info)) {
+	my ($name, $score) = split (':', $test);
+
+	my $info = { name => $name, score => $score, desc => '-' };
+	if (my $si = $spamdesc->{$name}) {
+	    $info->{desc} = $si->{desc};
+	    $info->{url} = $si->{url} if defined($si->{url});
+	}
+	push @$res, $info;
+    }
+
+    return $res;
+}
 
 my $parse_header_info = sub {
     my ($ref) = @_;
@@ -41,13 +63,22 @@ my $parse_header_info = sub {
     $res->{from} = PMG::Utils::decode_rfc1522(PVE::Tools::trim ($fromarray[0])) // '';
 
     my $sender = PMG::Utils::decode_rfc1522(PVE::Tools::trim($head->get('sender')));
-    $res->{sender} = $sender if $sender;
+    $res->{sender} = $sender if $sender && ($sender ne $res->{from});
 
     $res->{envelope_sender} = $ref->{sender};
     $res->{receiver} = $ref->{receiver};
     $res->{id} = 'C' . $ref->{cid} . 'R' . $ref->{rid};
     $res->{time} = $ref->{time};
     $res->{bytes} = $ref->{bytes};
+
+    my $qtype = $ref->{qtype};
+
+    if ($qtype eq 'V') {
+	$res->{virusname} = $ref->{info};
+    } elsif ($qtype eq 'S') {
+	$res->{spamlevel} = $ref->{spamlevel} // 0;
+	$res->{spaminfo} = decode_spaminfo($ref->{info});
+    }
 
     return $res;
 };
@@ -246,6 +277,14 @@ __PACKAGE__->register_method ({
 		time => {
 		    description => "Receive time stamp",
 		    type => 'integer',
+		},
+		spamlevel => {
+		    description => "Spam score.",
+		    type => 'number',
+		},
+		spaminfo => {
+		    description => "Information about matched spam tests (name, score, desc, url).",
+		    type => 'array',
 		},
 	    },
 	},
