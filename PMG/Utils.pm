@@ -941,4 +941,39 @@ sub bencode_header {
     return $res;
 }
 
+sub load_sa_descriptions {
+
+    my @dirs = ('/usr/share/spamassassin',
+		'/usr/share/spamassassin-extra');
+
+    my $res = {};
+
+    my $parse_sa_file = sub {
+	my ($file) = @_;
+
+	open(my $fh,'<', $file);
+	return if !defined($fh);
+
+	while (defined(my $line = <$fh>)) {
+	    if ($line =~ m/^describe\s+(\S+)\s+(.*)\s*$/) {
+		my ($name, $desc) = ($1, $2);
+		next if $res->{$name};
+		$res->{$name}->{desc} = $desc;
+		if ($desc =~ m|[\(\s](http:\/\/\S+\.[^\s\.\)]+\.[^\s\.\)]+)|i) {
+		    $res->{$name}->{url} = $1;
+		}
+	    }
+	}
+	close($fh);
+    };
+
+    foreach my $dir (@dirs) {
+	foreach my $file (<$dir/*.cf>) {
+	    $parse_sa_file->($file);
+	}
+    }
+
+    return $res;
+}
+
 1;
