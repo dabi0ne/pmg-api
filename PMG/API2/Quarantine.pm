@@ -77,7 +77,6 @@ my $parse_header_info = sub {
 	$res->{virusname} = $ref->{info};
     } elsif ($qtype eq 'S') {
 	$res->{spamlevel} = $ref->{spamlevel} // 0;
-	$res->{spaminfo} = decode_spaminfo($ref->{info});
     }
 
     return $res;
@@ -282,10 +281,6 @@ __PACKAGE__->register_method ({
 		    description => "Spam score.",
 		    type => 'number',
 		},
-		spaminfo => {
-		    description => "Information about matched spam tests (name, score, desc, url).",
-		    type => 'array',
-		},
 	    },
 	},
     },
@@ -356,7 +351,57 @@ __PACKAGE__->register_method ({
     },
     returns => {
 	type => "object",
-	properties => {},
+	properties => {
+		id => {
+		    description => 'Unique ID',
+		    type => 'string',
+		},
+		bytes => {
+		    description => "Size of raw email.",
+		    type => 'integer' ,
+		},
+		envelope_sender => {
+		    description => "SMTP envelope sender.",
+		    type => 'string',
+		},
+		from => {
+		    description => "Header 'From' field.",
+		    type => 'string',
+		},
+		sender => {
+		    description => "Header 'Sender' field.",
+		    type => 'string',
+		    optional => 1,
+		},
+		receiver => {
+		    description => "Receiver email address",
+		    type => 'string',
+		},
+		subject => {
+		    description => "Header 'Subject' field.",
+		    type => 'string',
+		},
+		time => {
+		    description => "Receive time stamp",
+		    type => 'integer',
+		},
+		spamlevel => {
+		    description => "Spam score.",
+		    type => 'number',
+		},
+		spaminfo => {
+		    description => "Information about matched spam tests (name, score, desc, url).",
+		    type => 'array',
+		},
+		header => {
+		    description => "Raw email header data.",
+		    type => 'string',
+		},
+		content => {
+		    description => "Raw email data (first 4096 bytes). Useful for preview. NOTE: The  'htmlmail' formatter displays the whole email.",
+		    type => 'string',
+		}
+	},
     },
     code => sub {
 	my ($param) = @_;
@@ -381,9 +426,6 @@ __PACKAGE__->register_method ({
 
 	my $res = $parse_header_info->($ref);
 
-	foreach my $k (qw(info file spamlevel)) {
-	    $res->{$k} = $ref->{$k} if defined($ref->{$k});
-	}
 
 	my $filename = $ref->{file};
 	my $spooldir = $PMG::MailQueue::spooldir;
@@ -400,8 +442,12 @@ __PACKAGE__->register_method ({
 	    $res->{content} = PMG::HTMLMail::email_to_html($path, $param->{raw}, $viewimages, $allowhref);
 
 	} else {
-	    my ($header, $content) = PMG::HTMLMail::read_raw_email($path, 4096);
+	    # include additional details
 
+	    my ($header, $content) = PMG::HTMLMail::read_raw_email($path, 4096);
+	    
+	    $res->{file} = $ref->{file};
+	    $res->{spaminfo} = decode_spaminfo($ref->{info});
 	    $res->{header} = $header;
 	    $res->{content} = $content;
 	}
