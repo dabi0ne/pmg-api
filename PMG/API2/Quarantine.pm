@@ -27,6 +27,20 @@ use base qw(PVE::RESTHandler);
 
 my $spamdesc;
 
+my $verify_optional_pmail = sub {
+    my ($authuser, $role, $pmail) = @_;
+
+    if ($role eq 'quser') {
+	raise_param_exc({ pmail => "paramater not allwed with role '$role'"})
+	    if defined($pmail);
+	$pmail = $authuser;
+    } else {
+	raise_param_exc({ pmail => "paramater required with role '$role'"})
+	    if !defined($pmail);
+    }
+    return $pmail;
+};
+
 sub decode_spaminfo {
     my ($info) = @_;
 
@@ -47,6 +61,43 @@ sub decode_spaminfo {
 
     return $res;
 }
+
+my $extract_email = sub {
+    my $data = shift;
+
+    return $data if !$data;
+
+    if ($data =~ m/^.*\s(\S+)\s*$/) {
+	$data = $1;
+    }
+
+    if ($data =~ m/^<([^<>\s]+)>$/) {
+	$data = $1;
+    }
+
+    if ($data !~ m/[\s><]/ && $data =~ m/^(.+\@[^\.]+\..*[^\.]+)$/) {
+	$data = $1;
+    } else {
+	$data = undef;
+    }
+
+    return $data;
+};
+
+my $get_real_sender = sub {
+    my ($ref) = @_;
+
+    my @lines = split('\n', $ref->{header});
+    my $head = Mail::Header->new(\@lines);
+
+    my @fromarray = split ('\s*,\s*', $head->get ('from') || $ref->{sender});
+    my $from =  $extract_email->($fromarray[0]) || $ref->{sender};;
+    my $sender = $extract_email->($head->get ('sender'));
+
+    return $sender if $sender;
+
+    return $from;
+};
 
 my $parse_header_info = sub {
     my ($ref) = @_;
@@ -82,6 +133,11 @@ my $parse_header_info = sub {
     return $res;
 };
 
+my $pmail_param_type = {
+    description => "List entries for the user with this primary email address. Quarantine users cannot speficy this parameter, but it is required for all other roles.",
+    type => 'string', format => 'email',
+    optional => 1,
+};
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -105,13 +161,91 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
-	    { name => 'deliver' },
+	    { name => 'whitelist' },
+	    { name => 'blacklist' },
 	    { name => 'content' },
 	    { name => 'spam' },
 	    { name => 'virus' },
 	];
 
 	return $result;
+    }});
+
+
+my $read_user_bw_list = sub {
+    my ($listname, $param) = @_;
+
+    my $rpcenv = PMG::RESTEnvironment->get();
+    my $authuser = $rpcenv->get_user();
+    my $role = $rpcenv->get_role();
+
+    my $pmail = $verify_optional_pmail->($authuser, $role, $param->{pmail});
+
+    my $dbh = PMG::DBTools::open_ruledb();
+
+    my $list = PMG::DBTools::add_to_blackwhite($dbh, $pmail, $listname);
+
+    my $res = [];
+    foreach my $a (@$list) { push @$res, { address => $a }; }
+    return $res;
+};
+
+__PACKAGE__->register_method ({
+    name => 'whitelist',
+    path => 'whitelist',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    description => "Show user whitelist.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    pmail => $pmail_param_type,
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		address => {
+		    type => "string",
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	return $read_user_bw_list->('WL', $param);
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'blacklist',
+    path => 'blacklist',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    description => "Show user blacklist.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    pmail => $pmail_param_type,
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		address => {
+		    type => "string",
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	return $read_user_bw_list->('BL', $param);
     }});
 
 __PACKAGE__->register_method ({
@@ -135,11 +269,7 @@ __PACKAGE__->register_method ({
 		minimum => 1,
 		optional => 1,
 	    },
-	    pmail => {
-		description => "List entries for the user with this primary email address. Quarantine users cannot speficy this parameter, but it is required for all other roles.",
-		type => 'string', format => 'email',
-		optional => 1,
-	    },
+	    pmail => $pmail_param_type,
 	},
     },
     returns => {
@@ -170,16 +300,7 @@ __PACKAGE__->register_method ({
 	my $authuser = $rpcenv->get_user();
 	my $role = $rpcenv->get_role();
 
-	my $pmail = $param->{pmail};
-
-	if ($role eq 'quser') {
-	    raise_param_exc({ pmail => "paramater not allwed with role '$role'"})
-		if defined($pmail);
-	    $pmail = $authuser;
-	} else {
-	    raise_param_exc({ pmail => "paramater required with role '$role'"})
-		if !defined($pmail);
-	}
+	my $pmail = $verify_optional_pmail->($authuser, $role, $param->{pmail});
 
 	my $res = [];
 
@@ -232,11 +353,7 @@ __PACKAGE__->register_method ({
 		minimum => 1,
 		optional => 1,
 	    },
-	    pmail => {
-		description => "List entries for the user with this primary email address. Quarantine users cannot speficy this parameter, but it is required for all other roles.",
-		type => 'string', format => 'email',
-		optional => 1,
-	    },
+	    pmail => $pmail_param_type,
 	},
     },
     returns => {
@@ -291,16 +408,7 @@ __PACKAGE__->register_method ({
 	my $authuser = $rpcenv->get_user();
 	my $role = $rpcenv->get_role();
 
-	my $pmail = $param->{pmail};
-
-	if ($role eq 'quser') {
-	    raise_param_exc({ pmail => "paramater not allwed with role '$role'"})
-		if defined($pmail);
-	    $pmail = $authuser;
-	} else {
-	    raise_param_exc({ pmail => "paramater required with role '$role'"})
-		if !defined($pmail);
-	}
+	my $pmail = $verify_optional_pmail->($authuser, $role, $param->{pmail});
 
 	my $res = [];
 
@@ -438,14 +546,17 @@ __PACKAGE__->register_method ({
 	    my $viewimages = $cfg->get('spamquar', 'viewimages');
 	    my $allowhref = $cfg->get('spamquar', 'allowhrefs');
 
-	    $res->{header} = ''; # not required
 	    $res->{content} = PMG::HTMLMail::email_to_html($path, $param->{raw}, $viewimages, $allowhref);
 
+	    # to make result verification happy
+	    $res->{file} = '';
+	    $res->{header} = '';
+	    $res->{spaminfo} = [];
 	} else {
 	    # include additional details
 
 	    my ($header, $content) = PMG::HTMLMail::read_raw_email($path, 4096);
-	    
+
 	    $res->{file} = $ref->{file};
 	    $res->{spaminfo} = decode_spaminfo($ref->{info});
 	    $res->{header} = $header;
@@ -475,4 +586,62 @@ PVE::APIServer::Formatter::register_page_formatter(
 	return (encode('UTF-8', $raw), $ct, 1);
 });
 
+__PACKAGE__->register_method ({
+    name =>'action',
+    path => 'content',
+    method => 'POST',
+    description => "Execute quarantine actions.",
+    permissions => { check => [ 'admin', 'qmanager', 'quser'] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    id => {
+		description => 'Unique ID',
+		type => 'string',
+		pattern => 'C\d+R\d+',
+		maxLength => 40,
+	    },
+	    action => {
+		description => 'Action - specify what you want to do with the mail.',
+		type => 'string',
+		enum => ['whitelist', 'blacklist', 'deliver', 'delete'],
+	    },
+	},
+    },
+    returns => { type => "null" },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+	my $action = $param->{action};
+
+	my ($cid, $rid) = $param->{id} =~ m/^C(\d+)R(\d+)$/;
+	$cid = int($cid);
+	$rid = int($rid);
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid);
+
+	if ($role eq 'quser') {
+	    raise_perm_exc("mail does not belong to user '$authuser'")
+		if $authuser ne $ref->{pmail};
+	}
+
+	my $sender = $get_real_sender->($ref);
+	my $username = $ref->{pmail};
+
+	if ($action eq 'whitelist') {
+	    PMG::DBTools::add_to_blackwhite($dbh, $username, 'WL', [ $sender ]);
+	} elsif ($action eq 'blacklist') {
+	    PMG::DBTools::add_to_blackwhite($dbh, $username, 'BL', [ $sender ]);
+	} elsif ($action eq 'deliver') {
+	} elsif ($action eq 'delete') {
+	}
+
+	return undef;
+    }});
 1;
