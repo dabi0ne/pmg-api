@@ -22,6 +22,7 @@ use PMG::AccessControl;
 use PMG::Config;
 use PMG::DBTools;
 use PMG::HTMLMail;
+use PMG::Quarantine;
 
 use base qw(PVE::RESTHandler);
 
@@ -117,7 +118,7 @@ my $parse_header_info = sub {
     $res->{sender} = $sender if $sender && ($sender ne $res->{from});
 
     $res->{envelope_sender} = $ref->{sender};
-    $res->{receiver} = $ref->{receiver};
+    $res->{receiver} = $ref->{receiver} // $ref->{pmail};
     $res->{id} = 'C' . $ref->{cid} . 'R' . $ref->{rid};
     $res->{time} = $ref->{time};
     $res->{bytes} = $ref->{bytes};
@@ -183,7 +184,7 @@ my $read_user_bw_list = sub {
 
     my $dbh = PMG::DBTools::open_ruledb();
 
-    my $list = PMG::DBTools::add_to_blackwhite($dbh, $pmail, $listname);
+    my $list = PMG::Quarantine::add_to_blackwhite($dbh, $pmail, $listname);
 
     my $res = [];
     foreach my $a (@$list) { push @$res, { address => $a }; }
@@ -635,13 +636,19 @@ __PACKAGE__->register_method ({
 	my $username = $ref->{pmail};
 
 	if ($action eq 'whitelist') {
-	    PMG::DBTools::add_to_blackwhite($dbh, $username, 'WL', [ $sender ]);
+	    PMG::Quarantine::add_to_blackwhite($dbh, $username, 'WL', [ $sender ]);
 	} elsif ($action eq 'blacklist') {
-	    PMG::DBTools::add_to_blackwhite($dbh, $username, 'BL', [ $sender ]);
+	    PMG::Quarantine::add_to_blackwhite($dbh, $username, 'BL', [ $sender ]);
 	} elsif ($action eq 'deliver') {
+	    my $targets = [ $ref->{pmail} ];
+	    PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $targets);
 	} elsif ($action eq 'delete') {
+	    PMG::Quarantine::delete_quarantined_mail($dbh, $ref);
+	} else {
+	    die "internal error"; # should not be reached
 	}
 
 	return undef;
     }});
+
 1;

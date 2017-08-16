@@ -78,6 +78,7 @@ LIBSOURCES =				\
 	PMG/LDAPSet.pm			\
 	PMG/LDAPCache.pm		\
 	PMG/DBTools.pm			\
+	PMG/Quarantine.pm		\
 	PMG/RuleDB/Group.pm		\
 	PMG/RuleDB/Rule.pm		\
 	PMG/RuleDB/Object.pm		\
