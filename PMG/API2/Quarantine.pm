@@ -173,8 +173,8 @@ __PACKAGE__->register_method ({
     }});
 
 
-my $read_user_bw_list = sub {
-    my ($listname, $param) = @_;
+my $read_or_modify_user_bw_list = sub {
+    my ($listname, $param, $addrs, $delete) = @_;
 
     my $rpcenv = PMG::RESTEnvironment->get();
     my $authuser = $rpcenv->get_user();
@@ -184,12 +184,15 @@ my $read_user_bw_list = sub {
 
     my $dbh = PMG::DBTools::open_ruledb();
 
-    my $list = PMG::Quarantine::add_to_blackwhite($dbh, $pmail, $listname);
+    my $list = PMG::Quarantine::add_to_blackwhite(
+	$dbh, $pmail, $listname, $addrs, $delete);
 
     my $res = [];
     foreach my $a (@$list) { push @$res, { address => $a }; }
     return $res;
 };
+
+my $address_pattern = '[a-zA-Z0-9\+\-\_\*\.\@]+';
 
 __PACKAGE__->register_method ({
     name => 'whitelist',
@@ -217,7 +220,63 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	return $read_user_bw_list->('WL', $param);
+	return $read_or_modify_user_bw_list->('WL', $param);
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'whitelist_add',
+    path => 'whitelist',
+    method => 'POST',
+    description => "Add user whitelist entries.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    pmail => $pmail_param_type,
+	    address => {
+		description => "The address you want to add.",
+		type => "string",
+		pattern => $address_pattern,
+		maxLength => 512,
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	$read_or_modify_user_bw_list->('WL', $param, [ $param->{address} ]);
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'whitelist_delete',
+    path => 'whitelist/{address}',
+    method => 'DELETE',
+    description => "Delete user whitelist entries.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    pmail => $pmail_param_type,
+	    address => {
+		description => "The address you want to remove.",
+		type => "string",
+		pattern => $address_pattern,
+		maxLength => 512,
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	$read_or_modify_user_bw_list->('WL', $param, [ $param->{address} ], 1);
+
+	return undef;
     }});
 
 __PACKAGE__->register_method ({
@@ -246,7 +305,63 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	return $read_user_bw_list->('BL', $param);
+	return $read_or_modify_user_bw_list->('BL', $param);
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'blacklist_add',
+    path => 'blacklist',
+    method => 'POST',
+    description => "Add user blacklist entries.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    pmail => $pmail_param_type,
+	    address => {
+		description => "The address you want to add.",
+		type => "string",
+		pattern => $address_pattern,
+		maxLength => 512,
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	$read_or_modify_user_bw_list->('BL', $param, [ $param->{address} ]);
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'blacklist_delete',
+    path => 'blacklist/{address}',
+    method => 'DELETE',
+    description => "Delete user blacklist entries.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    pmail => $pmail_param_type,
+	    address => {
+		description => "The address you want to remove.",
+		type => "string",
+		pattern => $address_pattern,
+		maxLength => 512,
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	$read_or_modify_user_bw_list->('BL', $param, [ $param->{address} ], 1);
+
+	return undef;
     }});
 
 __PACKAGE__->register_method ({
