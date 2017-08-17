@@ -624,7 +624,7 @@ __PACKAGE__->register_method ({
 		content => {
 		    description => "Raw email data (first 4096 bytes). Useful for preview. NOTE: The  'htmlmail' formatter displays the whole email.",
 		    type => 'string',
-		}
+		},
 	},
     },
     code => sub {
