@@ -16,6 +16,8 @@ use PMG::Cluster;
 use PMG::ClusterConfig;
 use PMG::Statistic;
 
+use PMG::API2::RuleDB;
+
 use base qw(PVE::CLIHandler);
 
 sub setup_environment {
@@ -115,7 +117,6 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
-
 __PACKAGE__->register_method ({
     name => 'init',
     path => 'init',
@@ -212,6 +213,7 @@ our $cmddef = {
     'dump' => [ __PACKAGE__, 'dump', []],
     delete => [ __PACKAGE__, 'delete', []],
     init => [ __PACKAGE__, 'init', []],
+    reset => [ 'PMG::API2::RuleDB', 'reset_ruledb', []],
     update => [ __PACKAGE__, 'update', []],
 };
 

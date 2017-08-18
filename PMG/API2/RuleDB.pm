@@ -55,6 +55,27 @@ __PACKAGE__->register_method ({
 	return $result;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'reset_ruledb',
+    path => '',
+    method => 'POST',
+    description => "Reset PMG rule database back to factory defaults.",
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {}
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	my $dbh = PMG::DBTools::open_ruledb("Proxmox_ruledb");
+	my $ruledb = PMG::RuleDB->new($dbh);
+	PMG::DBTools::init_ruledb($ruledb, 1);
+
+	return undef;
+   }});
+
 __PACKAGE__->register_method({
     name => 'ruledb_digest',
     path => 'digest',
