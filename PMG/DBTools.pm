@@ -470,6 +470,8 @@ sub upgradedb {
 	eval { $dbh->do("ANALYZE $table"); };
 	warn $@ if $@;
     }
+
+    reload_ruledb();
 }
 
 sub init_ruledb {
