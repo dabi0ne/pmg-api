@@ -1166,6 +1166,9 @@ sub reload_ruledb {
 
     return 0 if !$pid;
 
+    return 0 if $pid !~ m/^(\d+)$/;
+    $pid = $1; # untaint
+
     return kill (10, $pid); # send SIGUSR1
 }
 
