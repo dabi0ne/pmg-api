@@ -774,6 +774,8 @@ sub init_ruledb {
     #$ruledb->rule_add_action ($rule, $accept);
 
     cond_create_std_actions ($ruledb);
+
+    reload_ruledb();
 }
 
 sub get_remote_time {
