@@ -250,10 +250,6 @@ sub register_object_group_config_api {
 sub register_objects_api {
     my ($apiclass, $oclass, $path) = @_;
 
-
-    # fixme:
-    # $conn->reload_ruledb ();
-
     $apiclass->register_method({
 	name => 'objects',
 	path => $path,
@@ -326,6 +322,8 @@ sub register_objects_api {
 	    die "object '$param->{id}' does not exists\n" if !defined($obj);
 
 	    $rdb->delete_object($obj);
+
+	    PMG::DBTools::reload_ruledb();
 
 	    return undef;
 	}});

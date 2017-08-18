@@ -14,6 +14,7 @@ use PVE::INotify;
 use PMG::Config;
 
 use PMG::RuleDB;
+use PMG::DBTools;
 use PMG::API2::ObjectGroupHelpers;
 
 use base qw(PVE::RESTHandler);
@@ -85,6 +86,8 @@ __PACKAGE__->register_method ({
 	$rdb->load_rule($param->{id}); # test if rule exist
 
 	$rdb->delete_rule($param->{id});
+
+	PMG::DBTools::reload_ruledb();
 
 	return undef;
     }});
@@ -189,6 +192,8 @@ __PACKAGE__->register_method ({
 
 	$rdb->save_rule($rule);
 
+	PMG::DBTools::reload_ruledb();
+
 	return undef;
    }});
 
@@ -262,6 +267,8 @@ my $register_rule_group_api = sub {
 
 	    $rdb->rule_add_group($param->{id}, $param->{ogroup}, $name);
 
+	    PMG::DBTools::reload_ruledb();
+
 	    return undef;
 	}});
 
@@ -294,6 +301,8 @@ my $register_rule_group_api = sub {
 	    my $rule = $rdb->load_rule($param->{id});
 
 	    $rdb->rule_remove_group($param->{id}, $param->{ogroup}, $name);
+
+	    PMG::DBTools::reload_ruledb();
 
 	    return undef;
 	}});

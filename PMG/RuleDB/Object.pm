@@ -5,6 +5,7 @@ use warnings;
 use DBI;
 
 use PMG::Utils;
+use PMG::RuleDB;
 
 sub new {
     my ($type, $otype, $ogroup) = @_;
@@ -196,6 +197,8 @@ sub register_api {
 
 	    my $id = $obj->save($rdb);
 
+	    PMG::DBTools::reload_ruledb();
+
 	    return $id;
 	}});
 
@@ -253,6 +256,8 @@ sub register_api {
 	    $obj->update($param);
 
 	    $obj->save($rdb);
+
+	    PMG::DBTools::reload_ruledb();
 
 	    return undef;
 	}});

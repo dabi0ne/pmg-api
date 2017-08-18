@@ -1156,4 +1156,13 @@ sub load_mail_data {
     return $res;
 }
 
+sub reload_ruledb {
+    my $pid_file = '/var/run/pmg-smtp-filter.pid';
+    my $pid = PVE::Tools::file_read_firstline($pid_file);
+
+    return 0 if !$pid;
+
+    return kill (10, $pid); # send SIGUSR1
+}
+
 1;

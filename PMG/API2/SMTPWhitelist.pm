@@ -99,11 +99,6 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
-
-# fixme:
-# $conn->reload_greylistdb () if $_class eq 'greylist';
-# $conn->reload_ruledb ();
-
 __PACKAGE__->register_method ({
     name => 'delete_object',
     path => 'objects/{id}',

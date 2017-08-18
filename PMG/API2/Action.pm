@@ -18,8 +18,6 @@ use PMG::RuleDB;
 
 use base qw(PVE::RESTHandler);
 
-# fixme: $conn->reload_ruledb ();
-
 my $id_property = {
     description => "Action Object ID.",
     type => 'string',
@@ -275,6 +273,8 @@ my $register_action_api = sub {
 	    $action->update($param);
 
 	    $action->save($rdb);
+
+	    PMG::DBTools::reload_ruledb();
 
 	    return undef;
 	}});
