@@ -995,4 +995,38 @@ sub format_uptime {
     }
 }
 
+sub finalize_report {
+    my ($tt, $template, $data, $mailfrom, $receiver, $debug) = @_;
+
+    my $html = '';
+
+    $tt->process($template, $data, \$html) ||
+	die $tt->error() . "\n";
+
+    my $title;
+    if ($html =~ m|^\s*<title>(.*)</title>|m) {
+	$title = $1;
+    } else {
+	die "unable to extract template title\n";
+    }
+
+    my $top = MIME::Entity->build(
+	Type    => "multipart/related",
+	To      => $data->{pmail},
+	From    => $mailfrom,
+	Subject => bencode_header(decode_entities($title)));
+
+    $top->attach(
+	Data     => $html,
+	Type     => "text/html",
+	Encoding => $debug ? 'binary' : 'quoted-printable');
+
+    if ($debug) {
+	$top->print();
+	return;
+    }
+    # we use an empty envelope sender (we dont want to receive NDRs)
+    PMG::Utils::reinject_mail ($top, '', [$receiver], undef, $data->{fqdn});
+}
+
 1;
