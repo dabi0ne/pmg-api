@@ -976,4 +976,23 @@ sub load_sa_descriptions {
     return $res;
 }
 
+sub format_uptime {
+    my ($uptime) = @_;
+
+    my $days = int($uptime/86400);
+    $uptime -= $days*86400;
+
+    my $hours = int($uptime/3600);
+    $uptime -= $hours*3600;
+
+    my $mins = $uptime/60;
+
+    if ($days) {
+	my $ds = $days > 1 ? 'days' : 'day';
+	return sprintf "%d $ds %02d:%02d", $days, $hours, $mins;
+    } else {
+	return sprintf "%02d:%02d", $hours, $mins;
+    }
+}
+
 1;

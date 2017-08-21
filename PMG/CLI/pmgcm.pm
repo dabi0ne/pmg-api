@@ -12,6 +12,7 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::Utils;
 use PMG::Ticket;
 use PMG::RESTEnvironment;
 use PMG::DBTools;
@@ -56,20 +57,7 @@ my $format_nodelist = sub {
 	    $state = "ERROR: $err";
 	}
 
-	my $uptime = '-';
-	if (my $ut = $ni->{uptime}) {
-	    my $days = int($ut/86400);
-	    $ut -= $days*86400;
-	    my $hours = int($ut/3600);
-	    $ut -= $hours*3600;
-	    my $mins = $ut/60;
-	    if ($days) {
-		my $ds = $days > 1 ? 'days' : 'day';
-		$uptime = sprintf "%d $ds %02d:%02d", $days, $hours, $mins;
-	    } else {
-		$uptime = sprintf "%02d:%02d", $hours, $mins;
-	    }
-	}
+	my $uptime = $ni->{uptime} ? PMG::Utils::format_uptime($ni->{uptime}) : '-';
 
 	my $loadavg1 = '-';
 	if (my $d = $ni->{loadavg}) {
