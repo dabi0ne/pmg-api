@@ -18,10 +18,11 @@ sub new {
 
     bless($self);
 
-    if ((defined($start))&&(defined($end))) {
-        $self->timespan ($start, $end);
+    if (defined($start) && defined($end)) {
+        $self->timespan($start, $end);
     } else {
-        $self->timespan (time, time - 24*3600);
+	my $ctime = time();
+        $self->timespan($ctime, $ctime - 24*3600);
     }
 
     $self->{adv} = $advanced;
