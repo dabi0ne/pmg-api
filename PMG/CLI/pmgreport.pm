@@ -178,14 +178,14 @@ __PACKAGE__->register_method ({
 	PMG::Statistic::update_stats($rdb->{dbh}, $cinfo);
 
 	my $totals = $stat->total_mail_stat($rdb);
-	print Dumper($totals);
 
 	# Generate data for incoming mails
 	my $data = [];
 	push @$data, { text => 'Incoming Mails', value => $totals->{count_in}, percentage => $totals->{count_in_per} };
-	push @$data, { text => 'Spam Mails', value => $totals->{spamcount_in}, percentage => $totals->{spamcount_in_per}};
-	push @$data, { text => 'Virus Mails', value => $totals->{viruscount_in}, percentage => $totals->{viruscount_in_per}};
-	push @$data, { text => 'SPF rejects', value => $totals->{spfcount}, percentage => $totals->{spfcount_per}};
+	push @$data, { text => 'Spam Mails', value => $totals->{spamcount_in}, percentage => $totals->{spamcount_in_per} };
+	push @$data, { text => 'Virus Mails', value => $totals->{viruscount_in}, percentage => $totals->{viruscount_in_per} };
+	push @$data, { text => 'SPF rejects', value => $totals->{spfcount}, percentage => $totals->{spfcount_per} };
+	push @$data, { text => 'Mail Traffic', value => sprintf ("%.3f MByte", $totals->{traffic_in}) };
 
 	$vars->{incoming} = $data,
 
@@ -193,6 +193,7 @@ __PACKAGE__->register_method ({
 	$data = [];
 	push @$data, { text => 'Outgoing Mails', value => $totals->{count_out}, percentage => $totals->{count_out_per} };
 	push @$data, { text => 'Bounces', value => $totals->{bounces_out}, percentage => $totals->{bounces_out_per} };
+	push @$data, { text => 'Mail Traffic', value => sprintf ("%.3f MByte", $totals->{traffic_out}) };
 
 	$vars->{outgoing} = $data,
 
