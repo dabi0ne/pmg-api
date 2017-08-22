@@ -25,7 +25,7 @@ CRONSCRIPTS = pmg-hourly pmg-daily
 CLI_CLASSES = $(addprefix PMG/CLI/, $(addsuffix .pm, ${CLITOOLS}))
 SERVICE_CLASSES = $(addprefix PMG/Service/, $(addsuffix .pm, ${SERVICES}))
 SERVICE_UNITS = $(addprefix debian/, $(addsuffix .service, ${SERVICES}))
-TIMER_UNITS = $(addprefix debian/, $(addsuffix .timer, ${CRONSCRIPTS} pmgspamreport))
+TIMER_UNITS = $(addprefix debian/, $(addsuffix .timer, ${CRONSCRIPTS} pmgspamreport pmgreport))
 
 CLI_BINARIES = $(addprefix bin/, ${CLITOOLS} ${CLISCRIPTS} ${CRONSCRIPTS})
 CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
