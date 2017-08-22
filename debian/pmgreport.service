@@ -4,5 +4,5 @@ ConditionPathExists=/usr/bin/pmgreport
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/pmgreport --auto
+ExecStart=/usr/bin/pmgreport --timespan yesterday --auto
 

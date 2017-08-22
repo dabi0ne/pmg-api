@@ -171,21 +171,7 @@ __PACKAGE__->register_method ({
 	my (undef, undef, undef, $mday, $mon, $year) = localtime(time());	
 	my $daystart = timelocal(0, 0, 0, $mday, $mon, $year);
 	
-	my $start;
-	my $end;
-	
-	if ($timespan eq 'today') {
-	    $start = $daystart;
-	    $end = $start + 86400;
-	} elsif ($timespan eq 'yesterday') {
-	    $end = $daystart;
-	    $start = $end - 86400;
-	} elsif ($timespan eq 'week') {
-	    $end = $daystart;
-	    $start = $end - 7*86400;
-	} else {
-	    die "internal error";
-	}
+	my ($start, $end) = PMG::Utils::lookup_timespan($timespan);
 
 	my $hostname = PVE::INotify::nodename();
 	

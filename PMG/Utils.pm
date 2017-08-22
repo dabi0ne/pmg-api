@@ -13,6 +13,7 @@ use File::Basename;
 use MIME::Words;
 use MIME::Parser;
 use Time::HiRes qw (gettimeofday);
+use Time::Local;
 use Xdgmime;
 use Data::Dumper;
 use Digest::SHA;
@@ -1027,6 +1028,31 @@ sub finalize_report {
     }
     # we use an empty envelope sender (we dont want to receive NDRs)
     PMG::Utils::reinject_mail ($top, '', [$receiver], undef, $data->{fqdn});
+}
+
+sub lookup_timespan {
+    my ($timespan) = @_;
+
+    my (undef, undef, undef, $mday, $mon, $year) = localtime(time());
+    my $daystart = timelocal(0, 0, 0, $mday, $mon, $year);
+
+    my $start;
+    my $end;
+
+    if ($timespan eq 'today') {
+	$start = $daystart;
+	$end = $start + 86400;
+    } elsif ($timespan eq 'yesterday') {
+	$end = $daystart;
+	$start = $end - 86400;
+    } elsif ($timespan eq 'week') {
+	$end = $daystart;
+	$start = $end - 7*86400;
+    } else {
+	die "internal error";
+    }
+
+    return ($start, $end);
 }
 
 1;

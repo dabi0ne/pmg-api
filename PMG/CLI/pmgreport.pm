@@ -130,15 +130,23 @@ __PACKAGE__->register_method ({
 		type => 'string', format => 'email',
 		optional => 1,
 	    },
+	    timespan => {
+		description => "Select time span for included email statistics.\n\nNOTE: System and cluster performance data is always from current time (when script is run).",
+		type => 'string',
+		enum => ['today', 'yesterday'],
+		default => 'today',
+		optional => 1,
+	    },
 	},
     },
     returns => { type => 'null'},
     code => sub {
 	my ($param) = @_;
 
-	my $fqdn = PVE::Tools::get_fqdn($nodename);
+	my $timespan = $param->{timespan} // 'today';
+	my ($start, $end) = PMG::Utils::lookup_timespan($timespan);
 
-	my $end = time(); # fixme
+	my $fqdn = PVE::Tools::get_fqdn($nodename);
 
 	my $vars = {
 	    hostname => $nodename,
