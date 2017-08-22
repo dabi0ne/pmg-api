@@ -1,0 +1,8 @@
+[Unit]
+Description=Send Daily System Report Mail
+ConditionPathExists=/usr/bin/pmgreport
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pmgreport --auto
+

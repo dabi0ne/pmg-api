@@ -1,0 +1,9 @@
+[Unit]
+Description=Send Daily System Report Mail
+
+[Timer]
+OnCalendar=00:01
+Persistent=true
+
+[Install]
+WantedBy=timers.target
