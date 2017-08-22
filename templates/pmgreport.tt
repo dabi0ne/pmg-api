@@ -26,6 +26,29 @@ border-collapse: collapse;
 <body>
 
   [% IF cluster %]
+  <h2>Cluster Status</h2>
+  <table>
+    <tr>
+      <th>Hostname</th>
+      <th>IP Address</th>
+      <th>Role</th>
+      <th>State</th>
+      <th>Load</th>
+      <th>Memory</th>
+      <th>Disk</th>
+    </tr>
+    [% FOREACH item IN cluster %]
+    <tr>
+      <td>[% item.hostname %]</td>
+      <td>[% item.ip %]</td>
+      <td>[% item.type %]</td>
+      <td>[% item.state %]</td>
+      <td>[% item.loadavg1 %]</td>
+      <td>[% item.memory %]</td>
+      <td>[% item.disk %]</td>
+    </tr>
+    [% END %]
+  </table>
   [% END %]
 
   [% IF system %]
