@@ -16,6 +16,8 @@ use PMG::API2::Nodes;
 use PMG::ClusterConfig;
 use PMG::Cluster;
 use PMG::API2::Cluster;
+use PMG::RuleDB;
+use PMG::Statistic;
 
 use base qw(PVE::CLIHandler);
 
@@ -167,6 +169,32 @@ __PACKAGE__->register_method ({
 		return undef if $param->{auto}; # silent exit - do not send report
 	    }
 	}
+
+
+	my $stat = PMG::Statistic->new ($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	# update statistics
+	PMG::Statistic::update_stats($rdb->{dbh}, $cinfo);
+
+	my $totals = $stat->total_mail_stat($rdb);
+	print Dumper($totals);
+
+	# Generate data for incoming mails
+	my $data = [];
+	push @$data, { text => 'Incoming Mails', value => $totals->{count_in}, percentage => $totals->{count_in_per} };
+	push @$data, { text => 'Spam Mails', value => $totals->{spamcount_in}, percentage => $totals->{spamcount_in_per}};
+	push @$data, { text => 'Virus Mails', value => $totals->{viruscount_in}, percentage => $totals->{viruscount_in_per}};
+	push @$data, { text => 'SPF rejects', value => $totals->{spfcount}, percentage => $totals->{spfcount_per}};
+
+	$vars->{incoming} = $data,
+
+	# Generate data for outgoing mails
+	$data = [];
+	push @$data, { text => 'Outgoing Mails', value => $totals->{count_out}, percentage => $totals->{count_out_per} };
+	push @$data, { text => 'Bounces', value => $totals->{bounces_out}, percentage => $totals->{bounces_out_per} };
+
+	$vars->{outgoing} = $data,
 
 	my $tt = PMG::Config::get_template_toolkit();
 

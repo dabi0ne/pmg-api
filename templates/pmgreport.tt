@@ -54,10 +54,6 @@ border-collapse: collapse;
   [% IF system %]
   <h2>System Status</h2>
   <table>
-    <tr>
-      <th>Property</th>
-      <th>Value</th>
-    </tr>
     [% FOREACH item IN system %]
     <tr>
       <td>[% item.text %]</td>
@@ -67,6 +63,29 @@ border-collapse: collapse;
   </table>
   [% END %]
 
+  [% IF incoming %]
+  <h2>Incoming Mails (24 hours)</h2>
+  <table>
+    [% FOREACH item IN incoming %]
+    <tr>
+      <td>[% item.text %] ([% item.percentage %]%)</td>
+      <td>[% item.value %]</td>
+    </tr>
+    [% END %]
+  </table>
+  [% END %]
+
+  [% IF outgoing %]
+  <h2>Outgoing Mails (24 hours)</h2>
+  <table>
+    [% FOREACH item IN outgoing %]
+    <tr>
+      <td>[% item.text %] ([% item.percentage %]%)</td>
+      <td>[% item.value %]</td>
+    </tr>
+    [% END %]
+  </table>
+  [% END %]
 
 </body>
 </html>
