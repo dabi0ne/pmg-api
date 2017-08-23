@@ -217,20 +217,20 @@ sub update {
     }
 
     if ($mode eq 'any') {
-	raise_param_exc({ group => "paramater not allwed with mode '$mode'"})
+	raise_param_exc({ group => "parameter not allwed with mode '$mode'"})
 	    if defined($param->{group});
 	$self->{ldapgroup} = '';
 	$self->{profile} = $param->{profile} // '';
     } elsif ($mode eq 'none') {
-	raise_param_exc({ group => "paramater not allwed with mode '$mode'"})
+	raise_param_exc({ group => "parameter not allwed with mode '$mode'"})
 	    if defined($param->{group});
 	$self->{ldapgroup} = '-';
 	$self->{profile} = $param->{profile} // '';
     } elsif ($mode eq 'group') {
-	raise_param_exc({ group => "paramater is required with mode '$mode'"})
+	raise_param_exc({ group => "parameter is required with mode '$mode'"})
 	    if !defined($param->{group});
 	$self->{ldapgroup} = $param->{group};
-	raise_param_exc({ profile => "paramater is required with mode '$mode'"})
+	raise_param_exc({ profile => "parameter is required with mode '$mode'"})
 	    if !defined($param->{profile});
 	$self->{profile} = $param->{profile};
     } else {

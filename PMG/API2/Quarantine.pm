@@ -32,11 +32,11 @@ my $verify_optional_pmail = sub {
     my ($authuser, $role, $pmail) = @_;
 
     if ($role eq 'quser') {
-	raise_param_exc({ pmail => "paramater not allwed with role '$role'"})
+	raise_param_exc({ pmail => "parameter not allwed with role '$role'"})
 	    if defined($pmail);
 	$pmail = $authuser;
     } else {
-	raise_param_exc({ pmail => "paramater required with role '$role'"})
+	raise_param_exc({ pmail => "parameter required with role '$role'"})
 	    if !defined($pmail);
     }
     return $pmail;
