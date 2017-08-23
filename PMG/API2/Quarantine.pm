@@ -366,91 +366,6 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'spam',
-    path => 'spam',
-    method => 'GET',
-    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
-    description => "Show spam mails distribution (per day).",
-    parameters => {
-	additionalProperties => 0,
-	properties => {
-	    starttime => {
-		description => "Only consider entries newer than 'startime' (unix epoch).",
-		type => 'integer',
-		minimum => 0,
-		optional => 1,
-	    },
-	    endtime => {
-		description => "Only consider entries older than 'endtime' (unix epoch).",
-		type => 'integer',
-		minimum => 1,
-		optional => 1,
-	    },
-	    pmail => $pmail_param_type,
-	},
-    },
-    returns => {
-	type => 'array',
-	items => {
-	    type => "object",
-	    properties => {
-		day => {
-		    description => "Day (as unix epoch).",
-		    type => 'integer',
-		},
-		count => {
-		    description => "Number of quarantine entries.",
-		    type => 'integer',
-		},
-		spamavg => {
-		    description => "Average spam level.",
-		    type => 'number',
-		},
-	    },
-	},
-	links => [ { rel => 'child', href => "{day}" } ],
-    },
-    code => sub {
-	my ($param) = @_;
-
-	my $rpcenv = PMG::RESTEnvironment->get();
-	my $authuser = $rpcenv->get_user();
-	my $role = $rpcenv->get_role();
-
-	my $pmail = $verify_optional_pmail->($authuser, $role, $param->{pmail});
-
-	my $res = [];
-
-	my $dbh = PMG::DBTools::open_ruledb();
-
-	my $start = $param->{starttime};
-	my $end = $param->{endtime};
-
-	my $timezone = tz_local_offset();
-
-	my $sth = $dbh->prepare(
-	    "SELECT " .
-	    "((time + $timezone) / 86400) * 86400 - $timezone as day, " .
-	    "count (ID) as count, avg (Spamlevel) as spamavg " .
-	    "FROM CMailStore, CMSReceivers WHERE " .
-	    (defined($start) ? "time >= $start AND " : '') .
-	    (defined($end) ? "time < $end AND " : '') .
-	    "pmail = ? AND " .
-	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
-	    "AND Status = 'N' " .
-	    "GROUP BY day " .
-	    "ORDER BY day DESC");
-
-	$sth->execute($pmail);
-
-	while (my $ref = $sth->fetchrow_hashref()) {
-	    push @$res, $ref;
-	}
-
-	return $res;
-    }});
-
-__PACKAGE__->register_method ({
     name => 'spamusers',
     path => 'spamusers',
     method => 'GET',
@@ -516,18 +431,19 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'spamlist',
-    path => 'spam/{starttime}',
+    name => 'spam',
+    path => 'spam',
     method => 'GET',
     permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
-    description => "Show spam mails distribution (per day).",
+    description => "Get a list of quarantined spam mails in the given timeframe (default the last 24 hours) for the given user.",
     parameters => {
 	additionalProperties => 0,
 	properties => {
 	    starttime => {
-		description => "Only consider entries newer than 'starttime' (unix epoch).",
+		description => "Only consider entries newer than 'starttime' (unix epoch). This is set to 'now - 1day' by default.",
 		type => 'integer',
 		minimum => 0,
+		optional => 1,
 	    },
 	    endtime => {
 		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
@@ -596,7 +512,7 @@ __PACKAGE__->register_method ({
 
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $start = $param->{starttime};
+	my $start = $param->{starttime} // (time - 86400);
 	my $end = $param->{endtime} // ($start + 86400);
 
 	my $sth = $dbh->prepare(
