@@ -20,7 +20,7 @@ table, th, td {
 border: 1px solid black;
 border-collapse: collapse;
 }
-  
+
 </style>
 </head>
 <body>
@@ -57,7 +57,7 @@ border-collapse: collapse;
     [% FOREACH item IN system %]
     <tr>
       <td>[% item.text %]</td>
-      <td>[% item.value %]</td>
+      <td style="width:150px;">[% item.value %]</td>
     </tr>
     [% END %]
   </table>
@@ -98,6 +98,30 @@ border-collapse: collapse;
     <tr>
       <td>[% item.name %]</td>
       <td style="width:150px;">[% item.count %]</td>
+    </tr>
+    [% END %]
+  </table>
+  [% END %]
+
+  [% IF virusquar %]
+  <h2>Virus Quarantine</h2>
+  <table>
+    [% FOREACH item IN virusquar %]
+    <tr>
+      <td>[% item.text %]</td>
+      <td style="width:150px;">[% item.value %]</td>
+    </tr>
+    [% END %]
+  </table>
+  [% END %]
+
+  [% IF spamquar %]
+  <h2>Spam Quarantine</h2>
+  <table>
+    [% FOREACH item IN spamquar %]
+    <tr>
+      <td>[% item.text %]</td>
+      <td style="width:150px;">[% item.value %]</td>
     </tr>
     [% END %]
   </table>

@@ -185,6 +185,54 @@ my $get_virus_table_data = sub {
     return $data;
 };
 
+my $get_quarantine_table_data = sub {
+    my ($dbh, $qtype) = @_;
+
+    # Note;: We try to estimate used disk space - each mail
+    # is stored in an extra file ...
+
+    my $bs = 4096;
+
+    my $sth = $dbh->prepare(
+	"SELECT count(ID) as count,  sum (ceil((Bytes+$bs-1)/$bs)*$bs) / (1024*1024) as mbytes, " .
+	"avg(Bytes) as avgbytes, avg(Spamlevel) as avgspam " .
+	"FROM CMailStore WHERE QType = ?");
+
+    $sth->execute($qtype);
+
+    my $ref = $sth->fetchrow_hashref();
+
+    $sth->finish;
+
+    return undef if !($ref && $ref->{count});
+
+    my $data = [];
+
+    push @$data, {
+	text => "Quarantine Size (MBytes)",
+	value => int($ref->{mbytes}),
+    };
+
+    push @$data, {
+	text => "Number of Mails",
+	value => $ref->{count},
+    };
+
+    push @$data, {
+	text => "Average Size (Bytes)",
+	value => int($ref->{avgbytes}),
+    };
+
+    if ($qtype eq 'S') {
+	push @$data, {
+	    text => "Average Spam Level",
+	    value => int($ref->{avgspam}),
+	};
+    }
+
+    return $data;
+};
+
 __PACKAGE__->register_method ({
     name => 'pmgreport',
     path => 'pmgreport',
@@ -264,6 +312,14 @@ __PACKAGE__->register_method ({
 	my $virusinfo = $stat->total_virus_stat ($rdb);
 	if (my $data = $get_virus_table_data->($virusinfo)) {
 	    $vars->{virusstat} = $data;
+	}
+
+	if (my $data = $get_quarantine_table_data->($rdb->{dbh}, 'V')) {
+	    $vars->{virusquar} = $data;
+	}
+
+	if (my $data = $get_quarantine_table_data->($rdb->{dbh}, 'S')) {
+	    $vars->{spamquar} = $data;
 	}
 
 	my $tt = PMG::Config::get_template_toolkit();
