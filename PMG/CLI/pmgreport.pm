@@ -169,6 +169,22 @@ my $get_outgoing_table_data = sub {
     return $data;
 };
 
+my $get_virus_table_data = sub {
+    my ($virusinfo) = @_;
+
+    my $data = [];
+
+    foreach my $entry (@$virusinfo) {
+	next if !$entry->{count};
+	last if scalar(@$data) >= 10;
+	push @$data, { name => $entry->{name}, count => $entry->{count} };
+    }
+
+    return undef if !scalar(@$data);
+
+    return $data;
+};
+
 __PACKAGE__->register_method ({
     name => 'pmgreport',
     path => 'pmgreport',
@@ -244,6 +260,11 @@ __PACKAGE__->register_method ({
 	$vars->{incoming} = $get_incoming_table_data->($totals);
 
 	$vars->{outgoing} = $get_outgoing_table_data->($totals);
+
+	my $virusinfo = $stat->total_virus_stat ($rdb);
+	if (my $data = $get_virus_table_data->($virusinfo)) {
+	    $vars->{virusstat} = $data;
+	}
 
 	my $tt = PMG::Config::get_template_toolkit();
 

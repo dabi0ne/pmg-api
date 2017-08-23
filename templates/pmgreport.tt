@@ -69,7 +69,7 @@ border-collapse: collapse;
     [% FOREACH item IN incoming %]
     <tr>
       <td>[% item.text %][% IF item.percentage.defined %] ([% item.percentage %]%)[% END %]</td>
-      <td>[% item.value %]</td>
+      <td style="width:150px;">[% item.value %]</td>
     </tr>
     [% END %]
   </table>
@@ -81,7 +81,23 @@ border-collapse: collapse;
     [% FOREACH item IN outgoing %]
     <tr>
       <td>[% item.text %][% IF item.percentage.defined %] ([% item.percentage %]%)[% END %]</td>
-      <td>[% item.value %]</td>
+      <td style="width:150px;">[% item.value %]</td>
+    </tr>
+    [% END %]
+  </table>
+  [% END %]
+
+  [% IF virusstat %]
+  <h2>Virus Charts (Top 10)</h2>
+  <table>
+    <tr>
+      <th>Virus Name</th>
+      <th>Count</th>
+    </tr>
+    [% FOREACH item IN virusstat %]
+    <tr>
+      <td>[% item.name %]</td>
+      <td style="width:150px;">[% item.count %]</td>
     </tr>
     [% END %]
   </table>
