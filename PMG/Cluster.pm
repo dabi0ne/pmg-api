@@ -370,6 +370,9 @@ sub sync_config_from_master {
 	'pmg-csrf.key',
 	'ldap.conf',
 	'user.conf',
+	'domains',
+	'mynetworks',
+	'transport',
 	];
 
     foreach my $filename (@$files) {
