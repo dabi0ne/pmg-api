@@ -65,7 +65,7 @@ sub getscrubber {
 
     # see http://web.archive.org/web/20110726052341/http://feedparser.org/docs/html-sanitization.html
 
-    my @allow = qw(a abbr acronym address area b big blockquote br button caption center cite code col colgroup dd del dfn dir div dl dt em fieldset font form h1 h2 h3 h4 h5 h6 hr i img input ins kbd label legend li map menu ol optgroup option p pre q s samp select small span strike strong sub sup title table tbody td textarea tfoot th thead tr tt u ul var html body);
+    my @allow = qw(a abbr acronym address area b big blockquote br button caption center cite code col colgroup dd del dfn dir div dl dt em fieldset font form h1 h2 h3 h4 h5 h6 head hr i img input ins kbd label legend li map menu ol optgroup option p pre q s samp select small span style strike strong sub sup title table tbody td textarea tfoot th thead tr tt u ul var html body);
 
     my @rules = (
 	script => 0,
@@ -142,6 +142,7 @@ sub getscrubber {
 	    size => 1,
 	    span => 1,
 	    start => 1,
+	    style => 1,
 	    summary => 1,
 	    tabindex => 1,
 	    target => 1,
@@ -160,10 +161,10 @@ sub getscrubber {
 	rules   => \@rules,
 	default => \@default,
 	comment => 0,
-	script => 0,
-	style => 0,
 	process => 0,
     );
+
+    $scrubber->style(1);
 
     return $scrubber;
 }
