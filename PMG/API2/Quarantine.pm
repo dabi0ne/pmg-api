@@ -166,6 +166,7 @@ __PACKAGE__->register_method ({
 	    { name => 'blacklist' },
 	    { name => 'content' },
 	    { name => 'spam' },
+	    { name => 'spamusers' },
 	    { name => 'virus' },
 	];
 
@@ -444,6 +445,71 @@ __PACKAGE__->register_method ({
 
 	while (my $ref = $sth->fetchrow_hashref()) {
 	    push @$res, $ref;
+	}
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'spamusers',
+    path => 'spamusers',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    description => "Get a list of receivers of spam in the given timespan (Default the last 24 hours).",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => {
+		description => "Only consider entries newer than 'starttime' (unix epoch). Default is 'now - 1day'.",
+		type => 'integer',
+		minimum => 0,
+		optional => 1,
+	    },
+	    endtime => {
+		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
+		type => 'integer',
+		minimum => 1,
+		optional => 1,
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		mail => {
+		    description => 'the receiving email',
+		    type => 'string',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
+	my $res = [];
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $sth = $dbh->prepare(
+	    "SELECT DISTINCT pmail " .
+	    "FROM CMailStore, CMSReceivers WHERE " .
+	    "time >= $start AND time < $end AND " .
+	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
+	    "AND Status = 'N' ORDER BY pmail");
+
+	$sth->execute();
+
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    push @$res, { mail => $ref->{pmail} };
 	}
 
 	return $res;
