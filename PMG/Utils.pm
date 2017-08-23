@@ -599,6 +599,12 @@ sub run_postmap {
     # make sure the file exists (else postmap fails)
     IO::File->new($filename, 'a', 0644);
 
+    my $age_src = -M $filename // 0;
+    my $age_dst = -M "$filename.db" // 10000000000;
+
+    # if not changed, do nothing
+    return if $age_src > $age_dst;
+
     eval {
 	PVE::Tools::run_command(
 	    ['/usr/sbin/postmap', $filename],
