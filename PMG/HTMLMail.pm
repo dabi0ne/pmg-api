@@ -81,6 +81,7 @@ sub getscrubber {
 	    alt => 1,
 	    axis => 1,
 	    border => 1,
+	    bgcolor => 1,
 	    cellpadding => 1,
 	    cellspacing => 1,
 	    char => 1,
