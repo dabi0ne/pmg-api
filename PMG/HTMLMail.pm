@@ -67,18 +67,8 @@ sub getscrubber {
 
     my @allow = qw(a abbr acronym address area b big blockquote br button caption center cite code col colgroup dd del dfn dir div dl dt em fieldset font form h1 h2 h3 h4 h5 h6 head hr i img input ins kbd label legend li map menu ol optgroup option p pre q s samp select small span style strike strong sub sup title table tbody td textarea tfoot th thead tr tt u ul var html body);
 
-    my @rules = (
-	script => 0,
-	img => {
-	    alt => 1,                 # alt attribute allowed
-	    width => 1,
-	    height => 1,
-	    border => 1,
-	    src => $viewimages ? qr{^(?!(?:java)?script)}i : 0,
-	    '*' => 0, # deny all other attributes
-	},
-    );
-                                                                            #
+    my @rules = ( script => 0 );
+
     my @default = (
 	0 =>  # default rule, deny all tags
 	{
@@ -141,6 +131,7 @@ sub getscrubber {
 	    shape => 1,
 	    size => 1,
 	    span => 1,
+	    src => $viewimages ? qr{^(?!(?:java)?script)}i : 0,
 	    start => 1,
 	    style => 1,
 	    summary => 1,
