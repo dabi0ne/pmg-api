@@ -466,9 +466,6 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	my $rpcenv = PMG::RESTEnvironment->get();
-	my $authuser = $rpcenv->get_user();
-
 	my $dbh = PMG::DBTools::open_ruledb();
 	my $ref =  PMG::DBTools::get_quarantine_count($dbh, 'S');
 
