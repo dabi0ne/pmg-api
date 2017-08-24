@@ -405,7 +405,6 @@ __PACKAGE__->register_method ({
 
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
-	my $role = $rpcenv->get_role();
 
 	my $res = [];
 
@@ -457,7 +456,6 @@ __PACKAGE__->register_method ({
 
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
-	my $role = $rpcenv->get_role();
 
 	my $res = [];
 
@@ -650,8 +648,6 @@ __PACKAGE__->register_method ({
 
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
-	my $role = $rpcenv->get_role();
-
 
 	my $res = [];
 
