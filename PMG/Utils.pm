@@ -52,6 +52,20 @@ PVE::JSONSchema::register_standard_option('realm', {
     maxLength => 32,
 });
 
+PVE::JSONSchema::register_standard_option('pmg-starttime', {
+    description => "Only consider entries newer than 'starttime' (unix epoch). Default is 'now - 1day'.",
+    type => 'integer',
+    minimum => 0,
+    optional => 1,
+});
+
+PVE::JSONSchema::register_standard_option('pmg-endtime', {
+    description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
+    type => 'integer',
+    minimum => 1,
+    optional => 1,
+});
+
 PVE::JSONSchema::register_format('pmg-userid', \&verify_username);
 sub verify_username {
     my ($username, $noerr) = @_;

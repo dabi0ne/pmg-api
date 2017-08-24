@@ -377,18 +377,8 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    starttime => {
-		description => "Only consider entries newer than 'starttime' (unix epoch). Default is 'now - 1day'.",
-		type => 'integer',
-		minimum => 0,
-		optional => 1,
-	    },
-	    endtime => {
-		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
-		type => 'integer',
-		minimum => 1,
-		optional => 1,
-	    },
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
 	},
     },
     returns => {
@@ -525,18 +515,8 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    starttime => {
-		description => "Only consider entries newer than 'starttime' (unix epoch). This is set to 'now - 1day' by default.",
-		type => 'integer',
-		minimum => 0,
-		optional => 1,
-	    },
-	    endtime => {
-		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
-		type => 'integer',
-		minimum => 1,
-		optional => 1,
-	    },
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
 	    pmail => $pmail_param_type,
 	},
     },
@@ -627,18 +607,8 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    starttime => {
-		description => "Only consider entries newer than 'starttime' (unix epoch). This is set to 'now - 1day' by default.",
-		type => 'integer',
-		minimum => 0,
-		optional => 1,
-	    },
-	    endtime => {
-		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
-		type => 'integer',
-		minimum => 1,
-		optional => 1,
-	    },
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
 	},
     },
     returns => {
