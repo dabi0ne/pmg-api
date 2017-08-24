@@ -168,6 +168,7 @@ __PACKAGE__->register_method ({
 	    { name => 'spam' },
 	    { name => 'spamusers' },
 	    { name => 'virus' },
+	    { name => 'quarusers' },
 	];
 
 	return $result;
