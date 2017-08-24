@@ -130,7 +130,8 @@ __PACKAGE__->register_method ({
     name => 'spam',
     path => 'spam',
     method => 'GET',
-    description => "Get Statistics about detected Spam.",
+    description => "Get the count of spam mails grouped by spam level. " .
+	"Count for level 10 includes mails with spam level > 10.",
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
@@ -173,15 +174,21 @@ __PACKAGE__->register_method ({
 	my $res = [];
 
 	my $rest = $totalstat->{spamcount_in};
+
+	my $levelcount = {};
 	foreach my $ref (@$spamstat) {
-	    next if $ref->{spamlevel} >= 10;
-	    next if $ref->{spamlevel} < 1;
-	    $rest -= $ref->{count} if $ref->{spamlevel} >= 3;
-	    push @$res, { level =>  $ref->{spamlevel}, count => $ref->{count} };
+	    my $level = $ref->{spamlevel} // 0;
+	    next if $level >= 10 || $level < 1;
+	    $rest -= $ref->{count} if $level >= 3;
+	    $levelcount->{$level} = $ref->{count};
 	}
 
-	push @$res, { level => 10, count => $rest } if $rest;
-	push @$res, { level => 0, count => $totalstat->{count_in} - $totalstat->{spamcount_in}};
+	$levelcount->{0} = $totalstat->{count_in} - $totalstat->{spamcount_in};
+	$levelcount->{10} = $rest if $rest;
+
+	for (my $i = 0; $i <= 10; $i++) {
+	    push @$res, { level => $i, count => $levelcount->{$i} // 0 };
+	}
 
 	return $res;
     }});
