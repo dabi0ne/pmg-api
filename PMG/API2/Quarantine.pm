@@ -167,6 +167,7 @@ __PACKAGE__->register_method ({
 	    { name => 'content' },
 	    { name => 'spam' },
 	    { name => 'spamusers' },
+	    { name => 'spamstatus' },
 	    { name => 'virus' },
 	    { name => 'quarusers' },
 	];
@@ -428,6 +429,49 @@ __PACKAGE__->register_method ({
 	}
 
 	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'spamstatus',
+    path => 'spamstatus',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    description => "Get Spam Quarantine Status",
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => {
+	type => "object",
+	properties => {
+	    count => {
+		description => 'Number of stored mails.',
+		type => 'integer',
+	    },
+	    mbytes => {
+		description => "Estimated disk space usage in MByte.",
+		type => 'number',
+	    },
+	    avgbytes => {
+		description => "Average size of stored mails in bytes.",
+		type => 'number',
+	    },
+	    avgspam => {
+		description => "Average spam level.",
+		type => 'number',
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+
+	my $dbh = PMG::DBTools::open_ruledb();
+	my $ref =  PMG::DBTools::get_quarantine_count($dbh, 'S');
+
+	return $ref;
     }});
 
 __PACKAGE__->register_method ({
