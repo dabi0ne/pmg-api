@@ -749,6 +749,8 @@ __PACKAGE__->register_method ({
 	my $dbh = PMG::DBTools::open_ruledb();
 	my $ref = PMG::DBTools::get_quarantine_count($dbh, 'V');
 
+	delete $ref->{avgspam};
+	
 	return $ref;
     }});
 
