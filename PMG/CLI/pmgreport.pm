@@ -4,6 +4,7 @@ use strict;
 use Data::Dumper;
 use Template;
 use POSIX qw(strftime);
+use HTML::Entities;
 
 use PVE::INotify;
 use PVE::CLIHandler;
@@ -77,6 +78,11 @@ my $get_cluster_table_data = sub {
     foreach my $ni (@$res) {
 	my $state = 'A';
 	$state = 'S' if !$ni->{insync};
+
+	if (my $err = $ni->{conn_error}) {
+	    $err =~ s/\n/ /g;
+	    $state = encode_entities("ERROR: $err");
+	}
 
 	my $loadavg1  = '-';
 	if (my $d = $ni->{loadavg}) {
