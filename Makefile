@@ -125,6 +125,7 @@ LIBSOURCES =				\
 	PMG/API2/Config.pm		\
 	PMG/API2/Cluster.pm		\
 	PMG/API2/ClamAV.pm		\
+	PMG/API2/Statistics.pm		\
 	PMG/API2/Nodes.pm		\
 	PMG/API2/Postfix.pm		\
 	PMG/API2/Quarantine.pm		\
