@@ -895,6 +895,28 @@ sub purge_quarantine_database {
     return $count;
 }
 
+sub get_quarantine_count {
+    my ($dbh, $qtype) = @_;
+
+    # Note;: We try to estimate used disk space - each mail
+    # is stored in an extra file ...
+
+    my $bs = 4096;
+
+    my $sth = $dbh->prepare(
+	"SELECT count(ID) as count,  sum (ceil((Bytes+$bs-1)/$bs)*$bs) / (1024*1024) as mbytes, " .
+	"avg(Bytes) as avgbytes, avg(Spamlevel) as avgspam " .
+	"FROM CMailStore WHERE QType = ?");
+
+    $sth->execute($qtype);
+
+    my $ref = $sth->fetchrow_hashref();
+
+    $sth->finish;
+
+    return $ref;
+}
+
 sub copy_table {
     my ($ldb, $rdb, $table) = @_;
 

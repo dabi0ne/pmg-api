@@ -18,6 +18,7 @@ use PMG::ClusterConfig;
 use PMG::Cluster;
 use PMG::API2::Cluster;
 use PMG::RuleDB;
+use PMG::DBTools;
 use PMG::Statistic;
 
 use base qw(PVE::CLIHandler);
@@ -194,21 +195,7 @@ my $get_virus_table_data = sub {
 my $get_quarantine_table_data = sub {
     my ($dbh, $qtype) = @_;
 
-    # Note;: We try to estimate used disk space - each mail
-    # is stored in an extra file ...
-
-    my $bs = 4096;
-
-    my $sth = $dbh->prepare(
-	"SELECT count(ID) as count,  sum (ceil((Bytes+$bs-1)/$bs)*$bs) / (1024*1024) as mbytes, " .
-	"avg(Bytes) as avgbytes, avg(Spamlevel) as avgspam " .
-	"FROM CMailStore WHERE QType = ?");
-
-    $sth->execute($qtype);
-
-    my $ref = $sth->fetchrow_hashref();
-
-    $sth->finish;
+    my $ref = PMG::DBTools::get_quarantine_count($dbh, $qtype);
 
     return undef if !($ref && $ref->{count});
 
