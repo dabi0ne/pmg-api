@@ -914,6 +914,10 @@ sub get_quarantine_count {
 
     $sth->finish;
 
+    foreach my $k (qw(count mbytes avgbytes avgspam)) {
+	$ref->{$k} //= 0;
+    }
+
     return $ref;
 }
 
