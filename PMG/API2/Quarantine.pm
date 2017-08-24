@@ -533,6 +533,106 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
+    name => 'virus',
+    path => 'virus',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
+    description => "Get a list of quarantined virus mails in the given timeframe (default the last 24 hours).",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => {
+		description => "Only consider entries newer than 'starttime' (unix epoch). This is set to 'now - 1day' by default.",
+		type => 'integer',
+		minimum => 0,
+		optional => 1,
+	    },
+	    endtime => {
+		description => "Only consider entries older than 'endtime' (unix epoch). This is set to '<start> + 1day' by default.",
+		type => 'integer',
+		minimum => 1,
+		optional => 1,
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		id => {
+		    description => 'Unique ID',
+		    type => 'string',
+		},
+		bytes => {
+		    description => "Size of raw email.",
+		    type => 'integer' ,
+		},
+		envelope_sender => {
+		    description => "SMTP envelope sender.",
+		    type => 'string',
+		},
+		from => {
+		    description => "Header 'From' field.",
+		    type => 'string',
+		},
+		sender => {
+		    description => "Header 'Sender' field.",
+		    type => 'string',
+		    optional => 1,
+		},
+		receiver => {
+		    description => "Receiver email address",
+		    type => 'string',
+		},
+		subject => {
+		    description => "Header 'Subject' field.",
+		    type => 'string',
+		},
+		time => {
+		    description => "Receive time stamp",
+		    type => 'integer',
+		},
+		virusname => {
+		    description => "Virus name.",
+		    type => 'string',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
+
+	my $res = [];
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $sth = $dbh->prepare(
+	    "SELECT * " .
+	    "FROM CMailStore, CMSReceivers WHERE " .
+	    "time >= $start AND time < $end AND " .
+	    "QType = 'V' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
+	    "AND Status = 'N' ORDER BY time, receiver");
+
+	$sth->execute();
+
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    my $data = $parse_header_info->($ref);
+	    push @$res, $data;
+	}
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
     name => 'content',
     path => 'content',
     method => 'GET',
