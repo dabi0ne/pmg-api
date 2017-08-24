@@ -369,7 +369,7 @@ __PACKAGE__->register_method ({
     name => 'spamusers',
     path => 'spamusers',
     method => 'GET',
-    permissions => { check => [ 'admin', 'qmanager', 'audit', 'quser'] },
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     description => "Get a list of receivers of spam in the given timespan (Default the last 24 hours).",
     parameters => {
 	additionalProperties => 0,
