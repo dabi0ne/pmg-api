@@ -20,7 +20,6 @@ use PMG::API2::Services;
 use PMG::API2::Network;
 use PMG::API2::ClamAV;
 use PMG::API2::Postfix;
-use PMG::API2::Statistics;
 
 use base qw(PVE::RESTHandler);
 
@@ -47,11 +46,6 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Services",
     path => 'services',
-});
-
-__PACKAGE__->register_method ({
-    subclass => "PMG::API2::Statistics",
-    path => 'statistics',
 });
 
 __PACKAGE__->register_method ({
@@ -82,7 +76,6 @@ __PACKAGE__->register_method ({
 	    { name => 'postfix' },
 	    { name => 'services' },
 	    { name => 'syslog' },
-	    { name => 'statistics' },
 	    { name => 'tasks' },
 	    { name => 'time' },
 	    { name => 'status' },

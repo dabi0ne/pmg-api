@@ -26,9 +26,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    node => get_standard_option('pve-node'),
-	},
+	properties => {},
     },
     returns => {
 	type => 'array',
@@ -43,6 +41,8 @@ __PACKAGE__->register_method ({
 
 	return [
 	    { name => "mail" },
+	    { name => "spam" },
+	    { name => "virus" },
 	];
     }});
 
@@ -52,11 +52,9 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "General Mail Statistics.",
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
-    proxyto => 'node',
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
 	},
@@ -88,11 +86,9 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Get Statistics about detected Viruses.",
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
-    proxyto => 'node',
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
 	},
@@ -136,11 +132,9 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Get Statistics about detected Spam.",
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
-    proxyto => 'node',
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
 	},
@@ -176,7 +170,7 @@ __PACKAGE__->register_method ({
 	my $totalstat = $stat->total_mail_stat ($rdb);
 	my $spamstat = $stat->total_spam_stat($rdb);
 
-	my $res => [];
+	my $res = [];
 
 	my $rest = $totalstat->{spamcount_in};
 	foreach my $ref (@$spamstat) {
