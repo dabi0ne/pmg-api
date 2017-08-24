@@ -431,6 +431,51 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
+    name => 'quarusers',
+    path => 'quarusers',
+    method => 'GET',
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    description => "Get a list of users with whitelist/blacklist setttings.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		mail => {
+		    description => 'the receiving email',
+		    type => 'string',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
+	my $res = [];
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $sth = $dbh->prepare(
+	    "SELECT DISTINCT pmail FROM UserPrefs ORDER BY pmail");
+
+	$sth->execute();
+
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    push @$res, { mail => $ref->{pmail} };
+	}
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
     name => 'spam',
     path => 'spam',
     method => 'GET',
