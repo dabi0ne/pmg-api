@@ -65,8 +65,67 @@ __PACKAGE__->register_method ({
 	    avptime => {
 		description => "Average mail processing time in seconds.",
 		type => 'number',
-	    }
-
+	    },
+	    bounces_in => {
+		description => "Incoming bounce mail count (sender = <>).",
+		type => 'number',
+	    },
+	    bounces_out => {
+		description => "Outgoing bounce mail count (sender = <>).",
+		type => 'number',
+	    },
+	    count => {
+		description => "Overall mail count (in and out).",
+		type => 'number',
+	    },
+	    count_in => {
+		description => "Incoming mail count.",
+		type => 'number',
+	    },
+	    count_out => {
+		description => "Outgoing mail count.",
+		type => 'number',
+	    },
+	    glcount => {
+		description => "Number of greylisted mails.",
+		type => 'number',
+	    },
+	    junk_in => {
+		description => "Incoming junk mail count (viruscount_in + spamcount_in + glcount + spfcount).",
+		type => 'number',
+	    },
+	    junk_out => {
+		description => "Outgoing junk mail count (viruscount_out + spamcount_out).",
+		type => 'number',
+	    },
+	    spamcount_in => {
+		description => "Incoming spam mails.",
+		type => 'number',
+	    },
+	    spamcount_out => {
+		description => "Outgoing spam mails.",
+		type => 'number',
+	    },
+	    spfcount => {
+		description => "Mails rejected by SPF.",
+		type => 'number',
+	    },
+	    traffic_in => {
+		description => "Incoming mail traffic (bytes).",
+		type => 'number',
+	    },
+	    traffic_out => {
+		description => "Outgoing mail traffic (bytes).",
+		type => 'number',
+	    },
+	    viruscount_in => {
+		description => "Number of incoming virus mails.",
+		type => 'number',
+	    },
+	    viruscount_out => {
+		description => "Number of outgoing virus mails.",
+		type => 'number',
+	    },
 	},
     },
     code => sub {
