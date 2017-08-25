@@ -406,6 +406,8 @@ sub total_mail_stat {
     $ref = $sth->fetchrow_hashref();
     $sth->finish();
 
+    foreach my $k (keys %$ref) { $ref->{$k} += 0; } # convert to numbers
+
     if (!$ref->{avptime}) {
 	$ref->{count_in} = $ref->{count_out} = $ref->{viruscount_in} = $ref->{viruscount_out} =
 	    $ref->{spamcount_in} = $ref->{spamcount_out} = $ref->{glcount} = $ref->{spfcount} =
@@ -415,29 +417,10 @@ sub total_mail_stat {
 
     $ref->{count} = $ref->{count_in} + $ref->{count_out};
 
-    $ref->{count_in_per} =  $ref->{count} > 0 ?  ($ref->{count_in} * 100)/$ref->{count} : 0;
-    $ref->{count_out_per} =  100 -  $ref->{count_in_per};
-
-    $ref->{viruscount_in_per} =  $ref->{count_in} > 0 ?  ($ref->{viruscount_in} * 100)/$ref->{count_in} : 0;
-    $ref->{viruscount_out_per} =  $ref->{count_out} > 0 ?  ($ref->{viruscount_out} * 100)/$ref->{count_out} : 0;
-
-    $ref->{spamcount_in_per} =  $ref->{count_in} > 0 ?  ($ref->{spamcount_in} * 100)/$ref->{count_in} : 0;
-    $ref->{spamcount_out_per} =  $ref->{count_out} > 0 ?  ($ref->{spamcount_out} * 100)/$ref->{count_out} : 0;
-
-    $ref->{bounces_in_per} =  $ref->{count_in} > 0 ?  ($ref->{bounces_in} * 100)/$ref->{count_in} : 0;
-    $ref->{bounces_out_per} =  $ref->{count_out} > 0 ?  ($ref->{bounces_out} * 100)/$ref->{count_out} : 0;
-
-    $ref->{glcount_per} =  $ref->{count_in} > 0 ?  ($ref->{glcount} * 100)/$ref->{count_in} : 0;
-    $ref->{spfcount_per} =  $ref->{count_in} > 0 ?  ($ref->{spfcount} * 100)/$ref->{count_in} : 0;
-    $ref->{rblcount_per} =  $ref->{count_in} > 0 ?  ($ref->{rblcount} * 100)/$ref->{count_in} : 0;
-
     $ref->{junk_in} = $ref->{viruscount_in} + $ref->{spamcount_in} + $ref->{glcount} +
 	$ref->{spfcount} + $ref->{rblcount};
 
     $ref->{junk_out} = $ref->{viruscount_out} + $ref->{spamcount_out};
-
-    $ref->{junk_in_per} = $ref->{count_in} > 0 ?  ($ref->{junk_in} * 100)/$ref->{count_in} : 0;
-    $ref->{junk_out_per} = $ref->{count_out} > 0 ?  ($ref->{junk_out} * 100)/$ref->{count_out} : 0;
 
     return $ref;
 }

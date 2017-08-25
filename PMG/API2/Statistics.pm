@@ -61,7 +61,13 @@ __PACKAGE__->register_method ({
     },
     returns => {
 	type => "object",
-	properties => {},
+	properties => {
+	    avptime => {
+		description => "Average mail processing time in seconds.",
+		type => 'number',
+	    }
+
+	},
     },
     code => sub {
 	my ($param) = @_;
