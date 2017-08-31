@@ -730,17 +730,20 @@ sub user_stat_receiver {
 }
 
 sub traffic_stat_graph {
-    my ($self, $rdb, $span, $dir) = @_;
+    my ($self, $rdb, $span) = @_;
     my $res;
 
     my ($from, $to) = $self->localhourspan();
-    my $p = $dir ? "In" : "Out";
     my $timezone = tz_local_offset();;
 
-    my $spam =  $dir ? "sum (SpamIn) + sum (GreylistCount) + sum (SPFCount) + sum (RBLCount)"  : "sum (SpamOut)";
-
-    my $cmd = "SELECT sum(Count$p) as count, (time - $from) / $span AS index, " .
-	"sum (Virus$p) as viruscount, $spam as spamcount, sum (Bounces$p) as bounces " .
+    my $cmd = "SELECT " .
+	"(time - $from) / $span AS index, " .
+	"sum(CountIn) as count_in, sum(CountOut) as count_out, " .
+	"sum(VirusIn) as viruscount_in, sum (VirusOut) as viruscount_out, " .
+	"sum(SpamIn) + sum (GreylistCount) + sum (SPFCount) + sum (RBLCount) as spamcount_in, " .
+	"sum(SpamOut) as spamcount_out, " .
+	"sum(BouncesIn) as bounces_in, " .
+	"sum(BouncesOut) as bounces_out " .
 	"FROM DailyStat WHERE time >= $from AND time < $to " .
 	"GROUP BY index ORDER BY index";
 
@@ -755,9 +758,16 @@ sub traffic_stat_graph {
     my $c = int (($to - $from) / $span);
 
     for (my $i = 0; $i < $c; $i++) {
-	my $eref = {count => 0, index => $i, spamcount => 0, viruscount => 0, bounces => 0};
-	@$res[$i] = $eref if !@$res[$i];
-	@$res[$i]->{time} = $from + ($i+1)*$span - $timezone;
+	@$res[$i] //= {
+	    index => $i,
+	    count_in => 0, count_out => 0,
+	    spamcount_in => 0, spamcount_out => 0,
+	    viruscount_in => 0, viruscount_out => 0,
+	    bounces_in => 0, bounces_out => 0 };
+
+	my $d = @$res[$i];
+
+	$d->{time} = $from + ($i+1)*$span - $timezone;
     }
     $sth->finish();
 
