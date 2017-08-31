@@ -41,7 +41,7 @@ __PACKAGE__->register_method ({
 
 	return [
 	    { name => "mail" },
-	    { name => "spam" },
+	    { name => "spamscores" },
 	    { name => "virus" },
 	];
     }});
@@ -192,11 +192,11 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'spam',
-    path => 'spam',
+    name => 'spamscores',
+    path => 'spamscores',
     method => 'GET',
-    description => "Get the count of spam mails grouped by spam level. " .
-	"Count for level 10 includes mails with spam level > 10.",
+    description => "Get the count of spam mails grouped by spam score. " .
+	"Count for score 10 includes mails with spam score > 10.",
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
@@ -218,6 +218,10 @@ __PACKAGE__->register_method ({
 		    description => 'Detection count.',
 		    type => 'integer',
 		},
+		ratio => {
+		    description => 'Portion of overall mail count.',
+		    type => 'number',
+		},
 	    },
 	}
     },
@@ -238,6 +242,7 @@ __PACKAGE__->register_method ({
 
 	my $res = [];
 
+	my $count_in = $totalstat->{count_in};
 	my $rest = $totalstat->{spamcount_in};
 
 	my $levelcount = {};
@@ -252,7 +257,9 @@ __PACKAGE__->register_method ({
 	$levelcount->{10} = $rest if $rest;
 
 	for (my $i = 0; $i <= 10; $i++) {
-	    push @$res, { level => $i, count => $levelcount->{$i} // 0 };
+	    my $count = $levelcount->{$i} // 0;
+	    my $ratio = $count_in ? $count/$count_in : 0;
+	    push @$res, { level => $i, count => $count, ratio => $ratio };
 	}
 
 	return $res;
