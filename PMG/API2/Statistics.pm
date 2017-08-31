@@ -41,6 +41,7 @@ __PACKAGE__->register_method ({
 
 	return [
 	    { name => "mail" },
+	    { name => "mailcount" },
 	    { name => "spamscores" },
 	    { name => "virus" },
 	];
@@ -141,6 +142,104 @@ __PACKAGE__->register_method ({
 	my $rdb = PMG::RuleDB->new();
 
 	my $res = $stat->total_mail_stat($rdb);
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'mailcount',
+    path => 'mailcount',
+    method => 'GET',
+    description => "Mail Count Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	    timespan => {
+		description => "Return Mails/<timespan>, when <timespan> is specified in seconds.",
+		type => 'integer',
+		minimum => 3600,
+		maximum => 366*86400,
+		optional => 1,
+		default => 3600,
+	    }
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		index => {
+		    description => "Time index.",
+		    type => 'integer',
+		},
+		time => {
+		    description => "Time (Unix epoch).",
+		    type => 'integer',
+		},
+		count => {
+		    description => "Overall mail count (in and out).",
+		    type => 'number',
+		},
+		count_in => {
+		    description => "Incoming mail count.",
+		    type => 'number',
+		},
+		count_out => {
+		    description => "Outgoing mail count.",
+		    type => 'number',
+		},
+		spamcount_in => {
+		    description => "Incoming spam mails (spamcount_in + glcount + spfcount).",
+		    type => 'number',
+		},
+		spamcount_out => {
+		    description => "Outgoing spam mails.",
+		    type => 'number',
+		},
+		viruscount_in => {
+		    description => "Number of incoming virus mails.",
+		    type => 'number',
+		},
+		viruscount_out => {
+		    description => "Number of outgoing virus mails.",
+		    type => 'number',
+		},
+		bounces_in => {
+		    description => "Incoming bounce mail count (sender = <>).",
+		    type => 'number',
+		},
+		bounces_out => {
+		    description => "Outgoing bounce mail count (sender = <>).",
+		    type => 'number',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $span = $param->{timespan} // 3600;
+
+	my $count = ($end - $start)/$span;
+
+	die "too many entries - try to increase parameter 'span'\n" if $count > 5000;
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	#PMG::Statistic::update_stats_dailystat($rdb->{dbh}, $cinfo);
+
+	my $res = $stat->traffic_stat_graph ($rdb, $span);
 
 	return $res;
     }});

@@ -760,7 +760,7 @@ sub traffic_stat_graph {
     for (my $i = 0; $i < $c; $i++) {
 	@$res[$i] //= {
 	    index => $i,
-	    count_in => 0, count_out => 0,
+	    count => 0, count_in => 0, count_out => 0,
 	    spamcount_in => 0, spamcount_out => 0,
 	    viruscount_in => 0, viruscount_out => 0,
 	    bounces_in => 0, bounces_out => 0 };
@@ -768,6 +768,7 @@ sub traffic_stat_graph {
 	my $d = @$res[$i];
 
 	$d->{time} = $from + ($i+1)*$span - $timezone;
+	$d->{count} = $d->{count_in} + $d->{count_out};
     }
     $sth->finish();
 
