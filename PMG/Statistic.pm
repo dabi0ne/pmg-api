@@ -393,7 +393,7 @@ sub total_mail_stat {
     my $cmds = "SELECT sum(CountIn) + $glcount AS count_in, sum(CountOut) AS count_out, " .
 	"sum (VirusIn) AS viruscount_in, sum (VirusOut) AS viruscount_out, " .
 	"sum (SpamIn) AS spamcount_in, sum (SpamOut) AS spamcount_out, " .
-	"sum (BytesIn) AS traffic_in, sum (BytesOut) AS traffic_out, " .
+	"sum (BytesIn) AS bytes_in, sum (BytesOut) AS bytes_out, " .
 	"sum (BouncesIn) AS bounces_in, sum (BouncesOut) AS bounces_out, " .
 	"sum (GreylistCount) + $glcount as glcount, " .
 	"sum (SPFCount) as spfcount, " .
@@ -411,8 +411,8 @@ sub total_mail_stat {
     if (!$ref->{avptime}) {
 	$ref->{count_in} = $ref->{count_out} = $ref->{viruscount_in} = $ref->{viruscount_out} =
 	    $ref->{spamcount_in} = $ref->{spamcount_out} = $ref->{glcount} = $ref->{spfcount} =
-	    $ref->{rblcount} = $ref->{bounces_in} = $ref->{bounces_out} = $ref->{traffic_in} =
-	    $ref->{traffic_out} = $ref->{avptime} = 0;
+	    $ref->{rblcount} = $ref->{bounces_in} = $ref->{bounces_out} = $ref->{bytes_in} =
+	    $ref->{bytes_out} = $ref->{avptime} = 0;
     }
 
     $ref->{count} = $ref->{count_in} + $ref->{count_out};
@@ -488,8 +488,8 @@ sub total_domain_stat {
 
     my $query = "SELECT domain, SUM (CountIn) AS count_in, SUM (CountOut) AS count_out," .
 	"SUM (BytesIn) AS bytes_in, SUM (BytesOut) AS bytes_out, " .
-	"SUM (VirusIn) AS virus_in, SUM (VirusOut) AS virus_out," .
-	"SUM (SpamIn) as spam_in, SUM (SpamOut) as spam_out " .
+	"SUM (VirusIn) AS viruscount_in, SUM (VirusOut) AS viruscount_out," .
+	"SUM (SpamIn) as spamcount_in, SUM (SpamOut) as spamcount_out " .
 	"FROM DomainStat where time >= $from AND time < $to " .
 	"GROUP BY domain ORDER BY $orderby $sortdir, domain ASC";
 
