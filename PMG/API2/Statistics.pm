@@ -40,12 +40,91 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	return [
+	    { name => "domains" },
 	    { name => "mail" },
 	    { name => "mailcount" },
 	    { name => "maildistribution" },
 	    { name => "spamscores" },
 	    { name => "virus" },
 	];
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'domains',
+    path => 'domains',
+    method => 'GET',
+    description => "Mail Domains Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		domain => {
+		    description => "Domain name.",
+		    type => 'string',
+		},
+		count_in => {
+		    description => "Incoming mail count.",
+		    type => 'number',
+		},
+		count_out => {
+		    description => "Outgoing mail count.",
+		    type => 'number',
+		},
+		spamcount_in => {
+		    description => "Incoming spam mails.",
+		    type => 'number',
+		},
+		spamcount_out => {
+		    description => "Outgoing spam mails.",
+		    type => 'number',
+		},
+		mbytes_in => {
+		    description => "Incoming mail traffic (Mebibytes).",
+		    type => 'number',
+		},
+		mbytes_out => {
+		    description => "Outgoing mail traffic (Mebibytes).",
+		    type => 'number',
+		},
+		viruscount_in => {
+		    description => "Number of incoming virus mails.",
+		    type => 'number',
+		},
+		viruscount_out => {
+		    description => "Number of outgoing virus mails.",
+		    type => 'number',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	#PMG::Statistic::update_stats_domainstat_in($rdb->{dbh}, $cinfo);
+	#PMG::Statistic::update_stats_domainstat_out($rdb->{dbh}, $cinfo);
+
+	my $res = $stat->total_domain_stat($rdb);
+
+	
+	return $res;
     }});
 
 __PACKAGE__->register_method ({
@@ -112,11 +191,11 @@ __PACKAGE__->register_method ({
 		description => "Mails rejected by SPF.",
 		type => 'number',
 	    },
-	    traffic_in => {
+	    bytes_in => {
 		description => "Incoming mail traffic (bytes).",
 		type => 'number',
 	    },
-	    traffic_out => {
+	    bytes_out => {
 		description => "Outgoing mail traffic (bytes).",
 		type => 'number',
 	    },
