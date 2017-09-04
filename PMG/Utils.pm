@@ -110,6 +110,14 @@ PVE::JSONSchema::register_standard_option('username', {
     maxLength => 64,
 });
 
+PVE::JSONSchema::register_standard_option('pmg-email-address', {
+    description => "Email Address (allow most characters).",
+    type => 'string',
+    pattern => '(?:|[^\s\/\@]+\@[^\s\/\@]+)',
+    maxLength => 512,
+    minLength => 3,
+});
+
 sub lastid {
     my ($dbh, $seq) = @_;
 

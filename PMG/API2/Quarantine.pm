@@ -196,8 +196,6 @@ my $read_or_modify_user_bw_list = sub {
     return $res;
 };
 
-my $address_pattern = '[a-zA-Z0-9\+\-\_\*\.\@]+';
-
 __PACKAGE__->register_method ({
     name => 'whitelist',
     path => 'whitelist',
@@ -238,12 +236,9 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => {
+	    address => get_standard_option('pmg-email-address', {
 		description => "The address you want to add.",
-		type => "string",
-		pattern => $address_pattern,
-		maxLength => 512,
-	    },
+	    }),
 	},
     },
     returns => { type => 'null' },
@@ -266,12 +261,9 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => {
+	    address => get_standard_option('pmg-email-address', {
 		description => "The address you want to remove.",
-		type => "string",
-		pattern => $address_pattern,
-		maxLength => 512,
-	    },
+	    }),
 	},
     },
     returns => { type => 'null' },
@@ -323,12 +315,9 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => {
+	    address => get_standard_option('pmg-email-address', {
 		description => "The address you want to add.",
-		type => "string",
-		pattern => $address_pattern,
-		maxLength => 512,
-	    },
+	    }),
 	},
     },
     returns => { type => 'null' },
@@ -351,12 +340,9 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => {
+	    address => get_standard_option('pmg-email-address', {
 		description => "The address you want to remove.",
-		type => "string",
-		pattern => $address_pattern,
-		maxLength => 512,
-	    },
+	    }),
 	},
     },
     returns => { type => 'null' },
