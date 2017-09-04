@@ -605,21 +605,39 @@ sub user_stat_contact {
 }
 
 sub user_stat_sender_details {
-    my ($self, $rdb, $sender, $limit, $orderby) = @_;
+    my ($self, $rdb, $sender, $limit, $sorters, $filter) = @_;
+
     my ($from, $to) = $self->timespan();
     my $sth;
-    my $res;
 
-    $orderby || ($orderby = 'time');
-    my $sortdir = sort_dir ($orderby);
+    my $orderby = '';
+
+    my $receiver_sort;
+
+    foreach my $obj (@$sorters) {
+	$receiver_sort = 1 if $obj->{property} eq 'receiver';
+	$orderby .= ', ' if $orderby;
+	$orderby .= "$obj->{property} $obj->{direction}"
+    }
+
+    $orderby .= 'time DESC' if !$orderby;
+
+    $orderby .= ", receiver" if !$receiver_sort;
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
-    $sth = $rdb->{dbh}->prepare("SELECT * FROM CStatistic, CReceivers WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND " .
-				"$cond_good_mail AND NOT direction AND sender = ? " .
-				"ORDER BY $orderby $sortdir, receiver limit $limit");
+    $sth = $rdb->{dbh}->prepare(
+	"SELECT " .
+	"blocked, bytes, ptime, sender, receiver, spamlevel, time, virusinfo " .
+	"FROM CStatistic, CReceivers " .
+	"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND " .
+	"$cond_good_mail AND NOT direction AND sender = ? " .
+	($filter ? "AND receiver like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
+	"ORDER BY $orderby limit $limit");
+
     $sth->execute($sender);
 
+    my $res = [];
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
     }
@@ -630,14 +648,25 @@ sub user_stat_sender_details {
 }
 
 sub user_stat_sender {
-    my ($self, $rdb, $limit, $orderby) = @_;
+    my ($self, $rdb, $limit, $sorters, $filter) = @_;
+
     my ($from, $to) = $self->timespan();
     my $sth;
-    my $res;
     my $query;
 
-    $orderby || ($orderby = 'count');
-    my $sortdir = sort_dir ($orderby);
+    my $orderby = '';
+
+    my $sender_sort;
+
+    foreach my $obj (@$sorters) {
+	$sender_sort = 1 if $obj->{property} eq 'sender';
+	$orderby .= ', ' if $orderby;
+	$orderby .= "$obj->{property} $obj->{direction}"
+    }
+
+    $orderby .= 'count DESC' if !$orderby;
+
+    $orderby .= ", sender" if !$sender_sort;
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
@@ -645,11 +674,13 @@ sub user_stat_sender {
 	"count (virusinfo) as viruscount, " .
 	"count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
 	"FROM CStatistic WHERE $cond_good_mail AND NOT direction AND sender != '' " .
-	"GROUP BY sender ORDER BY $orderby $sortdir, sender limit $limit";
+	($filter ? "AND sender like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
+	"GROUP BY sender ORDER BY $orderby limit $limit";
 
     $sth = $rdb->{dbh}->prepare($query);
     $sth->execute();
 
+    my $res = [];
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
     }

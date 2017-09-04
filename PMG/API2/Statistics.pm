@@ -3,6 +3,7 @@ package PMG::API2::Statistics;
 use strict;
 use warnings;
 use Data::Dumper;
+use JSON;
 
 use PVE::Tools;
 use PVE::SafeSyslog;
@@ -45,8 +46,199 @@ __PACKAGE__->register_method ({
 	    { name => "mailcount" },
 	    { name => "maildistribution" },
 	    { name => "spamscores" },
+	    { name => "sender" },
+	    { name => "senderdetails" },
 	    { name => "virus" },
 	];
+    }});
+
+my $decode_orderby = sub {
+    my ($orderby, $allowed_props) = @_;
+
+    my $sorters;
+
+    eval { $sorters = decode_json($orderby); };
+    if (my $err = $@) {
+	raise_param_exc({ orderby => 'invalid JSON'});
+    }
+
+    my $schema = {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		property => {
+		    type => 'string',
+		    enum => $allowed_props,
+		},
+		direction => {
+		    type => 'string',
+		    enum => ['ASC', 'DESC'],
+		},
+	    },
+	},
+    };
+
+    PVE::JSONSchema::validate($sorters, $schema, "Parameter 'orderby' verification failed\n");
+
+    return $sorters;
+};
+
+my $orderby_param_desc = {
+    description => "Remote sorting (ExtJS compatible).",
+    type => 'string',
+    optional => 1,
+    maxLength => 4096,
+};
+
+my $userstat_limit = 2000; # hardcoded limit
+
+__PACKAGE__->register_method ({
+    name => 'sender',
+    path => 'sender',
+    method => 'GET',
+    description => "Sender Address Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	    filter => {
+		description => "Sender address filter.",
+		type => 'string',
+		maxLength => 512,
+		optional => 1,
+	    },
+	    orderby => $orderby_param_desc,
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		sender => {
+		    description => "Sender email.",
+		    type => 'string',
+		},
+		count => {
+		    description => "Mail count.",
+		    type => 'number',
+		    optional => 1,
+		},
+		bytes => {
+		    description => "Mail traffic (Bytes).",
+		    type => 'number',
+		},
+		viruscount => {
+		    description => "Number of sent virus mails.",
+		    type => 'number',
+		    optional => 1,
+		},
+	    },
+	},
+	links => [ { rel => 'child', href => "{sender}" } ],
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $sorters = [];
+	if ($param->{orderby}) {
+	    my $props = ['sender', 'count', 'bytes', 'viruscount'];
+	    $sorters = $decode_orderby->($param->{orderby}, $props);
+	}
+
+	my $res = $stat->user_stat_sender($rdb, $userstat_limit, $sorters, $param->{filter});
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'senderdetails',
+    path => 'sender/{sender}',
+    method => 'GET',
+    description => "Detailed Sender Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	    sender => get_standard_option('pmg-email-address', {
+		description => "Sender email address.",
+	    }),
+	    filter => {
+		description => "Receiver address filter.",
+		type => 'string',
+		maxLength => 512,
+		optional => 1,
+	    },
+	    orderby => $orderby_param_desc,
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		time => {
+		    description => "Receive time stamp",
+		    type => 'integer',
+		},
+		receiver => {
+		    description => "Receiver email.",
+		    type => 'string',
+		},
+		bytes => {
+		    description => "Mail traffic (Bytes).",
+		    type => 'number',
+		},
+		blocked => {
+		    description => "Mail was blocked.",
+		    type => 'boolean',
+		},
+		spamlevel => {
+		    description => "Spam score.",
+		    type => 'number',
+		},
+		virusname => {
+		    description => "Virus name.",
+		    type => 'string',
+		    optional => 1,
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $sorters = [];
+	if ($param->{orderby}) {
+	    my $props = ['time', 'receiver', 'bytes', 'blocked', 'spamlevel', 'viruscount'];
+	    $sorters = $decode_orderby->($param->{orderby}, $props);
+	}
+
+	return $stat->user_stat_sender_details(
+	    $rdb, $param->{sender}, $userstat_limit, $sorters, $param->{filter});
     }});
 
 __PACKAGE__->register_method ({
@@ -123,7 +315,7 @@ __PACKAGE__->register_method ({
 
 	my $res = $stat->total_domain_stat($rdb);
 
-	
+
 	return $res;
     }});
 
