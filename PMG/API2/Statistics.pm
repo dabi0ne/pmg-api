@@ -47,7 +47,6 @@ __PACKAGE__->register_method ({
 	    { name => "maildistribution" },
 	    { name => "spamscores" },
 	    { name => "sender" },
-	    { name => "senderdetails" },
 	    { name => "virus" },
 	];
     }});
