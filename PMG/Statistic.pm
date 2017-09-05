@@ -536,6 +536,26 @@ sub sort_dir {
     return $sortdir;
 }
 
+my $compute_sql_orderby = sub {
+    my ($sorters, $sort_default, $sort_always_prop) = @_;
+
+    my $has_default_sort;
+
+    my $orderby = '';
+
+    foreach my $obj (@$sorters) {
+	$has_default_sort = 1 if $obj->{property} eq $sort_always_prop;
+	$orderby .= ', ' if $orderby;
+	$orderby .= "$obj->{property} $obj->{direction}"
+    }
+
+    $orderby .= $sort_default if !$orderby;
+
+    $orderby .= ", $sort_always_prop" if !$has_default_sort;
+
+    return $orderby;
+};
+
 sub user_stat_contact_details {
     my ($self, $rdb, $receiver, $limit, $orderby) = @_;
     my ($from, $to) = $self->timespan();
@@ -608,25 +628,12 @@ sub user_stat_sender_details {
     my ($self, $rdb, $sender, $limit, $sorters, $filter) = @_;
 
     my ($from, $to) = $self->timespan();
-    my $sth;
 
-    my $orderby = '';
+    my $orderby = $compute_sql_orderby->($sorters, 'time ASC', 'receiver');
 
-    my $receiver_sort;
+    my $cond_good_mail = $self->query_cond_good_mail($from, $to);
 
-    foreach my $obj (@$sorters) {
-	$receiver_sort = 1 if $obj->{property} eq 'receiver';
-	$orderby .= ', ' if $orderby;
-	$orderby .= "$obj->{property} $obj->{direction}"
-    }
-
-    $orderby .= 'time DESC' if !$orderby;
-
-    $orderby .= ", receiver" if !$receiver_sort;
-
-    my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
-
-    $sth = $rdb->{dbh}->prepare(
+    my $sth = $rdb->{dbh}->prepare(
 	"SELECT " .
 	"blocked, bytes, ptime, sender, receiver, spamlevel, time, virusinfo " .
 	"FROM CStatistic, CReceivers " .
@@ -654,19 +661,7 @@ sub user_stat_sender {
     my $sth;
     my $query;
 
-    my $orderby = '';
-
-    my $sender_sort;
-
-    foreach my $obj (@$sorters) {
-	$sender_sort = 1 if $obj->{property} eq 'sender';
-	$orderby .= ', ' if $orderby;
-	$orderby .= "$obj->{property} $obj->{direction}"
-    }
-
-    $orderby .= 'count DESC' if !$orderby;
-
-    $orderby .= ", sender" if !$sender_sort;
+    my $orderby = $compute_sql_orderby->($sorters, 'count DESC', 'sender');
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
@@ -691,21 +686,24 @@ sub user_stat_sender {
 }
 
 sub user_stat_receiver_details {
-    my ($self, $rdb, $receiver, $limit, $orderby) = @_;
+    my ($self, $rdb, $receiver, $limit, $sorters, $filter) = @_;
+
     my ($from, $to) = $self->timespan();
-    my $sth;
-    my $res;
 
-    $orderby || ($orderby = 'time');
-    my $sortdir = sort_dir ($orderby);
+    my $orderby = $compute_sql_orderby->($sorters, 'time ASC', 'sender');
 
-    my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
+    my $cond_good_mail = $self->query_cond_good_mail($from, $to);
 
-    $sth = $rdb->{dbh}->prepare("SELECT * FROM CStatistic, CReceivers " .
-				"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND receiver = ? " .
-				"ORDER BY $orderby $sortdir, sender limit $limit");
+    my $sth = $rdb->{dbh}->prepare(
+	"SELECT blocked, bytes, ptime, sender, receiver, spamlevel, time, virusinfo " .
+	"FROM CStatistic, CReceivers " .
+	"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND receiver = ? " .
+	($filter ? "AND sender like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
+	"ORDER BY $orderby limit $limit");
+
     $sth->execute($receiver);
 
+    my $res = [];
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
     }
@@ -716,41 +714,43 @@ sub user_stat_receiver_details {
 }
 
 sub user_stat_receiver {
-    my ($self, $rdb, $limit, $orderby) = @_;
+    my ($self, $rdb, $limit, $sorters, $filter) = @_;
+
     my ($from, $to) = $self->timespan();
     my $sth;
-    my $res;
-    my $query;
 
-    $orderby || ($orderby = 'count');
-    my $sortdir = sort_dir ($orderby);
+    my $orderby = $compute_sql_orderby->($sorters, 'count DESC', 'receiver');
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to) . " AND " .
 	"receiver IS NOT NULL AND receiver != ''";
 
+    my $query = "SELECT receiver, " .
+	"count(*) AS count, " .
+	"sum (bytes) AS bytes, " .
+	"count (virusinfo) as viruscount, " .
+	"count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount ";
+
     if ($self->{adv}) {
 	my $active_workers = $self->query_active_workers ();
 
-	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes, " .
-	    "count (virusinfo) as viruscount, " .
-	    "count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
-	    "FROM CStatistic, CReceivers, ($active_workers) as workers " .
-	    "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND direction AND worker=receiver " .
-	    "GROUP BY receiver " .
-	    "ORDER BY $orderby $sortdir, receiver LIMIT $limit";
+	$query .= "FROM CStatistic, CReceivers, ($active_workers) as workers ";
+
+	$query .= "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND worker=receiver ";
+
     } else {
-	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes, " .
-	    "count (virusinfo) as viruscount, " .
-	    "count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
-	    "FROM CStatistic, CReceivers " .
-	    "WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail and direction " .
-	    "GROUP BY receiver " .
-	    "ORDER BY $orderby $sortdir, receiver LIMIT $limit";
+	$query .= "FROM CStatistic, CReceivers ";
+
+	$query .= "WHERE cid = cstatistic_cid AND rid = cstatistic_rid ";
     }
+
+    $query .= "AND $cond_good_mail and direction " .
+	($filter ? "AND receiver like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
+	"GROUP BY receiver ORDER BY $orderby LIMIT $limit";
 
     $sth = $rdb->{dbh}->prepare($query);
     $sth->execute();
 
+    my $res = [];
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
     }
