@@ -12,7 +12,7 @@ use PMG::ClusterConfig;
 use PMG::RuleDB;
 
 sub new {
-    my ($self, $start, $end, $advanced) = @_;
+    my ($self, $start, $end) = @_;
 
     $self = {};
 
@@ -24,8 +24,6 @@ sub new {
 	my $ctime = time();
         $self->timespan($ctime, $ctime - 24*3600);
     }
-
-    $self->{adv} = $advanced;
 
     return $self;
 }
@@ -586,7 +584,7 @@ sub user_stat_contact_details {
 }
 
 sub user_stat_contact {
-    my ($self, $rdb, $limit, $sorters, $filter) = @_;
+    my ($self, $rdb, $limit, $sorters, $filter, $advfilter) = @_;
 
     my ($from, $to) = $self->timespan();
 
@@ -601,7 +599,7 @@ sub user_stat_contact {
 	($filter ? "AND receiver like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
 	"AND $cond_good_mail AND NOT direction AND sender != '' ";
 
-    if ($self->{adv}) {
+    if ($advfilter) {
 	my $active_workers = $self->query_active_workers ();
 
 	$query .= "AND receiver NOT IN ($active_workers) ";
@@ -710,7 +708,7 @@ sub user_stat_receiver_details {
 }
 
 sub user_stat_receiver {
-    my ($self, $rdb, $limit, $sorters, $filter) = @_;
+    my ($self, $rdb, $limit, $sorters, $filter, $advfilter) = @_;
 
     my ($from, $to) = $self->timespan();
 
@@ -725,7 +723,7 @@ sub user_stat_receiver {
 	"count (virusinfo) as viruscount, " .
 	"count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount ";
 
-    if ($self->{adv}) {
+    if ($advfilter) {
 	my $active_workers = $self->query_active_workers ();
 
 	$query .= "FROM CStatistic, CReceivers, ($active_workers) as workers ";

@@ -60,6 +60,11 @@ sub type {
 
 sub properties {
     return {
+	advfilter => {
+	    description => "Use advanced filters for statistic.",
+	    type => 'boolean',
+	    default => 1,
+	},
 	dailyreport => {
 	    description => "Send daily reports.",
 	    type => 'boolean',
@@ -104,6 +109,7 @@ sub properties {
 
 sub options {
     return {
+	advfilter => { optional => 1 },
 	statlifetime => { optional => 1 },
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },

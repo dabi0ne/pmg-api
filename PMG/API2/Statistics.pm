@@ -14,6 +14,7 @@ use PMG::RESTEnvironment;
 use PVE::JSONSchema qw(get_standard_option);
 
 use PMG::Utils;
+use PMG::Config;
 use PMG::RuleDB;
 use PMG::Statistic;
 
@@ -151,6 +152,9 @@ __PACKAGE__->register_method ({
 	my $start = $param->{starttime} // (time - 86400);
 	my $end = $param->{endtime} // ($start + 86400);
 
+	my $cfg = PMG::Config->new();
+	my $advfilter = $cfg->get('admin', 'advfilter');
+
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
@@ -160,7 +164,7 @@ __PACKAGE__->register_method ({
 	    $sorters = $decode_orderby->($param->{orderby}, $props);
 	}
 
-	my $res = $stat->user_stat_contact($rdb, $userstat_limit, $sorters, $param->{filter});
+	my $res = $stat->user_stat_contact($rdb, $userstat_limit, $sorters, $param->{filter}, $advfilter);
 
 	return $res;
     }});
@@ -452,7 +456,9 @@ __PACKAGE__->register_method ({
 	my $start = $param->{starttime} // (time - 86400);
 	my $end = $param->{endtime} // ($start + 86400);
 
-	# fixme: advanced stat setting
+	my $cfg = PMG::Config->new();
+	my $advfilter = $cfg->get('admin', 'advfilter');
+
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
@@ -462,7 +468,7 @@ __PACKAGE__->register_method ({
 	    $sorters = $decode_orderby->($param->{orderby}, $props);
 	}
 
-	my $res = $stat->user_stat_receiver($rdb, $userstat_limit, $sorters, $param->{filter});
+	my $res = $stat->user_stat_receiver($rdb, $userstat_limit, $sorters, $param->{filter}, $advfilter);
 
 	return $res;
     }});
