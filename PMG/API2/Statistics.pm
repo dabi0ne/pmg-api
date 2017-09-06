@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use Data::Dumper;
 use JSON;
-use URI::Escape;
 
 use PVE::Tools;
 use PVE::SafeSyslog;
@@ -234,8 +233,6 @@ __PACKAGE__->register_method ({
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
-	my $contact = uri_unescape($param->{contact});
-
 	my $sorters = [];
 	if ($param->{orderby}) {
 	    my $props = ['time', 'sender', 'bytes', 'blocked', 'spamlevel', 'virusinfo'];
@@ -243,7 +240,7 @@ __PACKAGE__->register_method ({
 	}
 
 	return $stat->user_stat_contact_details(
-	    $rdb, $contact, $userstat_limit, $sorters, $param->{filter});
+	    $rdb, $param->{contact}, $userstat_limit, $sorters, $param->{filter});
     }});
 
 __PACKAGE__->register_method ({
@@ -384,8 +381,6 @@ __PACKAGE__->register_method ({
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
-	my $sender = uri_unescape($param->{sender});
-
 	my $sorters = [];
 	if ($param->{orderby}) {
 	    my $props = ['time', 'receiver', 'bytes', 'blocked', 'spamlevel', 'virusinfo'];
@@ -393,7 +388,7 @@ __PACKAGE__->register_method ({
 	}
 
 	return $stat->user_stat_sender_details(
-	    $rdb, $sender, $userstat_limit, $sorters, $param->{filter});
+	    $rdb, $param->{sender}, $userstat_limit, $sorters, $param->{filter});
     }});
 
 __PACKAGE__->register_method ({
@@ -540,8 +535,6 @@ __PACKAGE__->register_method ({
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
-	my $receiver = uri_unescape($param->{receiver});
-
 	my $sorters = [];
 	if ($param->{orderby}) {
 	    my $props = ['time', 'sender', 'bytes', 'blocked', 'spamlevel', 'virusinfo'];
@@ -549,7 +542,7 @@ __PACKAGE__->register_method ({
 	}
 
 	return $stat->user_stat_receiver_details(
-	    $rdb, $receiver, $userstat_limit, $sorters, $param->{filter});
+	    $rdb, $param->{receiver}, $userstat_limit, $sorters, $param->{filter});
     }});
 
 __PACKAGE__->register_method ({
