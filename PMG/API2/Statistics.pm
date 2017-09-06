@@ -42,6 +42,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	return [
+	    { name => "contact" },
 	    { name => "domains" },
 	    { name => "mail" },
 	    { name => "mailcount" },
@@ -93,6 +94,157 @@ my $orderby_param_desc = {
 };
 
 my $userstat_limit = 2000; # hardcoded limit
+
+
+__PACKAGE__->register_method ({
+    name => 'contact',
+    path => 'contact',
+    method => 'GET',
+    description => "Contact Address Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	    filter => {
+		description => "Contact address filter.",
+		type => 'string',
+		maxLength => 512,
+		optional => 1,
+	    },
+	    orderby => $orderby_param_desc,
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		contact => {
+		    description => "Contact email.",
+		    type => 'string',
+		},
+		count => {
+		    description => "Mail count.",
+		    type => 'number',
+		    optional => 1,
+		},
+		bytes => {
+		    description => "Mail traffic (Bytes).",
+		    type => 'number',
+		},
+		viruscount => {
+		    description => "Number of sent virus mails.",
+		    type => 'number',
+		    optional => 1,
+		},
+	    },
+	},
+	links => [ { rel => 'child', href => "{contact}" } ],
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $sorters = [];
+	if ($param->{orderby}) {
+	    my $props = ['contact', 'count', 'bytes', 'viruscount'];
+	    $sorters = $decode_orderby->($param->{orderby}, $props);
+	}
+
+	my $res = $stat->user_stat_contact($rdb, $userstat_limit, $sorters, $param->{filter});
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'contactdetails',
+    path => 'contact/{contact}',
+    method => 'GET',
+    description => "Detailed Contact Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	    contact => get_standard_option('pmg-email-address', {
+		description => "Contact email address.",
+	    }),
+	    filter => {
+		description => "Sender address filter.",
+		type => 'string',
+		maxLength => 512,
+		optional => 1,
+	    },
+	    orderby => $orderby_param_desc,
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		time => {
+		    description => "Receive time stamp",
+		    type => 'integer',
+		},
+		sender => {
+		    description => "Sender email.",
+		    type => 'string',
+		},
+		bytes => {
+		    description => "Mail traffic (Bytes).",
+		    type => 'number',
+		},
+		blocked => {
+		    description => "Mail was blocked.",
+		    type => 'boolean',
+		},
+		spamlevel => {
+		    description => "Spam score.",
+		    type => 'number',
+		},
+		virusinfo => {
+		    description => "Virus name.",
+		    type => 'string',
+		    optional => 1,
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $contact = uri_unescape($param->{contact});
+
+	my $sorters = [];
+	if ($param->{orderby}) {
+	    my $props = ['time', 'sender', 'bytes', 'blocked', 'spamlevel', 'virusinfo'];
+	    $sorters = $decode_orderby->($param->{orderby}, $props);
+	}
+
+	return $stat->user_stat_contact_details(
+	    $rdb, $contact, $userstat_limit, $sorters, $param->{filter});
+    }});
 
 __PACKAGE__->register_method ({
     name => 'sender',

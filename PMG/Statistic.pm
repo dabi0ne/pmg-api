@@ -557,24 +557,25 @@ my $compute_sql_orderby = sub {
 };
 
 sub user_stat_contact_details {
-    my ($self, $rdb, $receiver, $limit, $orderby) = @_;
-    my ($from, $to) = $self->timespan();
-    my $sth;
-    my $res;
+    my ($self, $rdb, $receiver, $limit, $sorters, $filter) = @_;
 
-    $orderby || ($orderby = 'time');
-    my $sortdir = sort_dir ($orderby);
+    my ($from, $to) = $self->timespan();
+
+    my $orderby = $compute_sql_orderby->($sorters, 'time ASC', 'sender');
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
     my $query = "SELECT * FROM CStatistic, CReceivers " .
-	"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail AND NOT direction AND sender != '' AND receiver = ? " .
-	"ORDER BY $orderby $sortdir, receiver limit $limit";
+	"WHERE cid = cstatistic_cid AND rid = cstatistic_rid AND $cond_good_mail " .
+	"AND NOT direction AND sender != '' AND receiver = ? " .
+	($filter ? "AND sender like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
+	"ORDER BY $orderby limit $limit";
 
-    $sth = $rdb->{dbh}->prepare($query);
+    my $sth = $rdb->{dbh}->prepare($query);
 
-    $sth->execute ($receiver);
+    $sth->execute($receiver);
 
+    my $res = [];
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
     }
@@ -585,36 +586,33 @@ sub user_stat_contact_details {
 }
 
 sub user_stat_contact {
-    my ($self, $rdb, $limit, $orderby) = @_;
+    my ($self, $rdb, $limit, $sorters, $filter) = @_;
+
     my ($from, $to) = $self->timespan();
-    my $sth;
-    my $res;
-    my $query;
 
-    $orderby || ($orderby = 'count');
-    my $sortdir = sort_dir ($orderby);
+    my $orderby = $compute_sql_orderby->($sorters, 'count DESC', 'contact');
 
-    my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
+    my $cond_good_mail = $self->query_cond_good_mail($from, $to);
+
+    my $query = "SELECT receiver as contact, count(*) AS count, sum (bytes) AS bytes, " .
+	"count (virusinfo) as viruscount " .
+	"FROM CStatistic, CReceivers " .
+	"WHERE cid = cstatistic_cid AND rid = cstatistic_rid " .
+	($filter ? "AND receiver like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
+	"AND $cond_good_mail AND NOT direction AND sender != '' ";
 
     if ($self->{adv}) {
 	my $active_workers = $self->query_active_workers ();
 
-	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes " .
-	    "FROM CStatistic, CReceivers WHERE cid = cstatistic_cid AND rid = cstatistic_rid " .
-	    "AND $cond_good_mail AND NOT direction AND sender != '' AND " .
-	    "receiver NOT IN ($active_workers) " .
-	    "GROUP BY receiver ORDER BY $orderby $sortdir, receiver limit $limit";
-    } else {
-	$query = "SELECT receiver, count(*) AS count, sum (bytes) AS bytes " .
-	    "FROM CStatistic, CReceivers WHERE cid = cstatistic_cid AND rid = cstatistic_rid " .
-	    "AND $cond_good_mail AND NOT direction AND sender != '' " .
-	    "GROUP BY receiver ORDER BY $orderby $sortdir, receiver limit $limit";
+	$query .= "AND receiver NOT IN ($active_workers) ";
     }
 
-    $sth = $rdb->{dbh}->prepare($query);
+    $query .="GROUP BY contact ORDER BY $orderby limit $limit";
+    my $sth = $rdb->{dbh}->prepare($query);
 
     $sth->execute();
 
+    my $res = [];
     while (my $ref = $sth->fetchrow_hashref()) {
 	push @$res, $ref;
     }
@@ -658,21 +656,19 @@ sub user_stat_sender {
     my ($self, $rdb, $limit, $sorters, $filter) = @_;
 
     my ($from, $to) = $self->timespan();
-    my $sth;
-    my $query;
 
     my $orderby = $compute_sql_orderby->($sorters, 'count DESC', 'sender');
 
     my $cond_good_mail = $self->query_cond_good_mail ($from, $to);
 
-    $query = "SELECT sender,count(*) AS count, sum (bytes) AS bytes, " .
+    my $query = "SELECT sender,count(*) AS count, sum (bytes) AS bytes, " .
 	"count (virusinfo) as viruscount, " .
 	"count (CASE WHEN spamlevel >= 3 THEN 1 ELSE NULL END) as spamcount " .
 	"FROM CStatistic WHERE $cond_good_mail AND NOT direction AND sender != '' " .
 	($filter ? "AND sender like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
 	"GROUP BY sender ORDER BY $orderby limit $limit";
 
-    $sth = $rdb->{dbh}->prepare($query);
+    my $sth = $rdb->{dbh}->prepare($query);
     $sth->execute();
 
     my $res = [];
@@ -717,7 +713,6 @@ sub user_stat_receiver {
     my ($self, $rdb, $limit, $sorters, $filter) = @_;
 
     my ($from, $to) = $self->timespan();
-    my $sth;
 
     my $orderby = $compute_sql_orderby->($sorters, 'count DESC', 'receiver');
 
@@ -747,7 +742,7 @@ sub user_stat_receiver {
 	($filter ? "AND receiver like " . $rdb->{dbh}->quote("%${filter}%") . ' ' : '') .
 	"GROUP BY receiver ORDER BY $orderby LIMIT $limit";
 
-    $sth = $rdb->{dbh}->prepare($query);
+    my $sth = $rdb->{dbh}->prepare($query);
     $sth->execute();
 
     my $res = [];
