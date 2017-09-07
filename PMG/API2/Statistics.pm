@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use JSON;
+use Time::Local;
 
 use PVE::Tools;
 use PVE::SafeSyslog;
@@ -103,14 +104,82 @@ my $default_properties = sub {
     $prop->{starttime} = get_standard_option('pmg-starttime');
     $prop->{endtime} = get_standard_option('pmg-endtime');
 
+    $prop->{year} = {
+	description => "Year. Defaults to current year. You will get statistics for the whole year if you do not specify a month or day.",
+	type => 'integer',
+	minimum => 1900,
+	maximum => 3000,
+	optional => 1,
+    };
+
+    $prop->{month} = {
+	description => "Month. You will get statistics for the whole month if you do not specify a day.",
+	type => 'integer',
+	minimum => 1,
+	maximum => 12,
+	optional => 1,
+    };
+
+    $prop->{day} = {
+	description => "Day of month. Get statistics for a single day.",
+	type => 'integer',
+	minimum => 1,
+	maximum => 31,
+	optional => 1,
+    };
+
     return $prop;
 };
 
 my $extract_start_end = sub {
     my ($param) = @_;
 
-    my $start = $param->{starttime} // (time - 86400);
-    my $end = $param->{endtime} // ($start + 86400);
+    my $has_ymd;
+    foreach my $k (qw(year month day)) {
+	if (defined($param->{$k})) {
+	    $has_ymd = $k;
+	    last;
+	}
+    }
+    my $has_se;
+    foreach my $k (qw(starttime endtime)) {
+	if (defined($param->{$k})) {
+	    $has_se = $k;
+	    last;
+	}
+    }
+
+    raise_param_exc({ $has_se => "parameter conflicts with parameter '$has_ymd'"})
+	if $has_se && $has_ymd;
+
+    my $start;
+    my $end;
+
+    if ($has_ymd) {
+	my (undef, undef, undef, undef, $month, $year) = localtime(time());
+	$month += 1;
+	$year = $param->{year} if defined($param->{year});
+	if (defined($param->{day})) {
+	    $month = $param->{month} if defined($param->{month});
+	    $start = timelocal(0, 0, 0, 1, $month - 1, $year);
+	    $end = timelocal(0, 0, 0, 1, $month, $year);
+	} elsif (defined($param->{month})) {
+	    my $month = $param->{month};
+	    if ($month < 12) {
+		$start = timelocal(0, 0, 0, 1, $month - 1, $year);
+		$end = timelocal(0, 0, 0, 1, $month, $year);
+	    } else {
+		$start = timelocal(0, 0, 0, 1, 11, $year);
+		$end = timelocal(0, 0, 0, 1, 0, $year + 1);
+	    }
+	} else {
+	    $start = timelocal(0, 0, 0, 1, 0, $year);
+	    $end = timelocal(0, 0, 0, 1, 0, $year + 1);
+	}
+    } else {
+	$start = $param->{starttime} // (time - 86400);
+	$end = $param->{endtime} // ($start + 86400);
+    }
 
     return ($start, $end);
 };
