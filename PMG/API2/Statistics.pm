@@ -86,15 +86,36 @@ my $decode_orderby = sub {
     return $sorters;
 };
 
-my $orderby_param_desc = {
-    description => "Remote sorting (ExtJS compatible).",
-    type => 'string',
-    optional => 1,
-    maxLength => 4096,
+my $api_properties = {
+    orderby => {
+	description => "Remote sorting configuration(JSON, ExtJS compatible).",
+	type => 'string',
+	optional => 1,
+	maxLength => 4096,
+    },
+};
+
+my $default_properties = sub {
+    my ($prop) = @_;
+
+    $prop //= {};
+
+    $prop->{starttime} = get_standard_option('pmg-starttime');
+    $prop->{endtime} = get_standard_option('pmg-endtime');
+
+    return $prop;
+};
+
+my $extract_start_end = sub {
+    my ($param) = @_;
+
+    my $start = $param->{starttime} // (time - 86400);
+    my $end = $param->{endtime} // ($start + 86400);
+
+    return ($start, $end);
 };
 
 my $userstat_limit = 2000; # hardcoded limit
-
 
 __PACKAGE__->register_method ({
     name => 'contact',
@@ -104,17 +125,15 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    filter => {
 		description => "Contact address filter.",
 		type => 'string',
 		maxLength => 512,
 		optional => 1,
 	    },
-	    orderby => $orderby_param_desc,
-	},
+	    orderby => $api_properties->{orderby},
+	}),
     },
     returns => {
 	type => 'array',
@@ -149,8 +168,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $cfg = PMG::Config->new();
 	my $advfilter = $cfg->get('admin', 'advfilter');
@@ -177,9 +195,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    contact => get_standard_option('pmg-email-address', {
 		description => "Contact email address.",
 	    }),
@@ -189,8 +205,8 @@ __PACKAGE__->register_method ({
 		maxLength => 512,
 		optional => 1,
 	    },
-	    orderby => $orderby_param_desc,
-	},
+	    orderby => $api_properties->{orderby},
+	}),
     },
     returns => {
 	type => 'array',
@@ -231,8 +247,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -255,17 +270,15 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    filter => {
 		description => "Sender address filter.",
 		type => 'string',
 		maxLength => 512,
 		optional => 1,
 	    },
-	    orderby => $orderby_param_desc,
-	},
+	    orderby => $api_properties->{orderby},
+	}),
     },
     returns => {
 	type => 'array',
@@ -300,8 +313,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -325,9 +337,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    sender => get_standard_option('pmg-email-address', {
 		description => "Sender email address.",
 	    }),
@@ -337,8 +347,8 @@ __PACKAGE__->register_method ({
 		maxLength => 512,
 		optional => 1,
 	    },
-	    orderby => $orderby_param_desc,
-	},
+	    orderby => $api_properties->{orderby},
+	}),
     },
     returns => {
 	type => 'array',
@@ -379,8 +389,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -403,17 +412,15 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    filter => {
 		description => "Receiver address filter.",
 		type => 'string',
 		maxLength => 512,
 		optional => 1,
 	    },
-	    orderby => $orderby_param_desc,
-	},
+	    orderby => $api_properties->{orderby},
+	}),
     },
     returns => {
 	type => 'array',
@@ -453,8 +460,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $cfg = PMG::Config->new();
 	my $advfilter = $cfg->get('admin', 'advfilter');
@@ -481,9 +487,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    receiver => get_standard_option('pmg-email-address', {
 		description => "Receiver email address.",
 	    }),
@@ -493,8 +497,8 @@ __PACKAGE__->register_method ({
 		maxLength => 512,
 		optional => 1,
 	    },
-	    orderby => $orderby_param_desc,
-	},
+	    orderby => $api_properties->{orderby},
+	}),
     },
     returns => {
 	type => 'array',
@@ -535,8 +539,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -559,10 +562,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
-	},
+	properties => $default_properties->(),
     },
     returns => {
 	type => 'array',
@@ -614,8 +614,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -637,10 +636,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
-	},
+	properties => $default_properties->(),
     },
     returns => {
 	type => "object",
@@ -717,8 +713,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -736,18 +731,16 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
+	properties => $default_properties->({
 	    timespan => {
-		description => "Return Mails/<timespan>, when <timespan> is specified in seconds.",
+		description => "Return Mails/<timespan>, where <timespan> is specified in seconds.",
 		type => 'integer',
 		minimum => 3600,
 		maximum => 366*86400,
 		optional => 1,
 		default => 3600,
-	    }
-	},
+	    },
+	}),
     },
     returns => {
 	type => 'array',
@@ -807,8 +800,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $span = $param->{timespan} // 3600;
 
@@ -834,10 +826,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
-	},
+	properties => $default_properties->(),
     },
     returns => {
 	type => 'array',
@@ -861,8 +850,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -881,10 +869,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
-	},
+	properties => $default_properties->(),
     },
     returns => {
 	type => 'array',
@@ -912,8 +897,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
@@ -955,10 +939,7 @@ __PACKAGE__->register_method ({
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
-	properties => {
-	    starttime => get_standard_option('pmg-starttime'),
-	    endtime => get_standard_option('pmg-endtime'),
-	},
+	properties => $default_properties->(),
     },
     returns => {
 	type => 'array',
@@ -1014,8 +995,7 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $cinfo = $restenv->{cinfo};
 
-	my $start = $param->{starttime} // (time - 86400);
-	my $end = $param->{endtime} // ($start + 86400);
+	my ($start, $end) = $extract_start_end->($param);
 
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
