@@ -107,7 +107,7 @@ sub parse_entity {
     if (my $id = $entity->head->mime_attr ('x-proxmox-tmp-aid')) {
 	chomp $id;
 
-	if (my $value = $entity->head->get ($self->{field})) {
+	if (defined(my $value = $entity->head->get($self->{field}))) {
 	    chomp $value;
 
 	    my $decvalue = MIME::Words::decode_mimewords($value);
