@@ -451,7 +451,7 @@ sub upgradedb {
     };
 
     foreach my $table (keys %$tables) {
-	cond_create_dbtable($dbh, $table, $tables->{$tables});
+	cond_create_dbtable($dbh, $table, $tables->{$table});
     }
 
     cond_create_std_actions($ruledb);
