@@ -122,6 +122,7 @@ LIBSOURCES =				\
 	PMG/API2/Users.pm		\
 	PMG/API2/Transport.pm		\
 	PMG/API2/MyNetworks.pm		\
+	PMG/API2/MimeTypes.pm		\
 	PMG/API2/Config.pm		\
 	PMG/API2/Cluster.pm		\
 	PMG/API2/ClamAV.pm		\

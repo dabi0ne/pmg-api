@@ -19,6 +19,7 @@ use PMG::API2::Transport;
 use PMG::API2::Cluster;
 use PMG::API2::MyNetworks;
 use PMG::API2::SMTPWhitelist;
+use PMG::API2::MimeTypes;
 
 use base qw(PVE::RESTHandler);
 
@@ -60,6 +61,11 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Cluster",
     path => 'cluster',
+});
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::MimeTypes",
+    path => 'mimetypes',
 });
 
 __PACKAGE__->register_method ({
