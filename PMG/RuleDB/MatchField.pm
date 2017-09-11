@@ -32,20 +32,20 @@ sub oicon {
 
 sub new {
     my ($type, $field, $field_value, $ogroup) = @_;
-   
+
     my $class = ref($type) || $type;
 
     my $self = $class->SUPER::new($class->otype(), $ogroup);
 
     $self->{field} = $field;
     $self->{field_value} = $field_value;
-    
+
     return $self;
 }
 
 sub load_attr {
     my ($type, $ruledb, $id, $ogroup, $value) = @_;
-    
+
     my $class = ref($type) || $type;
 
     defined($value) || die "undefined value: ERROR";;
@@ -61,9 +61,9 @@ sub load_attr {
     bless $obj, $class;
 
     $obj->{id} = $id;
-    
+
     $obj->{digest} = Digest::SHA::sha1_hex($id, $field, $field_value, $ogroup);
-    
+
     return $obj;
 }
 
@@ -77,9 +77,9 @@ sub save {
 
     if (defined ($self->{id})) {
 	# update
-	
+
 	$ruledb->{dbh}->do(
-	    "UPDATE Object SET Value = ? WHERE ID = ?", 
+	    "UPDATE Object SET Value = ? WHERE ID = ?",
 	    undef, $new_value, $self->{id});
 
     } else {
@@ -90,10 +90,10 @@ sub save {
 	    "VALUES (?, ?, ?);");
 
 	$sth->execute($self->ogroup, $self->otype, $new_value);
-    
-	$self->{id} = PMG::Utils::lastid($ruledb->{dbh}, 'object_id_seq'); 
+
+	$self->{id} = PMG::Utils::lastid($ruledb->{dbh}, 'object_id_seq');
     }
-	
+
     return $self->{id};
 }
 
@@ -135,7 +135,7 @@ sub what_match {
 
 sub short_desc {
     my $self = shift;
-    
+
     return "$self->{field}=$self->{field_value}";
 }
 

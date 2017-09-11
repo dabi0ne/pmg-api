@@ -32,13 +32,13 @@ sub oicon {
 
 sub new {
     my ($type, $fvalue, $ogroup) = @_;
-    
+
     my $class = ref($type) || $type;
 
     # translate old values
     if ($fvalue && (my $nt = $oldtypemap->{$fvalue})) {
 	$fvalue = $nt;
-    } 
+    }
 
     my $self = $class->SUPER::new('content-type', $fvalue, $ogroup);
 
@@ -47,7 +47,7 @@ sub new {
 
 sub load_attr {
     my ($type, $ruledb, $id, $ogroup, $value) = @_;
-    
+
     my $class = ref($type) || $type;
 
     my $obj = $class->SUPER::load_attr($ruledb, $id, $ogroup, $value);
@@ -84,7 +84,7 @@ sub parse_entity {
 	    push @$res, $id;
 	}
     }
-    
+
     foreach my $part ($entity->parts)  {
 	if (my $match = $self->parse_entity ($part)) {
 	    push @$res, @$match;
