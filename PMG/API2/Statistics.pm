@@ -50,6 +50,7 @@ __PACKAGE__->register_method ({
 	    { name => "maildistribution" },
 	    { name => "spamscores" },
 	    { name => "sender" },
+	    { name => "rblcount" },
 	    { name => "receiver" },
 	    { name => "virus" },
 	];
@@ -1072,6 +1073,67 @@ __PACKAGE__->register_method ({
 	#PMG::Statistic::update_stats_dailystat($rdb->{dbh}, $cinfo);
 
 	my $res = $stat->traffic_stat_day_dist ($rdb);
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'rblcount',
+    path => 'rblcount',
+    method => 'GET',
+    description => "Mail RBL Count Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => $default_properties->({
+	    timespan => {
+		description => "Return RBL rejects/<timespan>, where <timespan> is specified in seconds.",
+		type => 'integer',
+		minimum => 3600,
+		maximum => 366*86400,
+		optional => 1,
+		default => 3600,
+	    },
+	}),
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		index => {
+		    description => "Time index.",
+		    type => 'integer',
+		},
+		time => {
+		    description => "Time (Unix epoch).",
+		    type => 'integer',
+		},
+		count => {
+		    description => "RBL recject count.",
+		    type => 'number',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+	my $cinfo = $restenv->{cinfo};
+
+	my ($start, $end) = $extract_start_end->($param);
+
+	my $span = $param->{timespan} // 3600;
+
+	my $count = ($end - $start)/$span;
+
+	die "too many entries - try to increase parameter 'span'\n" if $count > 5000;
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $res = $stat->rbl_count_stats($rdb, $span);
 
 	return $res;
     }});

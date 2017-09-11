@@ -755,6 +755,39 @@ sub user_stat_receiver {
     return $res;
 }
 
+sub rbl_count_stats {
+    my ($self, $rdb, $span) = @_;
+    my $res;
+
+    my ($from, $to) = $self->localhourspan();
+    my $timezone = tz_local_offset();;
+
+    my $cmd = "SELECT " .
+	"(time - $from) / $span AS index, " .
+	"sum(rblcount) as count " .
+	"FROM LocalStat WHERE time >= $from AND time < $to " .
+	"GROUP BY index ORDER BY index";
+
+    my $sth = $rdb->{dbh}->prepare($cmd);
+    $sth->execute ();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+	@$res[$ref->{index}] = $ref;
+    }
+
+    my $c = int (($to - $from) / $span);
+
+    for (my $i = 0; $i < $c; $i++) {
+	@$res[$i] //= { index => $i, count => 0, };
+
+	my $d = @$res[$i];
+	$d->{time} = $from + ($i+1)*$span - $timezone;
+    }
+    $sth->finish();
+
+    return $res;
+}
+
 sub traffic_stat_graph {
     my ($self, $rdb, $span) = @_;
     my $res;
