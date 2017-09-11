@@ -12,6 +12,7 @@ use Fcntl;
 use Fcntl ':flock';
 use IO::Multiplex;
 use Time::HiRes qw(gettimeofday);
+use Time::Zone;
 
 use PVE::INotify;
 use PVE::Tools;
@@ -99,12 +100,30 @@ $SIG{'__WARN__'} = sub {
     $@ = $err;
 };
 
+sub update_rbl_stats {
+    my ($dbh, $lcid) = @_;
+
+    my $rblcount = PMG::Utils::scan_journal_for_rbl_rejects();
+    return if !$rblcount;
+
+    my $timezone = tz_local_offset();;
+    my $hour = int((time() + $timezone)/3600) * 3600;
+
+    my $sth = $dbh->prepare(
+	'INSERT INTO LocalStat (Time, RBLCount, CID, MTime) ' .
+	'VALUES (?, ?, ?, EXTRACT(EPOCH FROM now())) ' .
+	'ON CONFLICT (Time, CID) DO UPDATE SET ' .
+	'RBLCount = LocalStat.RBLCount + excluded.RBLCount, ' .
+	'MTime = excluded.MTime');
+
+    $sth->execute($hour, $rblcount, $lcid);
+    $sth->finish();
+};
+
 sub run_dequeue {
     my $self = shift;
 
-    $self->log(2, "starting greylist database maintainance");
-
-    my ($csec, $usec) = gettimeofday ();
+    $self->log(2, "starting policy database maintainance (greylist, rbl)");
 
     my $cinfo = PMG::ClusterConfig->new();
     my $lcid = $cinfo->{local}->{cid};
@@ -120,6 +139,20 @@ sub run_dequeue {
     if ($err) {
 	$self->log(0, "ERROR: $err");
 	return;
+    }
+
+    my ($csec, $usec) = gettimeofday ();
+
+    eval { update_rbl_stats($dbh, $lcid); };
+    $err = $@;
+
+    my ($csec_end, $usec_end) = gettimeofday ();
+    my $rbltime = int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
+    ($csec, $usec) = ($csec_end, $usec_end);
+
+    if ($err) {
+	$self->log(0, "rbl update error: $err");
+	# continue;
     }
 
     my $now = time();
@@ -225,18 +258,17 @@ sub run_dequeue {
 
 	$dbh->commit;
     };
-
     $err = $@;
 
-    my ($csec_end, $usec_end) = gettimeofday ();
+    ($csec_end, $usec_end) = gettimeofday ();
     my $ptime = int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
 
     if ($err) {
 	$dbh->rollback if $dbh;
-	$self->log(0, $err);
-    } else {
-	$self->log(2, "end greylist database maintainance ($ptime ms)");
+	$self->log(0, "greylist database update error: $err");
     }
+
+    $self->log(2, "end policy database maintainance ($rbltime ms, $ptime ms)");
 
     $dbh->disconnect() if $dbh;
 }
