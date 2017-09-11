@@ -143,6 +143,18 @@ my $clusterinfo_ctablecmd =  <<__EOD;
      PRIMARY KEY (CID, Name))
 __EOD
 
+my $local_stat_ctablecmd =  <<__EOD;
+    CREATE TABLE LocalStat
+    (Time INTEGER NOT NULL UNIQUE,
+     RBLCount INTEGER DEFAULT 0 NOT NULL,
+     CID INTEGER NOT NULL,
+     MTime INTEGER NOT NULL,
+     PRIMARY KEY (Time, CID));
+
+    CREATE INDEX LocalStat_MTime_Index ON LocalStat (MTime);
+__EOD
+
+
 my $daily_stat_ctablecmd =  <<__EOD;
     CREATE TABLE DailyStat
     (Time INTEGER NOT NULL UNIQUE,
@@ -297,7 +309,7 @@ sub cond_create_dbtable {
 	my $cmd = "SELECT tablename FROM pg_tables " .
 	    "WHERE tablename = lower ('$name')";
 
-	my $sth = $dbh->prepare ($cmd);
+	my $sth = $dbh->prepare($cmd);
 
 	$sth->execute();
 
@@ -380,6 +392,8 @@ sub create_ruledb {
 
 	      $clusterinfo_ctablecmd;
 
+	      $local_stat_ctablecmd;
+
 	      $daily_stat_ctablecmd;
 
 	      $domain_stat_ctablecmd;
@@ -439,7 +453,8 @@ sub upgradedb {
     $dbh->do("set enable_seqscan = false");
 
     my $tables = {
-	'DailyStat'=> $daily_stat_ctablecmd,
+	'LocalStat', $local_stat_ctablecmd,
+	'DailyStat', $daily_stat_ctablecmd,
 	'DomainStat', $domain_stat_ctablecmd,
 	'StatInfo', $statinfo_ctablecmd,
 	'CMailStore', $cmailstore_ctablecmd,
@@ -814,6 +829,9 @@ sub init_masterdb {
 	print STDERR "update greylist database\n";
 	$dbh->do ("UPDATE CGreylist SET CID = $lcid WHERE CID = 0;");
 
+	print STDERR "update localstat database\n";
+	$dbh->do ("UPDATE LocalStat SET CID = $lcid WHERE CID = 0;");
+
 	$dbh->commit;
     };
     my $err = $@;
@@ -983,7 +1001,7 @@ sub update_master_clusterinfo {
 
     $dbh->do("DELETE FROM ClusterInfo WHERE CID = $clientcid");
 
-    my @mt = ('CMSReceivers', 'CGreylist', 'UserPrefs', 'DomainStat', 'DailyStat', 'VirusInfo');
+    my @mt = ('CMSReceivers', 'CGreylist', 'UserPrefs', 'DomainStat', 'DailyStat', 'LocalStat', 'VirusInfo');
 
     foreach my $table (@mt) {
 	$dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $clientcid, 'lastmt_$table', " .
@@ -1006,7 +1024,7 @@ sub update_client_clusterinfo {
     $dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $mastercid, 'lastid_CStatistic', " .
 	      "COALESCE (max (rid), -1) FROM CStatistic WHERE cid = $mastercid");
 
-    my @mt = ('CMSReceivers', 'CGreylist', 'UserPrefs', 'DomainStat', 'DailyStat', 'VirusInfo');
+    my @mt = ('CMSReceivers', 'CGreylist', 'UserPrefs', 'DomainStat', 'DailyStat', 'LocalStat', 'VirusInfo');
 
     foreach my $table (@mt) {
 	$dbh->do ("INSERT INTO ClusterInfo (cid, name, ivalue) select $mastercid, 'lastmt_$table', " .

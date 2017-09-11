@@ -39,10 +39,12 @@ sub clear_stats {
 
 	$dbh->do ("DELETE FROM Statinfo");
 	$dbh->do ("DELETE FROM DailyStat");
+	$dbh->do ("DELETE FROM LocalStat");
 	$dbh->do ("DELETE FROM DomainStat");
 	$dbh->do ("DELETE FROM VirusInfo");
 	$dbh->do ("DELETE FROM ClusterInfo WHERE name = 'lastmt_DomainStat'");
 	$dbh->do ("DELETE FROM ClusterInfo WHERE name = 'lastmt_DailyStat'");
+	$dbh->do ("DELETE FROM ClusterInfo WHERE name = 'lastmt_LocalStat'");
 	$dbh->do ("DELETE FROM ClusterInfo WHERE name = 'lastmt_VirusInfo'");
 
 	$dbh->commit;

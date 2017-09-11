@@ -77,6 +77,8 @@ sub sync_data_from_node {
 
 	PMG::Cluster::sync_virusinfo_db($dbh, $rdb, $ni);
     }
+
+    PMG::Cluster::sync_localstat_db($dbh, $rdb, $ni);
 }
 
 sub cluster_sync {

@@ -710,6 +710,31 @@ my $sync_generic_mtime_db = sub {
     return $updates;
 };
 
+sub sync_localstat_db {
+    my ($dbh, $rdb, $ni) = @_;
+
+    my $rcid = $ni->{cid};
+
+    my $selectfunc = sub {
+	my ($ctime, $lastmt) = @_;
+	return "SELECT * from LocalStat WHERE mtime >= $lastmt AND cid = $rcid";
+    };
+
+    my $merge_sth = $dbh->prepare(
+	'INSERT INTO LocalStat (Time, RBLCount, CID, MTime) ' .
+	'VALUES (?, ?, ?, ?) ' .
+	'ON CONFLICT (Time, CID) DO UPDATE SET ' .
+	'RBLCount = excluded.RBLCount, MTime = excluded.MTime');
+
+    my $mergefunc = sub {
+	my ($ref) = @_;
+
+	$merge_sth->execute($ref->{time}, $ref->{rblcount}, $ref->{cid}, $ref->{mtime});
+    };
+
+    return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'LocalStat', $selectfunc, $mergefunc);
+}
+
 sub sync_greylist_db {
     my ($dbh, $rdb, $ni) = @_;
 
