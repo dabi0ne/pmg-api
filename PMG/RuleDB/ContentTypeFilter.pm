@@ -100,6 +100,30 @@ sub what_match {
     return $self->parse_entity ($entity);
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	contenttype => {
+	    description => "Content Type",
+	    type => 'string',
+	    pattern => '[0-9a-zA-Z\/\\\[\]\+\-\.\*\_]+',
+	    maxLength => 1024,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return { contenttype => $self->{field_value} };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{field_value} = $param->{contenttype};
+}
 
 1;
 
