@@ -1083,4 +1083,43 @@ sub lookup_timespan {
     return ($start, $end);
 }
 
+my $rbl_scan_last_cursor;
+my $rbl_scan_start_time = time();
+
+sub scan_journal_for_rbl_rejects {
+
+    # example postscreen log entry for RBL rejects
+    # Aug 29 08:00:36 proxmox postfix/postscreen[11266]: NOQUEUE: reject: RCPT from [x.x.x.x]:1234: 550 5.7.1 Service unavailable; client [x.x.x.x] blocked using zen.spamhaus.org; from=<xxxx>, to=<yyyy>, proto=ESMTP, helo=<zzz>
+
+    my $identifier = 'postfix/postscreen';
+
+    my $count = 0;
+
+    my $parser = sub {
+	my $line = shift;
+
+	if ($line =~ m/^--\scursor:\s(\S+)$/) {
+	    $rbl_scan_last_cursor = $1;
+	    return;
+	}
+
+	return if $line !~ m/\s$identifier\[\d+\]:\sNOQUEUE:\sreject:.*550 5.7.1 Service unavailable;/;
+	$count++;
+    };
+
+    # limit to last 5000 lines to avoid long delays
+    my $cmd = ['journalctl', '--show-cursor', '-o', 'short-unix', '--no-pager',
+	       '--identifier', $identifier, '-n', 5000];
+
+    if (defined($rbl_scan_last_cursor)) {
+	push @$cmd, "--after-cursor=${rbl_scan_last_cursor}";
+    } else {
+	push @$cmd, "--since=@" . $rbl_scan_start_time;
+    }
+
+    PVE::Tools::run_command($cmd, outfunc => $parser);
+
+    return $count;
+}
+
 1;
