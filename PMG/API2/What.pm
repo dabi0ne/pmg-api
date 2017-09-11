@@ -48,6 +48,8 @@ __PACKAGE__->register_method ({
 	return [
 	    { subdir => 'config' },
 	    { subdir => 'objects' },
+	    { subdir => 'contenttype' },
+	    { subdir => 'matchfield' },
 	];
 
     }});
@@ -56,5 +58,7 @@ PMG::API2::ObjectGroupHelpers::register_delete_object_group_api(__PACKAGE__, 'wh
 PMG::API2::ObjectGroupHelpers::register_object_group_config_api(__PACKAGE__, 'what', 'config');
 PMG::API2::ObjectGroupHelpers::register_objects_api(__PACKAGE__, 'what', 'objects');
 
+PMG::RuleDB::ContentTypeFilter->register_api(__PACKAGE__, 'contenttype');
+PMG::RuleDB::MatchField->register_api(__PACKAGE__, 'matchfield');
 
 1;
