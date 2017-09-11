@@ -122,7 +122,7 @@ sub get_data {
 
     $data->{id} = $self->{id};
     $data->{ogroup} = $self->{ogroup};
-    $data->{otype} = $self->{otype};
+    $data->{otype} = $self->otype();
     $data->{otype_text} = $self->otype_text();
     $data->{receivertest} = $self->receivertest();
     $data->{descr} = $self->short_desc();
