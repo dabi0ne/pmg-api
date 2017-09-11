@@ -11,52 +11,11 @@ use PMG::RuleDB::MatchField;
 
 use base qw(PMG::RuleDB::MatchField);
 
-my $mtypes = {
-    'message/delivery-status' => undef,
-    'message/disposition-notification' => undef,
-    'message/external-body' => undef,
-    'message/news' => undef,
-    'message/partial' => undef,
-    'message/rfc822' => undef,
-    'multipart/alternative' => undef,
-    'multipart/digest' => undef,
-    'multipart/encrypted' => undef,
-    'multipart/mixed' => undef,
-    'multipart/related' => undef,
-    'multipart/report' => undef,
-    'multipart/signed' => undef,
-};
-
 my $oldtypemap = {
     'application/x-msdos-program' => 'application/x-ms-dos-executable',
     'application/java-vm' => 'application/x-java',
     'application/x-javascript' => 'application/javascript',
 };
-
-sub load_mime_types {
-    open(DAT, "/usr/share/mime/globs") || 
-	die ("Could not open file $!: ERROR");
-
-    while (my $row = <DAT>) {
-        next if $row =~ m/^\#/;
- 
-	if ($row =~ m/([A-Za-z0-9-_\.]*)\/([A-Za-z0-9-_\+\.]*):\*\.(\S{1,10})\s*$/) {
-            
-	    my $m = "$1/$2";
-	    my $end = $3;
-
-	    $m =~ s/\./\\\./g; # quote '.'
-	    $m =~ s/\+/\\\+/g; # quote '+'
-
-	    if (defined ($end)) {
-		$mtypes->{"$m"} = $mtypes->{"$m"} ? $mtypes->{"$m"} . ",$end" : $end;
-	    }
-	}
-    }
-    close(DAT);
-}
-
-load_mime_types ();
 
 sub otype {
     return 3003;
@@ -82,9 +41,7 @@ sub new {
     } 
 
     my $self = $class->SUPER::new('content-type', $fvalue, $ogroup);
-    
-    $self->{mtypes} = $mtypes;
- 
+
     return $self;
 }
 
@@ -99,8 +56,6 @@ sub load_attr {
     if ($obj->{field_value} && (my $nt = $oldtypemap->{$obj->{field_value}})) {
 	$obj->{field_value} = $nt;
     }
-
-    $obj->{mtypes} = $mtypes;
 
     return $obj;
 }
