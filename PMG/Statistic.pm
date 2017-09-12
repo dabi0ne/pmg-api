@@ -880,8 +880,8 @@ sub localdayspan {
     my ($from, $to) = $self->timespan();
 
     my $timezone = tz_local_offset();;
-    $from = (($from + $timezone)/86400) * 86400;
-    $to = (($to + $timezone)/86400) * 86400;
+    $from = int(($from + $timezone)/86400) * 86400;
+    $to = int(($to + $timezone)/86400) * 86400;
 
     $to += 86400 if $from == $to;
 
@@ -894,8 +894,8 @@ sub localhourspan {
     my ($from, $to) = $self->timespan();
 
     my $timezone = tz_local_offset();;
-    $from = (($from + $timezone)/3600) * 3600;
-    $to = (($to + $timezone)/3600) * 3600;
+    $from = int(($from + $timezone)/3600) * 3600;
+    $to = int(($to + $timezone)/3600) * 3600;
 
     $to += 3600 if $from == $to;
 
