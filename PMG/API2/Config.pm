@@ -95,6 +95,7 @@ __PACKAGE__->register_method ({
 
 	push @$res, { section => 'ldap' };
 	push @$res, { section => 'mynetworks' };
+	push @$res, { section => 'mimetypes' };
 	push @$res, { section => 'users' };
 	push @$res, { section => 'domains' };
 	push @$res, { section => 'cluster' };
