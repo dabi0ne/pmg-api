@@ -479,10 +479,7 @@ sub rule_count {
 }
 
 sub total_domain_stat {
-    my ($self, $rdb, $orderby) = @_;
-
-    $orderby || ($orderby = 'domain');
-    my $sortdir = sort_dir ($orderby);
+    my ($self, $rdb) = @_;
 
     my ($from, $to) = $self->localdayspan();
 
@@ -491,7 +488,7 @@ sub total_domain_stat {
 	"SUM (VirusIn) AS viruscount_in, SUM (VirusOut) AS viruscount_out," .
 	"SUM (SpamIn) as spamcount_in, SUM (SpamOut) as spamcount_out " .
 	"FROM DomainStat where time >= $from AND time < $to " .
-	"GROUP BY domain ORDER BY $orderby $sortdir, domain ASC";
+	"GROUP BY domain ORDER BY domain ASC";
 
     my $sth = $rdb->{dbh}->prepare($query);
     $sth->execute();
@@ -526,14 +523,6 @@ sub query_active_workers {
     my $cond_good_mail = $self->query_cond_good_mail ($start, $to);
 
     return "SELECT DISTINCT sender as worker FROM CStatistic WHERE $cond_good_mail AND NOT direction";
-}
-
-sub sort_dir {
-    my ($orderby) = @_;
-
-    my $sortdir = ($orderby eq "virusinfo" || $orderby eq 'sender' || $orderby eq 'domain' || $orderby eq 'receiver') ? 'ASC' : 'DESC';
-
-    return $sortdir;
 }
 
 my $compute_sql_orderby = sub {
