@@ -770,7 +770,7 @@ sub rbl_count_stats {
 	@$res[$i] //= { index => $i, count => 0, };
 
 	my $d = @$res[$i];
-	$d->{time} = $from + ($i+1)*$span - $timezone;
+	$d->{time} = $from + $i*$span - $timezone;
     }
     $sth->finish();
 
@@ -815,7 +815,7 @@ sub traffic_stat_graph {
 
 	my $d = @$res[$i];
 
-	$d->{time} = $from + ($i+1)*$span - $timezone;
+	$d->{time} = $from + $i*$span - $timezone;
 	$d->{count} = $d->{count_in} + $d->{count_out};
     }
     $sth->finish();
