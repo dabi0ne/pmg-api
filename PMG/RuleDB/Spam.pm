@@ -435,6 +435,30 @@ sub analyze_spam {
     return ($sa_score >= $sa_max);
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	spamlevel => {
+	    description => "Spam Level",
+	    type => 'integer',
+	    minimum => 0,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return { spamlevel => $self->{level} };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{level} = $param->{spamlevel};
+}
+
 1;
 
 __END__
