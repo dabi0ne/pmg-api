@@ -50,6 +50,9 @@ __PACKAGE__->register_method ({
 	    { subdir => 'objects' },
 	    { subdir => 'contenttype' },
 	    { subdir => 'matchfield' },
+	    { subdir => 'spamfilter' },
+	    { subdir => 'archivefilter' },
+	    { subdir => 'filenamefilter' },
 	];
 
     }});
@@ -60,5 +63,8 @@ PMG::API2::ObjectGroupHelpers::register_objects_api(__PACKAGE__, 'what', 'object
 
 PMG::RuleDB::ContentTypeFilter->register_api(__PACKAGE__, 'contenttype');
 PMG::RuleDB::MatchField->register_api(__PACKAGE__, 'matchfield');
+PMG::RuleDB::Spam->register_api(__PACKAGE__, 'spamfilter');
+PMG::RuleDB::ArchiveFilter->register_api(__PACKAGE__, 'archivefilter');
+PMG::RuleDB::MatchFilename->register_api(__PACKAGE__, 'filenamefilter');
 
 1;
