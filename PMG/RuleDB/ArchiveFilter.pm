@@ -16,7 +16,7 @@ sub otype {
 }
 
 sub otype_text {
-    return __('Archive Filter');
+    return 'Archive Filter';
 }
 
 sub oicon {
