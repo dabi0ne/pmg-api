@@ -115,6 +115,30 @@ sub short_desc {
     return "filename=$self->{fname}";
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	filename => {
+	    description => "Filename filter",
+	    type => 'string',
+	    maxLength => 1024,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return { filename => $self->{fname} };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{fname} = $param->{filename};
+}
+
 1;
 __END__
 
