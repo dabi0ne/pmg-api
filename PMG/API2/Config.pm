@@ -10,6 +10,7 @@ use HTTP::Status qw(:constants);
 use Storable qw(dclone);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
+use Time::HiRes qw();
 
 use PMG::Config;
 use PMG::API2::RuleDB;
@@ -102,6 +103,7 @@ __PACKAGE__->register_method ({
 	push @$res, { section => 'ruledb' };
 	push @$res, { section => 'transport' };
 	push @$res, { section => 'whitelist' };
+	push @$res, { section => 'regextest' };
 
 	return $res;
     }});
@@ -190,5 +192,55 @@ foreach my $section (@$section_type_enum) {
 	}});
 }
 
+__PACKAGE__->register_method({
+    name => 'regextest',
+    path => 'regextest',
+    method => 'POST',
+    protected => 0,
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
+    description => "Test Regex",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    regex => {
+		type => 'string',
+		description => 'The Regex to test',
+		maxLength => 1024,
+	    },
+	    text => {
+		type => 'string',
+		description => 'The String to test',
+		maxLength => 1024,
+	    }
+	},
+    },
+    returns => {
+	type => 'number',
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $text = $param->{text};
+	my $regex = $param->{regex};
+
+	my $regex_check = sub {
+	    my $start_time = [Time::HiRes::gettimeofday];
+	    my $match = 0;
+	    if ($text =~ /$regex/) {
+		$match = 1;
+	    }
+	    my $elapsed = Time::HiRes::tv_interval($start_time) * 1000;
+	    die "The Regular Expression '$regex' did not match the text '$text' (elapsed time: $elapsed ms)\n"
+		if !$match;
+	    return $elapsed;
+	};
+
+	my $elapsed = PVE::Tools::run_fork_with_timeout(2, $regex_check);
+	if ($elapsed eq '') {
+	    die "The Regular Expression timed out\n";
+	}
+
+	return $elapsed;
+    }});
 
 1;
