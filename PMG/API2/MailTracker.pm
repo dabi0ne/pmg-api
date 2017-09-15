@@ -89,8 +89,8 @@ my $run_pmg_log_tracker = sub {
 		$state = 'start';
 	    } elsif ($line =~ m/^(SMTP|FILTER|QMGR):/) {
 		# skip
-	    } elsif ($line =~ m/^(L[A-F0-9]+)\s/) {
-		push @$logs, { linenr => $1, text => $line };
+	    } elsif ($line =~ m/^(L[A-F0-9]+)\s(.*)$/) {
+		push @$logs, { linenr => $1, text => $2 };
 	    } else {
 		die "got unexpected data: $line";
 	    }
@@ -225,13 +225,6 @@ __PACKAGE__->register_method({
 		minLength => 3,
 		maxLength => 256,
 	    },
-	    includelog => {
-		description => "Include full logs for specified item.",
-		type => 'string',
-		optional => 1,
-		minLength => 3,
-		maxLength => 64,
-	    },
 	},
     },
     returns => {
@@ -263,12 +256,62 @@ __PACKAGE__->register_method({
 	    push @$args, '-t', $param->{target};
 	}
 
-	my $list = $run_pmg_log_tracker->($args, $param->{includelog});
+	my $list = $run_pmg_log_tracker->($args);
 
 	my $res = [];
 	foreach my $e (@$list) {
 	    push @$res, $e if !$e->{is_relay};
 	}
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'maillog',
+    path => '{id}',
+    method => 'GET',
+    description => "Get the detailed syslog entries for a specific mail ID.",
+    proxyto => 'node',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    starttime => get_standard_option('pmg-starttime'),
+	    endtime => get_standard_option('pmg-endtime'),
+	    id => {
+		description => "Mail ID (as returend by the list API).",
+		type => 'string',
+		minLength => 3,
+		maxLength => 64,
+	    },
+	},
+    },
+    returns => {
+	type => "object",
+	properties => {
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+
+	my $args = [];
+
+	my $start = $param->{starttime} // (time - 86400);
+	my $end = $param->{endtime} // ($start + 86400);
+
+	push @$args, '-s', $start;
+	push @$args, '-e', $end;
+
+	my $list = $run_pmg_log_tracker->($args, $param->{id});
+
+	my $res;
+	foreach my $e (@$list) {
+	    $res = $e if $e->{id} eq $param->{id};
+	}
+
+	die "entry '$param->{id}' not found\n" if !defined($res);
 
 	return $res;
     }});
