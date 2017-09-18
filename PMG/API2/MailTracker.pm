@@ -35,8 +35,10 @@ my $run_pmg_log_tracker = sub {
 	if ($id =~ m/^Q([a-f0-9]+)R([a-f0-9]+)$/i) {
 	    $logids->{$1} = 1;
 	    $logids->{$2} = 1;
+	    push @$args, '-q', $1, '-q', $2;
 	} else {
 	    $logids->{$id} = 1;
+	    push @$args, '-q', $id;
 	}
     }
 
@@ -106,7 +108,7 @@ my $run_pmg_log_tracker = sub {
 		$entry->{msgid} = $1;
 	    } elsif ($line =~ m/^CTIME:\s+([0-9A-F]+)$/) {
 		# ignore ?
-	    } elsif ($line =~ m/^TO:([0-9A-F]+):([0-9A-F]+):([0-9A-Z]):\s+from <(\S*)>\s+to\s+<(\S+)>\s+\((\S+)\)$/) {
+	    } elsif ($line =~ m/^TO:([0-9A-F]+):([0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>\s+\((\S+)\)$/) {
 		my $new = {};
 		$new->{size} = $entry->{size} // 0,
 		$new->{client} = $entry->{client} if defined($entry->{client});
@@ -138,22 +140,16 @@ my $run_pmg_log_tracker = sub {
 		# ignore
 	    } elsif ($line =~ m/^CTIME:\s+([0-9A-F]+)$/) {
 		# ignore ?
-	    } elsif ($line =~ m/^TO:([0-9A-F]+):00000000000:([0-9A-Z]):\s+from <(\S*)>\s+to\s+<(\S+)>$/) {
+	    } elsif ($line =~ m/^TO:([0-9A-F]+):(T[0-9A-F]+L[0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>$/) {
 		my $e = {};
 		$e->{time} = hex $1;
-		$e->{dstatus} = $2;
-		$e->{from} = $3;
-		$e->{to} = $4;
-
-		my $logid = 'T' . sprintf("%08x", $e->{time}) . 'D' .
-		    Digest::MD5::md5_hex("<$e->{from}><$e->{to}>");
-
-		if ($logids->{$logid}) {
-		    $entry->{wantlog} = 1;
-		}
+		$entry->{id} = $e->{id} = $2;
+		$e->{dstatus} = $3;
+		$e->{from} = $4;
+		$e->{to} = $5;
 		push @$list, $e;
 	    } elsif ($line =~ m/^LOGS:$/) {
-		if ($entry->{wantlog}) {
+		if ($logids->{$entry->{id}}) {
 		    $state = 'logs';
 		} else {
 		    $state = 'skiplogs';
@@ -187,9 +183,6 @@ my $run_pmg_log_tracker = sub {
 		}
 	    }
 	    $e->{id} = $id;
-	} else {
-	    $e->{id} = 'T' . sprintf("%08x", $e->{time}) . 'D' .
-		Digest::MD5::md5_hex("<$e->{from}><$e->{to}>");
 	}
 	if ($includelog && ($e->{id} eq $includelog)) {
 	    $e->{logs} = $sorted_logs;
@@ -211,6 +204,7 @@ __PACKAGE__->register_method({
 	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
+	    # fixme: filters??
 	    from => {
 		description => "Sender email address filter.",
 		type => 'string',
@@ -278,6 +272,7 @@ __PACKAGE__->register_method({
 	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
+	    # fixme: filters??
 	    id => {
 		description => "Mail ID (as returend by the list API).",
 		type => 'string',
@@ -296,7 +291,7 @@ __PACKAGE__->register_method({
 
 	my $restenv = PMG::RESTEnvironment->get();
 
-	my $args = [];
+	my $args = ['-v'];
 
 	my $start = $param->{starttime} // (time - 86400);
 	my $end = $param->{endtime} // ($start + 86400);
