@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use POSIX;
 use Digest::MD5;
+use Time::Zone;
 use Data::Dumper;
 
 use PVE::Tools;
@@ -30,6 +31,8 @@ my $run_pmg_log_tracker = sub {
     my ($args, $includelog) = @_;
 
     my $logids = {};
+
+    my $timezone = tz_local_offset();;
 
     if (defined(my $id = $includelog)) {
 	if ($id =~ m/^Q([a-f0-9]+)R([a-f0-9]+)$/i) {
@@ -113,7 +116,7 @@ my $run_pmg_log_tracker = sub {
 		$new->{size} = $entry->{size} // 0,
 		$new->{client} = $entry->{client} if defined($entry->{client});
 		$new->{msgid} = $entry->{msgid} if defined($entry->{msgid});
-		$new->{time} = hex $1;
+		$new->{time} = hex($1) - $timezone;
 		$new->{qid} = $2;
 		$new->{dstatus} = $3;
 		$new->{from} = $4;
@@ -143,7 +146,7 @@ my $run_pmg_log_tracker = sub {
 	    } elsif ($line =~ m/^TO:([0-9A-F]+):(T[0-9A-F]+L[0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>$/) {
 		my $e = {};
 		$e->{client} = $entry->{client} if defined($entry->{client});
-		$e->{time} = hex $1;
+		$e->{time} = hex($1) - $timezone;
 		$e->{id} = $2;
 		$e->{dstatus} = $3;
 		$e->{from} = $4;
