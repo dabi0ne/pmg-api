@@ -102,8 +102,6 @@ my $run_pmg_log_tracker = sub {
 		$state = 'start';
 	    } elsif ($line =~ m/^SIZE:\s+(\d+)$/) {
 		$entry->{size} = $1;
-	    } elsif  ($line =~ m/^CONNECT:\s+(\S+)$/) {
-		$entry->{connect} = $1;
 	    } elsif ($line =~ m/^CLIENT:\s+(\S+)$/) {
 		$entry->{client} = $1;
 	    } elsif ($line =~ m/^MSGID:\s+(\S+)$/) {
@@ -113,7 +111,6 @@ my $run_pmg_log_tracker = sub {
 	    } elsif ($line =~ m/^TO:([0-9A-F]+):([0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>\s+\((\S+)\)$/) {
 		my $new = {};
 		$new->{size} = $entry->{size} // 0,
-		$new->{connect} = $entry->{connect} if defined($entry->{connect});
 		$new->{client} = $entry->{client} if defined($entry->{client});
 		$new->{msgid} = $entry->{msgid} if defined($entry->{msgid});
 		$new->{time} = hex $1;
@@ -139,13 +136,13 @@ my $run_pmg_log_tracker = sub {
 	    if ($line =~  m/^\s*$/) {
 		$entry = undef;
 		$state = 'start';
-	    } elsif  ($line =~ m/^CONNECT:\s+(\S+)$/) {
-		$entry->{connect} = $1;
+	    } elsif  ($line =~ m/^CLIENT:\s+(\S+)$/) {
+		$entry->{client} = $1;
 	    } elsif ($line =~ m/^CTIME:\s+([0-9A-F]+)$/) {
 		# ignore ?
 	    } elsif ($line =~ m/^TO:([0-9A-F]+):(T[0-9A-F]+L[0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>$/) {
 		my $e = {};
-		$e->{connect} = $entry->{connect} if defined($entry->{connect});
+		$e->{client} = $entry->{client} if defined($entry->{client});
 		$e->{time} = hex $1;
 		$e->{id} = $2;
 		$e->{dstatus} = $3;
@@ -194,6 +191,63 @@ my $run_pmg_log_tracker = sub {
     }
 
     return $list;
+};
+
+my $email_log_property_desc = {
+    id => {
+	description => "Unique ID.",
+	type => 'string',
+    },
+    from => {
+	description => "Sender email address.",
+	type => 'string',
+    },
+    to => {
+	description => "Receiver email address.",
+	type => 'string',
+    },
+    qid => {
+	description => "Postfix qmgr ID.",
+	type => 'string',
+	optional => 1,
+    },
+    time => {
+	description => "Delivery timestamp.",
+	type => 'integer',
+    },
+    dstatus => {
+	description => "Delivery status.",
+	type => 'string',
+	minLength => 1,
+	maxLength => 1,
+    },
+    rstatus => {
+	description => "Delivery status of relayed mail.",
+	type => 'string',
+	minLength => 1,
+	maxLength => 1,
+	optional => 1,
+    },
+    relay => {
+	description => "ID of relayed mail.",
+	type => 'string',
+	optional => 1,
+    },
+    size => {
+	description => "The size of the raw email.",
+	type => 'number',
+	optional => 1,
+    },
+    client => {
+	description => "Client address",
+	type => 'string',
+	optional => 1,
+    },
+    msgid => {
+	description => "SMTP message ID.",
+	type => 'string',
+	optional => 1,
+    },
 };
 
 __PACKAGE__->register_method({
@@ -248,8 +302,7 @@ __PACKAGE__->register_method({
 	type => 'array',
 	items => {
 	    type => "object",
-	    properties => {
-	    },
+	    properties => $email_log_property_desc,
 	},
 	links => [ { rel => 'child', href => "{id}" } ],
     },
@@ -313,6 +366,11 @@ __PACKAGE__->register_method({
     returns => {
 	type => "object",
 	properties => {
+	    %$email_log_property_desc,
+	    logs => {
+		type => 'array',
+		items => { type => "string" },
+	    }
 	},
     },
     code => sub {
