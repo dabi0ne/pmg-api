@@ -209,7 +209,13 @@ __PACKAGE__->register_method({
 	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
-	    # fixme: filters??
+	    xfilter => {
+		description => "Only include mails containing this filter string.",
+		type => 'string',
+		minLength => 1,
+		maxLength => 256,
+		optional => 1,
+	    },
 	    from => {
 		description => "Sender email address filter.",
 		type => 'string',
@@ -223,6 +229,18 @@ __PACKAGE__->register_method({
 		optional => 1,
 		minLength => 3,
 		maxLength => 256,
+	    },
+	    ndr => {
+		description => "Include NDRs (non delivery reports).",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
+	    },
+	    greylist => {
+		description => "Include Greylisted entries.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
 	    },
 	},
     },
@@ -247,6 +265,12 @@ __PACKAGE__->register_method({
 
 	push @$args, '-s', $start;
 	push @$args, '-e', $end;
+
+	push @$args, '-n' if !$param->{ndr};
+
+	push @$args, '-g' if !$param->{greylist};
+
+	push @$args, '-x', $param->{xfilter} if defined($param->{xfilter});
 
 	if (defined($param->{from})) {
 	    push @$args, '-f', $param->{from};
@@ -278,7 +302,6 @@ __PACKAGE__->register_method({
 	    node => get_standard_option('pve-node'),
 	    starttime => get_standard_option('pmg-starttime'),
 	    endtime => get_standard_option('pmg-endtime'),
-	    # fixme: filters??
 	    id => {
 		description => "Mail ID (as returend by the list API).",
 		type => 'string',
