@@ -63,15 +63,15 @@ my $run_pmg_log_tracker = sub {
 		return;
 	    }
 
-	    if ($line =~ m/^SMTPD:/) {
+	    if ($line =~ m/^SMTPD:\s+(T[0-9A-F]+L[0-9A-F]+)$/) {
 		$state = 'smtp';
-		$entry = { logs => [] };
+		$entry = { id => $1 };
 		return;
 	    }
 
 	    if ($line =~ m/^QENTRY:\s+([0-9A-F]+)$/) {
 		$state = 'qentry';
-		$entry = { qid => $1, logs => [] };
+		$entry = { qid => $1 };
 		return;
 	    }
 
@@ -102,6 +102,8 @@ my $run_pmg_log_tracker = sub {
 		$state = 'start';
 	    } elsif ($line =~ m/^SIZE:\s+(\d+)$/) {
 		$entry->{size} = $1;
+	    } elsif  ($line =~ m/^CONNECT:\s+(\S+)$/) {
+		$entry->{connect} = $1;
 	    } elsif ($line =~ m/^CLIENT:\s+(\S+)$/) {
 		$entry->{client} = $1;
 	    } elsif ($line =~ m/^MSGID:\s+(\S+)$/) {
@@ -111,6 +113,7 @@ my $run_pmg_log_tracker = sub {
 	    } elsif ($line =~ m/^TO:([0-9A-F]+):([0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>\s+\((\S+)\)$/) {
 		my $new = {};
 		$new->{size} = $entry->{size} // 0,
+		$new->{connect} = $entry->{connect} if defined($entry->{connect});
 		$new->{client} = $entry->{client} if defined($entry->{client});
 		$new->{msgid} = $entry->{msgid} if defined($entry->{msgid});
 		$new->{time} = hex $1;
@@ -137,13 +140,14 @@ my $run_pmg_log_tracker = sub {
 		$entry = undef;
 		$state = 'start';
 	    } elsif  ($line =~ m/^CONNECT:\s+(\S+)$/) {
-		# ignore
+		$entry->{connect} = $1;
 	    } elsif ($line =~ m/^CTIME:\s+([0-9A-F]+)$/) {
 		# ignore ?
 	    } elsif ($line =~ m/^TO:([0-9A-F]+):(T[0-9A-F]+L[0-9A-F]+):([0-9A-Z]):\s+from <([^>]*)>\s+to\s+<([^>]+)>$/) {
 		my $e = {};
+		$e->{connect} = $entry->{connect} if defined($entry->{connect});
 		$e->{time} = hex $1;
-		$entry->{id} = $e->{id} = $2;
+		$e->{id} = $2;
 		$e->{dstatus} = $3;
 		$e->{from} = $4;
 		$e->{to} = $5;
@@ -198,6 +202,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Read mail list.",
     proxyto => 'node',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -266,6 +271,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Get the detailed syslog entries for a specific mail ID.",
     proxyto => 'node',
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
