@@ -277,14 +277,14 @@ __PACKAGE__->register_method({
 		description => "Sender email address filter.",
 		type => 'string',
 		optional => 1,
-		minLength => 3,
+		minLength => 1,
 		maxLength => 256,
 	    },
 	    target => {
 		description => "Receiver email address filter.",
 		type => 'string',
 		optional => 1,
-		minLength => 3,
+		minLength => 1,
 		maxLength => 256,
 	    },
 	    ndr => {
