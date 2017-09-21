@@ -166,9 +166,9 @@ my $run_pmg_log_tracker = sub {
 	}
     };
 
-    my $cmd = ['/usr/bin/pmg-log-tracker', '-v', '-l', 200]; # fixme: 200?
+    my $cmd = ['/usr/bin/pmg-log-tracker', '-v', '-l', 2000];
 
-    PVE::Tools::run_command([@$cmd, @$args], outfunc => $parser);
+    PVE::Tools::run_command([@$cmd, @$args], timeout => 25, outfunc => $parser);
 
     my $sorted_logs = [];
     foreach my $le (sort {$a->{linenr} cmp $b->{linenr}} @$logs) {
@@ -193,7 +193,7 @@ my $run_pmg_log_tracker = sub {
 	}
     }
 
-    return $list;
+    return wantarray ? ($list, $status) : $list;
 };
 
 my $email_log_property_desc = {
@@ -335,12 +335,15 @@ __PACKAGE__->register_method({
 	    push @$args, '-t', $param->{target};
 	}
 
-	my $list = $run_pmg_log_tracker->($args);
+	my ($list, $status) = $run_pmg_log_tracker->($args);
 
 	my $res = [];
 	foreach my $e (@$list) {
 	    push @$res, $e if !$e->{is_relay};
 	}
+
+	# hack: return status message in 'changes' attribute
+	$restenv->set_result_attrib('changes', $status) if defined($status);
 
 	return $res;
     }});
