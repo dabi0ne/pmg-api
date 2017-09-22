@@ -2,6 +2,7 @@ package PMG::Config::Base;
 
 use strict;
 use warnings;
+use URI;
 use Data::Dumper;
 
 use PVE::Tools;
@@ -86,23 +87,10 @@ sub properties {
 	    type => 'string', format => 'email',
 	    default => 'admin@domain.tld',
 	},
-	proxyport => {
-	    description => "HTTP proxy port.",
-	    type => 'integer',
-	    minimum => 1,
-	    default => 8080,
-	},
-	proxyserver => {
-	    description => "HTTP proxy server address.",
+	http_proxy => {
+	    description => "Specify external http proxy which is used for downloads (example: 'http://username:password\@host:port/')",
 	    type => 'string',
-	},
-	proxyuser => {
-	    description => "HTTP proxy user name.",
-	    type => 'string',
-	},
-	proxypassword => {
-	    description => "HTTP proxy password.",
-	    type => 'string',
+	    pattern => "http://.*",
 	},
     };
 }
@@ -114,10 +102,7 @@ sub options {
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },
 	email => { optional => 1 },
-	proxyport => { optional => 1 },
-	proxyserver => { optional => 1 },
-	proxyuser => { optional => 1 },
-	proxypassword => { optional => 1 },
+	http_proxy => { optional => 1 },
     };
 }
 
@@ -694,7 +679,7 @@ sub set {
 
 # get section value or default
 sub get {
-    my ($self, $section, $key) = @_;
+    my ($self, $section, $key, $nodefault) = @_;
 
     my $pdata = PMG::Config::Base->private();
     my $pdesc = $pdata->{propertyList}->{$key};
@@ -706,6 +691,8 @@ sub get {
 	defined(my $value = $self->{ids}->{$section}->{$key})) {
 	return $value;
     }
+
+    return undef if $nodefault;
 
     return $pdesc->{default};
 }
@@ -1027,6 +1014,24 @@ sub get_template_vars {
     my $resolv = PVE::INotify::read_file('resolvconf');
     $vars->{dns}->{hostname} = $nodename;
     $vars->{dns}->{domain} = $resolv->{search};
+
+    if (my $proxy = $vars->{pmg}->{admin}->{http_proxy}) {
+	eval {
+	    my $uri = URI->new($proxy);
+	    my $host = $uri->host;
+	    my $port = $uri->port // 8080;
+	    if ($host) {
+		my $data = { host => $host, port => $port };
+		if (my $ui = $uri->userinfo) {
+		    my ($username, $pw) = split(/:/, $ui, 2);
+		    $data->{username} = $username;
+		    $data->{password} = $pw if defined($pw);
+		}
+		$vars->{proxy} = $data;
+	    }
+	};
+	warn "parse http_proxy failed - $@" if $@;
+    }
 
     return $vars;
 }
