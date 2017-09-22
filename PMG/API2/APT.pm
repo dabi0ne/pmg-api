@@ -498,7 +498,7 @@ __PACKAGE__->register_method({
 	my $pkgrecords = $cache->packages();
 
 	# try to use a resonable ordering (most important things first)
-	my @list = qw(proxmox-mailgateway proxmox-spamassassin proxmox-mailgateway-gui proxmox-widget-toolkit);
+	my @list = qw(proxmox-mailgateway proxmox-mailgateway-gui proxmox-spamassassin proxmox-widget-toolkit);
 
 	foreach my $pkgname (keys %$cache) {
 	    if ($pkgname =~ m/pve-kernel-/) {
@@ -536,8 +536,9 @@ __PACKAGE__->register_method({
 	    $res->{CurrentState} = $p->{CurrentState};
 
 	    # hack: add some useful information (used by 'pmgversion -v')
-	    if ($pkgname eq 'proxmox-mailgateway') {
+	    if ($pkgname eq 'proxmox-mailgateway-gui') {
 		$res->{ManagerVersion} = $pmgver;
+	    } elsif ($pkgname eq 'proxmox-mailgateway') {
 		$res->{RunningKernel} = $kernel_release;
 	    }
 
