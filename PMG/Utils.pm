@@ -17,6 +17,7 @@ use Time::Local;
 use Xdgmime;
 use Data::Dumper;
 use Digest::SHA;
+use Digest::MD5;
 use Net::IP;
 use Socket;
 use RRDs;
@@ -1120,6 +1121,19 @@ sub scan_journal_for_rbl_rejects {
     PVE::Tools::run_command($cmd, outfunc => $parser);
 
     return $count;
+}
+
+my $hwaddress;
+
+sub get_hwaddress {
+
+    return $hwaddress if defined ($hwaddress);
+
+    my $fn = '/etc/ssh/ssh_host_rsa_key.pub';
+    my $sshkey = PVE::Tools::file_get_contents($fn);
+    $hwaddress = uc(Digest::MD5::md5_hex($sshkey));
+
+    return $hwaddress;
 }
 
 1;
