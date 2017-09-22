@@ -15,6 +15,7 @@ use PVE::ProcFSTools;
 
 use PMG::pmgcfg;
 use PMG::Ticket;
+use PMG::API2::APT;
 use PMG::API2::Tasks;
 use PMG::API2::Services;
 use PMG::API2::Network;
@@ -50,6 +51,11 @@ __PACKAGE__->register_method ({
 });
 
 __PACKAGE__->register_method ({
+    subclass => "PMG::API2::APT",
+    path => 'apt',
+});
+
+__PACKAGE__->register_method ({
     subclass => "PMG::API2::MailTracker",
     path => 'tracker',
 });
@@ -78,6 +84,7 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $result = [
+	    { name => 'apt' },
 	    { name => 'clamav' },
 	    { name => 'postfix' },
 	    { name => 'services' },
