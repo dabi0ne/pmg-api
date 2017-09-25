@@ -15,6 +15,7 @@ use PVE::ProcFSTools;
 
 use PMG::pmgcfg;
 use PMG::Ticket;
+use PMG::API2::Subscription;
 use PMG::API2::APT;
 use PMG::API2::Tasks;
 use PMG::API2::Services;
@@ -48,6 +49,11 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Services",
     path => 'services',
+});
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Subscription",
+    path => 'subscription',
 });
 
 __PACKAGE__->register_method ({
@@ -93,6 +99,7 @@ __PACKAGE__->register_method ({
 	    { name => 'tracker' },
 	    { name => 'time' },
 	    { name => 'status' },
+	    { name => 'subscription' },
 	    { name => 'vncshell' },
 	    { name => 'rrddata' },
 	];
