@@ -274,6 +274,29 @@ __PACKAGE__->register_method ({
 
 
 __PACKAGE__->register_method ({
+    name => 'delete_all_queues',
+    path => 'queue',
+    method => 'DELETE',
+    description => "Delete all mails in all posfix queues.",
+    proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	PMG::Postfix::delete_queue();
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
     name => 'delete_queue',
     path => 'queue/{queue}',
     method => 'DELETE',

@@ -184,7 +184,7 @@ sub postcat {
     return $res;
 }
 
-# flush all queues
+# flush all queuespostconf -d|grep enable_long_queue_ids
 sub flush_queues {
     PVE::Tools::run_command(['/usr/sbin/postqueue', '-f']);
 }
@@ -205,7 +205,10 @@ sub delete_queued_mail {
 sub delete_queue {
     my ($queue) = @_;
 
-    PVE::Tools::run_command(['/usr/sbin/postsuper', '-d', 'ALL', $queue]);
+    my $cmd = ['/usr/sbin/postsuper', '-d', 'ALL'];
+    push @$cmd, $queue if defined($queue);
+
+    PVE::Tools::run_command($cmd);
 }
 
 sub discard_verify_cache {
