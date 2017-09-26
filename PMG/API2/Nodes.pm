@@ -231,6 +231,12 @@ __PACKAGE__->register_method ({
     	additionalProperties => 0,
 	properties => {
 	    node => get_standard_option('pve-node'),
+	    upgrade => {
+		type => 'boolean',
+		description => "Run 'apt-get dist-upgrade' instead of normal shell.",
+		optional => 1,
+		default => 0,
+	    },
 	    websocket => {
 		optional => 1,
 		type => 'boolean',
@@ -253,6 +259,10 @@ __PACKAGE__->register_method ({
 
 	my $node = $param->{node};
 
+	if ($node ne PVE::INotify::nodename()) {
+	    die "vncproxy to remote node not implemented";
+	}
+
 	# we only implement the websocket based VNC here
 	my $websocket = $param->{websocket} // 1;
 	die "standard VNC not implemented" if !$websocket;
@@ -262,6 +272,8 @@ __PACKAGE__->register_method ({
 	my $restenv = PMG::RESTEnvironment->get();
 	my $user = $restenv->get_user();
 
+	raise_perm_exc('user != root@pam') if $param->{upgrade} && $user ne 'root@pam';
+
 	my $ticket = PMG::Ticket::assemble_vnc_ticket($user, $authpath);
 
 	my $family = PVE::Tools::get_host_address_family($node);
@@ -270,7 +282,13 @@ __PACKAGE__->register_method ({
 	my $shcmd;
 
 	if ($user eq 'root@pam') {
-	    $shcmd = [ '/bin/login', '-f', 'root' ];
+	    if ($param->{upgrade}) {
+		my $upgradecmd = "pmgupgrade --shell";
+		# $upgradecmd = PVE::Tools::shellquote($upgradecmd) if $remip;
+		$shcmd = [ '/bin/bash', '-c', $upgradecmd ];
+	    } else {
+		$shcmd = [ '/bin/login', '-f', 'root' ];
+	    }
 	} else {
 	    $shcmd = [ '/bin/login' ];
 	}
