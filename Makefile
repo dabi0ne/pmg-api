@@ -18,7 +18,7 @@ BASHCOMPLDIR=${DESTDIR}/usr/share/bash-completion/completions/
 REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy pmgtunnel pmgmirror
-CLITOOLS = pmgdb pmgconfig pmgperf pmgcm pmgqm pmgreport pmgversion
+CLITOOLS = pmgdb pmgconfig pmgperf pmgcm pmgqm pmgreport pmgversion pmgupgrade
 CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy
 CRONSCRIPTS = pmg-hourly pmg-daily
 
