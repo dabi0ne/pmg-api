@@ -1,27 +1,29 @@
-#!/usr/bin/perl
+package PMG::CLI::pmgversion;
 
 use strict;
 use warnings;
-use POSIX;
-use Getopt::Long;
+use POSIX qw();
+
+use PVE::SafeSyslog;
+use PVE::Tools qw(extract_param);
+use PVE::INotify;
+use PVE::CLIHandler;
+
+use PMG::RESTEnvironment;
 use PMG::pmgcfg;
 use PMG::API2::APT;
 
-my $pkgarray = PMG::API2::APT->versions({ node => 'localhost'});
-my $pkglist = {};
-foreach my $pkg (@$pkgarray) {
-    $pkglist->{$pkg->{Package}} = $pkg;
+use base qw(PVE::CLIHandler);
+
+sub setup_environment {
+    PMG::RESTEnvironment->setup_default_cli_env();
 }
 
-sub print_status {
-    my ($pkg) = @_;
+my $print_status = sub {
+    my ($pkginfo) = @_;
 
-    my $pkginfo =  $pkglist->{$pkg};
+    my $pkg = $pkginfo->{Package};
 
-    if (!$pkginfo) {
-	print "$pkg: unknown package - internal error\n";
-	return;
-    }
     my $version = "not correctly installed";
     if ($pkginfo->{OldVersion} && $pkginfo->{CurrentState} eq 'Installed') {
 	$version = $pkginfo->{OldVersion};
@@ -34,53 +36,46 @@ sub print_status {
     } else {
 	print "$pkg: $version\n";
     }
-}
+};
 
-sub print_usage {
-    my $msg = shift;
+__PACKAGE__->register_method ({
+    name => 'pmgversion',
+    path => 'pmgversion',
+    method => 'GET',
+    description => "Print version information for Proxmox Mail Gateway packages.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    verbose => {
+		type => 'boolean',
+		description => "List version details for important packages.",
+		optional => 1,
+		default => 0,
+	    },
+	}
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
 
-    print STDERR "ERROR: $msg\n" if $msg;
-    print STDERR "USAGE: pmgversion [--verbose]\n";
+	my $pkgarray = PMG::API2::APT->versions({ node => 'localhost'});
 
-}
+	my $ver =  PMG::pmgcfg::package() . '/' . PMG::pmgcfg::version_text();
+	my (undef, undef, $kver) = POSIX::uname();
 
-my $opt_verbose;
+	if (!$param->{verbose}) {
+	    print "$ver (running kernel: $kver)\n";
+	    return undef;
+	}
 
-if (!GetOptions ('verbose' => \$opt_verbose)) {
-    print_usage ();
-    exit (-1);
-} 
+	foreach my $pkg (@$pkgarray) {
+	    $print_status->($pkg);
+	}
 
-if (scalar (@ARGV) != 0) {
-    print_usage ();
-    exit (-1);
-}
+	return undef;
 
-my $ver =  PMG::pmgcfg::package() . '/' . PMG::pmgcfg::version_text();
-my (undef, undef, $kver) = POSIX::uname();
+    }});
 
+our $cmddef = [ __PACKAGE__, 'pmgversion', []];
 
-if (!$opt_verbose) {
-    print "$ver (running kernel: $kver)\n";
-    exit (0);
-}
-
-foreach my $pkg (@$pkgarray) {
-    print_status($pkg->{Package});
-}
-
-exit 0;
-
-__END__
-
-=head1 NAME
-
-pmgversion - Proxmox Mail Gateway version info
-
-=head1 SYNOPSIS
-
-pmgversion [--verbose]
-
-=head1 DESCRIPTION
-
-Print version information for Proxmox Mail Gateway packages.
+1;
