@@ -52,7 +52,7 @@ sub decode_spaminfo {
     foreach my $test (split (',', $info)) {
 	my ($name, $score) = split (':', $test);
 
-	my $info = { name => $name, score => $score, desc => '-' };
+	my $info = { name => $name, score => $score + 0, desc => '-' };
 	if (my $si = $spamdesc->{$name}) {
 	    $info->{desc} = $si->{desc};
 	    $info->{url} = $si->{url} if defined($si->{url});
