@@ -127,6 +127,7 @@ my $parse_header_info = sub {
 
     if ($qtype eq 'V') {
 	$res->{virusname} = $ref->{info};
+	$res->{spamlevel} = 0;
     } elsif ($qtype eq 'S') {
 	$res->{spamlevel} = $ref->{spamlevel} // 0;
     }
@@ -827,6 +828,7 @@ __PACKAGE__->register_method ({
 	    # to make result verification happy
 	    $res->{file} = '';
 	    $res->{header} = '';
+	    $res->{spamlevel} = 0;
 	    $res->{spaminfo} = [];
 	} else {
 	    # include additional details
