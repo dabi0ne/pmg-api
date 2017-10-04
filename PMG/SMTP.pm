@@ -95,7 +95,7 @@ sub loop {
 	    $self->reply ("250 2.5.0 OK");
 	    next;
 	} elsif ($cmd eq 'mail') {
-	    if ($args =~ m/^from:\s*<(\S*)>/i) {
+	    if ($args =~ m/^from:\s*<([^\s\>]*)>[^>]*$/i) {
 		delete $self->{to};
 		$self->{from} = $1;
 		$self->reply ('250 2.5.0 OK');
@@ -105,12 +105,12 @@ sub loop {
 		next;
 	    }
 	} elsif ($cmd eq 'rcpt') {
-	    if ($args =~ m/^to:\s*<(\S+)>/i) {
+	    if ($args =~ m/^to:\s*<([^\s\>]+)>[^>]*$/i) {
 		push @{$self->{to}} , $1;
 		$self->reply ('250 2.5.0 OK');
 		next;
 	    } else {
-		$self->reply ("501 5.5.2 Syntax: MAIL FROM: <address>");
+		$self->reply ("501 5.5.2 Syntax: RCPT TO: <address>");
 		next;
 	    }
 	} elsif ($cmd eq 'data') {
