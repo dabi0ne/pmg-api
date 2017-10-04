@@ -62,6 +62,7 @@ sub init {
 
     my $dirs = {};
 
+    add_dirs($dirs, '/pve2/locale/', '/usr/share/pmg-i18n/');
     add_dirs($dirs, '/pve2/ext6/', '/usr/share/javascript/extjs/');
     add_dirs($dirs, '/pve2/images/' => "$gui_base_dir/images/");
     add_dirs($dirs, '/pve2/css/' => "$gui_base_dir/css/");
@@ -170,7 +171,11 @@ sub get_index {
     $token = PMG::Ticket::assemble_csrf_prevention_token($username)
 	if defined($username);
 
-    my $langfile = 0; # fixme:
+    my $langfile = 0;
+
+    if (-f  "/usr/share/pmg-i18n/pmg-lang-$lang.js") {
+	$langfile = 1;
+    }
 
     $username = '' if !$username;
 
