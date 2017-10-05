@@ -235,6 +235,13 @@ __PACKAGE__->register_method ({
 
 	my $reportstyle = $param->{style} // $cfg->get('spamquar', 'reportstyle');
 
+	# overwrite report style none when:
+	# - explicit receiver specified
+	# - when debug flag enabled
+	if ($reportstyle eq 'none') {
+	    $reportstyle = 'verbose' if $param->{debug} || defined($param->{receiver});
+	}
+
 	return if $reportstyle eq 'none'; # do nothing
 
 	my $timespan = $param->{timespan} // 'today';
