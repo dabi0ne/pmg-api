@@ -67,7 +67,7 @@ sub get_item_data {
     my $item = {};
 
     $item->{id} = sprintf("C%dR%d", $ref->{cid}, $ref->{rid});
-    
+
     $item->{subject} = PMG::Utils::rfc1522_to_html(
 	PVE::Tools::trim($head->get('subject')) || 'No Subject');
 
@@ -87,11 +87,11 @@ sub get_item_data {
 
     $item->{date} = strftime("%F", localtime($ref->{time}));
     $item->{time} = strftime("%H:%M:%S", localtime($ref->{time}));
- 
+
     $item->{bytes} = $ref->{bytes};
     $item->{spamlevel} = $ref->{spamlevel};
     $item->{spaminfo} = $ref->{info};
-      
+
     my $title = "Received: $item->{date} $item->{time}\n";
     $title .= "From: $ref->{sender}\n";
     $title .= "To: $ref->{receiver}\n" if $ref->{receiver};
@@ -113,6 +113,75 @@ sub get_item_data {
 }
 
 __PACKAGE__->register_method ({
+    name => 'status',
+    path => 'status',
+    method => 'POST',
+    description => "Print quarantine status (mails per user) for specified time span.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    timespan => {
+		description => "Select time span.",
+		type => 'string',
+		enum => ['today', 'yesterday', 'week'],
+		default => 'today',
+		optional => 1,
+	    },
+	},
+    },
+    returns => { type => 'null'},
+    code => sub {
+	my ($param) = @_;
+
+	my $cinfo = PMG::ClusterConfig->new();
+	my $role = $cinfo->{local}->{type} // '-';
+
+	if (!(($role eq '-') || ($role eq 'master'))) {
+	   die "local node is not mastern";
+	}
+
+	my $cfg = PMG::Config->new();
+
+	my $timespan = $param->{timespan} // 'today';
+
+	my ($start, $end) = PMG::Utils::lookup_timespan($timespan);
+
+	my $hostname = PVE::INotify::nodename();
+
+	my $fqdn = $cfg->get('spamquar', 'hostname') //
+	    PVE::Tools::get_fqdn($hostname);
+
+
+	my $dbh = PMG::DBTools::open_ruledb();
+
+	my $domains = PVE::INotify::read_file('domains');
+	my $domainregex = domain_regex([keys %$domains]);
+
+	my $sth = $dbh->prepare(
+	    "SELECT pmail, AVG(spamlevel) as spamlevel, count(*)  FROM CMailStore, CMSReceivers " .
+	    "WHERE time >= $start AND time < $end AND " .
+	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
+	    "AND Status = 'N' " .
+	    "GROUP BY pmail " .
+	    "ORDER BY pmail");
+
+	$sth->execute();
+
+	print "Count  Spamlevel Mail\n";
+	my $res = [];
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    push @$res, $ref;
+	    my $extern = ($domainregex && $ref->{pmail} !~ $domainregex);
+	    my $hint = $extern ? " (external address)" : "";
+	    printf ("%-5d %10.2f %s$hint\n", $ref->{count}, $ref->{spamlevel}, $ref->{pmail});
+	}
+
+	$sth->finish();
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method ({
     name => 'send',
     path => 'send',
     method => 'POST',
@@ -123,7 +192,7 @@ __PACKAGE__->register_method ({
 	    receiver => {
 		description => "Generate report for a single email address. If not specified, generate reports for all users.",
 		type => 'string', format => 'email',
-		optional => 1,		
+		optional => 1,
 	    },
 	    timespan => {
 		description => "Select time span.",
@@ -133,9 +202,9 @@ __PACKAGE__->register_method ({
 		optional => 1,
 	    },
 	    style => {
-		description => "Spam report style. Value 'none' just prints the spam counts and does not send any emails. Default value is read from spam quarantine configuration.",
+		description => "Spam report style. Default value is read from spam quarantine configuration.",
 		type => 'string',
-		enum => ['none', 'short', 'verbose', 'custom'],
+		enum => ['short', 'verbose', 'custom'],
 		optional => 1,
 	    },
 	    redirect => {
@@ -160,23 +229,25 @@ __PACKAGE__->register_method ({
 
 	if (!(($role eq '-') || ($role eq 'master'))) {
 	   die "local node is not master - not sending spam report\n";
-	} 
+	}
 
 	my $cfg = PMG::Config->new();
 
 	my $reportstyle = $param->{style} // $cfg->get('spamquar', 'reportstyle');
+
+	return if $reportstyle eq 'none'; # do nothing
 
 	my $timespan = $param->{timespan} // 'today';
 
 	my ($start, $end) = PMG::Utils::lookup_timespan($timespan);
 
 	my $hostname = PVE::INotify::nodename();
-	
-	my $fqdn = $cfg->get('spamquar', 'hostname') // 
+
+	my $fqdn = $cfg->get('spamquar', 'hostname') //
 	    PVE::Tools::get_fqdn($hostname);
-	
+
 	my $port = 8006;
-	
+
 	my $global_data = {
 	    protocol => 'https',
 	    port => $port,
@@ -187,44 +258,39 @@ __PACKAGE__->register_method ({
 	    items => [],
 	};
 
-	my $mailfrom = $cfg->get ('spamquar', 'mailfrom') // 
+	my $mailfrom = $cfg->get ('spamquar', 'mailfrom') //
 	    "Proxmox Mail Gateway <postmaster>";
-	
+
 	my $dbh = PMG::DBTools::open_ruledb();
 
 	my $target = $param->{receiver};
 	my $redirect = $param->{redirect};
-	
+
 	if (defined($redirect) && !defined($target)) {
 	    die "can't redirect mails for all users\n";
 	}
-	
+
 	my $domains = PVE::INotify::read_file('domains');
 	my $domainregex = domain_regex([keys %$domains]);
 
-	my $template;
-
-	if ($reportstyle ne 'none') {
-
-	    $template = "spamreport-${reportstyle}.tt";
-	    my $found = 0;
-	    foreach my $path (@$PMG::Config::tt_include_path) {
-		if (-f "$path/$template") { $found = 1; last; }
-	    }
-	    if (!$found) {
-		warn "unable to find template '$template' - using default\n";
-		$template = "spamreport-verbose.tt";
-	    }
+	my $template = "spamreport-${reportstyle}.tt";
+	my $found = 0;
+	foreach my $path (@$PMG::Config::tt_include_path) {
+	    if (-f "$path/$template") { $found = 1; last; }
+	}
+	if (!$found) {
+	    warn "unable to find template '$template' - using default\n";
+	    $template = "spamreport-verbose.tt";
 	}
 
 	my $sth = $dbh->prepare(
-	    "SELECT * FROM CMailStore, CMSReceivers " . 
-	    "WHERE time >= $start AND time < $end AND " . 
+	    "SELECT * FROM CMailStore, CMSReceivers " .
+	    "WHERE time >= $start AND time < $end AND " .
 	    ($target ? "pmail = ? AND " : '') .
 	    "QType = 'S' AND CID = CMailStore_CID AND RID = CMailStore_RID " .
 	    "AND Status = 'N' " .
 	    "ORDER BY pmail, time, receiver");
-	    
+
 	if ($target) {
 	    $sth->execute($target);
 	} else {
@@ -239,28 +305,22 @@ __PACKAGE__->register_method ({
 	my $tt = PMG::Config::get_template_toolkit();
 
 	my $finalize = sub {
-	    
+
 	    my $extern = ($domainregex && $creceiver !~ $domainregex);
-		
-	    if ($template) {
-		if (!$extern) {
-		    $data->{mailcount} = $mailcount;
-		    my $sendto = $redirect ? $redirect : $creceiver;
-		    PMG::Utils::finalize_report($tt, $template, $data, $mailfrom, $sendto, $param->{debug});
-		}
-	    } else {
-		my $hint = $extern ? " (external address)" : "";
-		printf ("%-5d %s$hint\n", $mailcount, $creceiver);
+	    if (!$extern) {
+		$data->{mailcount} = $mailcount;
+		my $sendto = $redirect ? $redirect : $creceiver;
+		PMG::Utils::finalize_report($tt, $template, $data, $mailfrom, $sendto, $param->{debug});
 	    }
 	};
-	
+
 	while (my $ref = $sth->fetchrow_hashref()) {
 	    if ($creceiver ne $ref->{pmail}) {
 
 		$finalize->() if $data;
 
 		$data = clone($global_data);
-		
+
 		$creceiver = $ref->{pmail};
 		$mailcount = 0;
 
@@ -270,10 +330,8 @@ __PACKAGE__->register_method ({
 		$data->{managehref} = "https://$fqdn:$port/quarantine?ticket=${esc_ticket}";
 	    }
 
-	    if ($template) {
-		push @{$data->{items}}, get_item_data($data, $ref);
-	    }
-	    
+	    push @{$data->{items}}, get_item_data($data, $ref);
+
 	    $mailcount++;
 	    $lastref = $ref;
 	}
@@ -319,8 +377,8 @@ sub find_stale_files {
 
 sub test_quarantine_files {
     my ($spamlifetime, $viruslifetime, $purge) = @_;
-    
-    print STDERR "searching for stale files\n" if !$purge; 
+
+    print STDERR "searching for stale files\n" if !$purge;
 
     my $spooldir = $PMG::MailQueue::spooldir;
 
@@ -367,16 +425,16 @@ __PACKAGE__->register_method ({
 	my $purge = !$param->{check};
 
 	if ($purge) {
-	    print STDERR "purging database\n"; 
+	    print STDERR "purging database\n";
 
 	    my $dbh = PMG::DBTools::open_ruledb();
 
 	    if (my $count = PMG::DBTools::purge_quarantine_database($dbh, 'S', $spamlifetime)) {
-		print STDERR "removed $count spam quarantine files\n"; 
+		print STDERR "removed $count spam quarantine files\n";
 	    }
 
 	    if (my $count = PMG::DBTools::purge_quarantine_database($dbh, 'V', $viruslifetime)) {
-		print STDERR "removed $count virus quarantine files\n"; 
+		print STDERR "removed $count virus quarantine files\n";
 	    }
 	}
 
@@ -389,15 +447,7 @@ __PACKAGE__->register_method ({
 our $cmddef = {
     'purge' => [ __PACKAGE__, 'purge', []],
     'send' => [ __PACKAGE__, 'send', []],
-    'spam' => [ 'PMG::API2::Quarantine', 'spam', [], undef, sub {
-	my $res = shift;
-	print "Day          Count  AVG(Spam)\n";
-	foreach my $ref (@$res) {
-	    print sprintf("%-12s %5d %10.2f\n",
-			  strftime("%F", localtime($ref->{day})),
-			  $ref->{count}, $ref->{spamavg});
-	}
-     }],
+    'status' => [ __PACKAGE__, 'status', []],
 };
 
 1;
