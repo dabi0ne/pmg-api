@@ -104,6 +104,7 @@ sub get_item_data {
 
     my $basehref = "https://$data->{fqdn}:$data->{port}/quarantine";
     my $ticket = uri_escape($data->{ticket});
+    $item->{href} = "$basehref?ticket=$ticket&cselect=$item->{id}";
     $item->{wlhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=whitelist";
     $item->{blhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=blacklist";
     $item->{deliverhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=deliver";
