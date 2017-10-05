@@ -6,6 +6,7 @@ use POSIX;
 use Digest::MD5;
 use Time::Zone;
 use Data::Dumper;
+use Encode;
 
 use PVE::Tools;
 use PVE::SafeSyslog;
@@ -54,6 +55,9 @@ my $run_pmg_log_tracker = sub {
 
     my $parser = sub {
 	my ($line) = @_;
+
+	# assume syslog if UTF-8 encoded
+	$line = decode('UTF-8', $line);
 
 	if ($state eq 'start') {
 
