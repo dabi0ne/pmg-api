@@ -82,6 +82,7 @@ sub get_item_data {
 	$item->{from} = $from;
     }
 
+    $item->{envelope_sender} = $ref->{sender};
     $item->{pmail} = $ref->{pmail};
     $item->{receiver} = $ref->{receiver} || $ref->{pmail};
 
@@ -91,24 +92,11 @@ sub get_item_data {
     $item->{bytes} = $ref->{bytes};
     $item->{spamlevel} = $ref->{spamlevel};
     $item->{spaminfo} = $ref->{info};
-
-    my $title = "Received: $item->{date} $item->{time}\n";
-    $title .= "From: $ref->{sender}\n";
-    $title .= "To: $ref->{receiver}\n" if $ref->{receiver};
-    $title .= sprintf("Size: %d KB\n", int (($ref->{bytes} + 1023) / 1024 ));
-    $title .= sprintf("Spam level: %d\n", $ref->{spamlevel}) if $ref->{qtype} eq 'S';
-    $title .= sprintf("Virus info: %s\n", encode_entities ($ref->{info})) if $ref->{qtype} eq 'V';
-    $title .= sprintf("File: %s", encode_entities($ref->{file}));
-
-    $item->{title} = $title;
+    $item->{file} = $ref->{file};
 
     my $basehref = "https://$data->{fqdn}:$data->{port}/quarantine";
     my $ticket = uri_escape($data->{ticket});
     $item->{href} = "$basehref?ticket=$ticket&cselect=$item->{id}";
-    $item->{wlhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=whitelist";
-    $item->{blhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=blacklist";
-    $item->{deliverhref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=deliver";
-    $item->{deletehref} = "$basehref?ticket=$ticket&cselect=$item->{id}&action=delete";
 
     return $item;
 }

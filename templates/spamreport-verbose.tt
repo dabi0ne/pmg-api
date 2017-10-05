@@ -3,6 +3,15 @@
 [%- ELSE %]
 [%- SET title = "Daily Spam Report for '${pmail}' - ${date}" -%]
 [%- END -%]
+
+[% BLOCK tooltip %]Received: [% d.date %] [% d.time %]
+From: [% d.envelope_sender %]
+TO: [% d.receiver %]
+Size: [% d.bytes %]
+Score: [% d.spamlevel %]
+File: [% d.file %]
+[% END %]
+
 <html>
   <head>
     <title>[% title %]</title>
@@ -23,18 +32,18 @@
 
 	<!--start entries-->
 	[% FOREACH item IN items %]
-	<tr title='[% item.title %]'>
+	<tr>
 	  <td>[% item.from %]</td>
 	  <td align=right nowrap>[% item.date %] [% item.time %]</td>
 	</tr>
-	<tr title='[% item.title %]'>
+	<tr title='[% PROCESS tooltip d=item | html  %]'>
 	  <td><a style='cursor:pointer;' href='[% item.href | url %]'><b>[% item.subject %]</b></a></td>
 	  <td align=right nowrap>
 	    <div style='font-size:xx-small;'>
-	      <a href='[% item.wlhref | url %]'>Whitelist</a>&nbsp;
-	      <a href='[% item.blhref | url %]'>Blacklist</a>&nbsp;
-	      <a href='[% item.deliverhref | url %]'>Deliver</a>&nbsp;
-	      <a href='[% item.deletehref | url %]'>Delete</a>
+	      <a href='[% item.href | url %]&action=whitelist'>Whitelist</a>&nbsp;
+	      <a href='[% item.href | url %]&action=blacklist'>Blacklist</a>&nbsp;
+	      <a href='[% item.href | url %]&action=deliver'>Deliver</a>&nbsp;
+	      <a href='[% item.href | url %]&action=delete'>Delete</a>
 	    </div>
 	  </td>
 	</tr>
