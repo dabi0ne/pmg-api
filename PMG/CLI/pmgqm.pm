@@ -168,9 +168,6 @@ __PACKAGE__->register_method ({
 
 	my $timespan = $param->{timespan} // 'today';
 
-	my (undef, undef, undef, $mday, $mon, $year) = localtime(time());	
-	my $daystart = timelocal(0, 0, 0, $mday, $mon, $year);
-	
 	my ($start, $end) = PMG::Utils::lookup_timespan($timespan);
 
 	my $hostname = PVE::INotify::nodename();
