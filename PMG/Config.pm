@@ -1015,6 +1015,12 @@ sub get_template_vars {
     $vars->{dns}->{hostname} = $nodename;
     $vars->{dns}->{domain} = $resolv->{search};
 
+    my $wlbr = "$nodename.$resolv->{search}";
+    foreach my $r (PVE::Tools::split_list($vars->{pmg}->{spam}->{wl_bounce_relays})) {
+	$wlbr .= " $r"
+    }
+    $vars->{composed}->{wl_bounce_relays} = $wlbr;
+
     if (my $proxy = $vars->{pmg}->{admin}->{http_proxy}) {
 	eval {
 	    my $uri = URI->new($proxy);

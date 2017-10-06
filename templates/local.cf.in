@@ -20,8 +20,8 @@ skip_rbl_checks 1
 use_bayes [% pmg.spam.use_bayes %] 
 [% END %]
 
-[% IF pmg.spam.wl_bounce_relays %]
-whitelist_bounce_relays [% pmg.spam.wl_bounce_relays %]
+[% IF pmg.spam.bounce_score %]
+whitelist_bounce_relays [% composed.wl_bounce_relays %]
 score ANY_BOUNCE_MESSAGE [% pmg.spam.bounce_score %]
 [% END %]
 
