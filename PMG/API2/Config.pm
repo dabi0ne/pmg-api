@@ -162,6 +162,7 @@ foreach my $section (@$section_type_enum) {
 	path => $section,
 	method => 'GET',
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	description => "Read $section configuration properties.",
 	parameters => {
 	    additionalProperties => 0,
@@ -180,6 +181,7 @@ foreach my $section (@$section_type_enum) {
 	method => 'PUT',
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	description => "Update $section configuration properties.",
 	parameters => $plugin->updateSchema(1),
 	returns => { type => 'null' },
