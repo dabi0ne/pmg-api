@@ -113,6 +113,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     protected => 1, # fixme: can we avoid that?
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     description => "Read node RRD statistics",
     parameters => {
 	additionalProperties => 0,
