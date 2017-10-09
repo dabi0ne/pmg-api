@@ -21,6 +21,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "List transport map entries.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -59,6 +60,7 @@ __PACKAGE__->register_method ({
     method => 'POST',
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     description => "Add transport map entry.",
     parameters => {
 	additionalProperties => 0,
@@ -127,6 +129,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Read transport map entry.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -164,6 +167,7 @@ __PACKAGE__->register_method ({
     method => 'PUT',
     description => "Update transport map entry.",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
@@ -232,6 +236,7 @@ __PACKAGE__->register_method ({
     method => 'DELETE',
     description => "Delete a transport map entry",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
