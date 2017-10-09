@@ -154,6 +154,7 @@ __PACKAGE__->register_method({
     description => "Read system log",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
