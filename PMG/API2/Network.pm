@@ -159,6 +159,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "List available networks",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -425,6 +426,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Read network device configuration",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {

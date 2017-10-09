@@ -386,6 +386,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Read DNS settings.",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -474,6 +475,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Read server time and time zone settings.",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
