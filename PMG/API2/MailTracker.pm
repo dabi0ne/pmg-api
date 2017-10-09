@@ -264,6 +264,7 @@ __PACKAGE__->register_method({
     description => "Read mail list.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -359,6 +360,7 @@ __PACKAGE__->register_method({
     description => "Get the detailed syslog entries for a specific mail ID.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
