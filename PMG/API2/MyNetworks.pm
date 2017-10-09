@@ -21,6 +21,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "List of trusted networks from where SMTP clients are allowed to relay mail through Proxmox Mail Gateway.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -55,6 +56,7 @@ __PACKAGE__->register_method ({
     method => 'POST',
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     description => "Add a trusted network.",
     parameters => {
 	additionalProperties => 0,
@@ -101,6 +103,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Read trusted network data (comment).",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -134,6 +137,7 @@ __PACKAGE__->register_method ({
     method => 'PUT',
     description => "Update trusted data (comment).",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
@@ -177,6 +181,7 @@ __PACKAGE__->register_method ({
     method => 'DELETE',
     description => "Delete a truster network",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
