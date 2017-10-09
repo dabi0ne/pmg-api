@@ -20,6 +20,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Read task list for one node (finished tasks).",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -115,6 +116,7 @@ __PACKAGE__->register_method({
     path => '{upid}',
     method => 'GET',
     description => '', # index helper
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -146,6 +148,7 @@ __PACKAGE__->register_method({
     description => 'Stop a task.',
     protected => 1,
     proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -174,6 +177,7 @@ __PACKAGE__->register_method({
     protected => 1,
     description => "Read task log.",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -256,6 +260,7 @@ __PACKAGE__->register_method({
     protected => 1,
     description => "Read task status.",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
