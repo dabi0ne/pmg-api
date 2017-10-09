@@ -88,6 +88,7 @@ __PACKAGE__->register_method ({
     description => "Service list.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -126,6 +127,7 @@ __PACKAGE__->register_method({
     path => '{service}',
     method => 'GET',
     description => "Directory index",
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -164,6 +166,7 @@ __PACKAGE__->register_method ({
     description => "Read service properties",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -196,6 +199,7 @@ __PACKAGE__->register_method ({
     description => "Start service.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -232,6 +236,7 @@ __PACKAGE__->register_method ({
     description => "Stop service.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -268,6 +273,7 @@ __PACKAGE__->register_method ({
     description => "Restart service.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -304,6 +310,7 @@ __PACKAGE__->register_method ({
     description => "Reload service.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -332,3 +339,5 @@ __PACKAGE__->register_method ({
 
 	return $restenv->fork_worker('srvreload', $param->{service}, $user, $realcmd);
     }});
+
+1;
