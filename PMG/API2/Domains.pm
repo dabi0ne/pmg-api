@@ -20,6 +20,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "List relay domains.",
+    permissions => { check => [ 'admin', 'audit' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
@@ -56,6 +57,7 @@ __PACKAGE__->register_method ({
     method => 'POST',
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     description => "Add relay domain.",
     parameters => {
 	additionalProperties => 0,
@@ -102,6 +104,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Read Domain data (comment).",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -137,6 +140,7 @@ __PACKAGE__->register_method ({
     method => 'PUT',
     description => "Update relay domain data (comment).",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
@@ -180,6 +184,7 @@ __PACKAGE__->register_method ({
     method => 'DELETE',
     description => "Delete a relay domain",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     proxyto => 'master',
     parameters => {
 	additionalProperties => 0,
