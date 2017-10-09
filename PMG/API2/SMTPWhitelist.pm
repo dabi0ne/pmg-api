@@ -30,6 +30,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "Directory index.",
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -67,6 +68,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Get list of all SMTP whitelist entries.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -105,6 +107,7 @@ __PACKAGE__->register_method ({
     method => 'DELETE',
     description => "Remove an object from the SMTP whitelist.",
     proxyto => 'master',
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
