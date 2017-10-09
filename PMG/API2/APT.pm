@@ -232,6 +232,7 @@ __PACKAGE__->register_method({
     description => "List available updates.",
     protected => 1,
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -271,6 +272,7 @@ __PACKAGE__->register_method({
     description => "This is used to resynchronize the package index files from their sources (apt-get update).",
     protected => 1,
     proxyto => 'node',
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -373,6 +375,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Get package changelogs.",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -472,9 +475,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     proxyto => 'node',
     description => "Get package information for important Proxmox packages.",
-    permissions => {
-	check => ['perm', '/nodes/{node}', [ 'Sys.Audit' ]],
-    },
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
