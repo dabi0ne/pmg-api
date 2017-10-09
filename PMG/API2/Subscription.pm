@@ -99,6 +99,7 @@ __PACKAGE__->register_method ({
     description => "Update subscription info.",
     proxyto => 'node',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
