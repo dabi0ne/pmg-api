@@ -29,6 +29,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "Directory index.",
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {

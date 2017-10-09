@@ -24,6 +24,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "Directory index.",
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -68,6 +69,7 @@ __PACKAGE__->register_method ({
     description => "Delete rule.",
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -98,6 +100,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Get common rule properties.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -140,6 +143,7 @@ __PACKAGE__->register_method ({
     description => "Set rule properties.",
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -206,6 +210,7 @@ my $register_rule_group_api = sub {
 	method => 'GET',
 	description => "Get '$name' group list.",
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -244,6 +249,7 @@ my $register_rule_group_api = sub {
 	description => "Add  group to '$name' list.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -279,6 +285,7 @@ my $register_rule_group_api = sub {
 	description => "Delete group from '$name' list.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {

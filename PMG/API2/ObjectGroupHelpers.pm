@@ -62,6 +62,7 @@ sub register_group_list_api {
 	method => 'GET',
 	description => "Get list of '$oclass' groups.",
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {},
@@ -92,6 +93,7 @@ sub register_group_list_api {
 	description => "Create a new '$oclass' group.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -131,6 +133,7 @@ sub register_delete_object_group_api {
 	description => "Delete a '$oclass' group.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -161,6 +164,7 @@ sub register_object_group_config_api {
 	method => 'GET',
 	description => "Get '$oclass' group properties",
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -202,6 +206,7 @@ sub register_object_group_config_api {
 	description => "Modify '$oclass' group properties",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -256,6 +261,7 @@ sub register_objects_api {
 	method => 'GET',
 	description => "List '$oclass' group objects.",
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {
@@ -298,6 +304,7 @@ sub register_objects_api {
 	description => "Remove an object from the '$oclass' group.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => {

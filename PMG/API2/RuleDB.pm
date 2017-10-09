@@ -32,6 +32,7 @@ __PACKAGE__->register_method ({
     	additionalProperties => 0,
 	properties => {},
     },
+    permissions => { check => [ 'admin', 'audit' ] },
     returns => {
 	type => 'array',
 	items => {
@@ -86,6 +87,7 @@ __PACKAGE__->register_method({
 	additionalProperties => 0,
 	properties => {},
     },
+    permissions => { check => [ 'admin', 'audit' ] },
     returns => { type => 'string' },
     code => sub {
 	my ($param) = @_;
@@ -102,6 +104,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Get list of rules.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -155,6 +158,7 @@ __PACKAGE__->register_method({
     description => "Create new rule.",
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {

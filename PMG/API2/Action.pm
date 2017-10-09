@@ -55,6 +55,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "Directory index.",
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -85,6 +86,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "List 'actions' objects.",
     proxyto => 'master',
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -122,6 +124,7 @@ __PACKAGE__->register_method ({
     description => "Delete 'actions' object.",
     proxyto => 'master',
     protected => 1,
+    permissions => { check => [ 'admin' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => { id => $id_property }
@@ -190,6 +193,7 @@ my $register_action_api = sub {
 	description => "Create '$otype_text' object.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $create_properties,
@@ -217,6 +221,7 @@ my $register_action_api = sub {
 	method => 'GET',
 	description => "Read '$otype_text' object settings.",
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $read_properties,
@@ -244,6 +249,7 @@ my $register_action_api = sub {
 	description => "Update '$otype_text' object.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $update_properties,
