@@ -631,7 +631,7 @@ __PACKAGE__->register_method({
 	    total => $dinfo->{blocks},
 	    avail => $dinfo->{bavail},
 	    used => $dinfo->{used},
-	    free => $dinfo->{bavail} - $dinfo->{used},
+	    free => $dinfo->{blocks} - $dinfo->{used},
 	};
 
 	if (my $subinfo = PVE::INotify::read_file('subscription')) {
