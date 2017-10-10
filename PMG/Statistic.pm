@@ -833,6 +833,34 @@ sub recent_mailcount {
     return $res;
 }
 
+sub recent_receivers {
+    my ($self, $rdb, $limit) = @_;
+    my $res = [];
+
+    my ($from, $to) = $self->timespan();
+
+    my $cmd = "SELECT ".
+	"COUNT(receiver) as count, receiver ".
+	"FROM CStatistic, CReceivers ".
+	"WHERE time >= ? ".
+	"AND cid = cstatistic_cid ".
+	"AND rid = cstatistic_rid ".
+	"AND blocked = false ".
+	"AND direction = true ".
+	"GROUP BY receiver ORDER BY count DESC LIMIT ?;";
+
+    my $sth =  $rdb->{dbh}->prepare($cmd);
+
+    $sth->execute ($from, $limit);
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+	push @$res, $ref;
+    }
+    $sth->finish();
+
+    return $res;
+}
+
 sub traffic_stat_graph {
     my ($self, $rdb, $span) = @_;
     my $res;

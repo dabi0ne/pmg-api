@@ -48,6 +48,7 @@ __PACKAGE__->register_method ({
 	    { name => "mail" },
 	    { name => "mailcount" },
 	    { name => "recent" },
+	    { name => "recentreceivers" },
 	    { name => "maildistribution" },
 	    { name => "spamscores" },
 	    { name => "sender" },
@@ -896,6 +897,69 @@ __PACKAGE__->register_method ({
 	my $rdb = PMG::RuleDB->new();
 
 	my $res = $stat->recent_mailcount($rdb, $span);
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'recentreceivers',
+    path => 'recentreceivers',
+    method => 'GET',
+    description => "Top recent Mail Receivers (including spam)",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    hours => {
+		description => "How many hours you want to get",
+		type => 'integer',
+		minimum => 1,
+		maximum => 24,
+		optional => 1,
+		default => 12,
+	    },
+	    limit => {
+		description => "The maximum number of receivers to return.",
+		type => 'integer',
+		minimum => 1,
+		maximum => 50,
+		optional => 1,
+		default => 5,
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		count => {
+		    description => "The count of incoming not blocked E-Mails",
+		    type => 'integer',
+		},
+		receiver => {
+		    description => "The receiver",
+		    type => 'string',
+		},
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+
+	my $hours = $param->{hours} // 12;
+
+	my $limit = $param->{limit} // 5;
+
+	my $end = time();
+	my $start = $end - 3600*$hours;
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $res = $stat->recent_receivers($rdb, $limit);
 
 	return $res;
     }});
