@@ -47,6 +47,7 @@ __PACKAGE__->register_method ({
 	    { name => "domains" },
 	    { name => "mail" },
 	    { name => "mailcount" },
+	    { name => "recent" },
 	    { name => "maildistribution" },
 	    { name => "spamscores" },
 	    { name => "sender" },
@@ -789,6 +790,112 @@ __PACKAGE__->register_method ({
 	my $rdb = PMG::RuleDB->new();
 
 	my $res = $stat->total_mail_stat($rdb);
+
+	return $res;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'recent',
+    path => 'recent',
+    method => 'GET',
+    description => "Mail Count Statistics.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit'] },
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    hours => {
+		description => "How many hours you want to get",
+		type => 'integer',
+		minimum => 1,
+		maximum => 24,
+		optional => 1,
+		default => 12,
+	    },
+	    timespan => {
+		description => "The Timespan for one datapoint (in seconds)",
+		type => 'integer',
+		minimum => 1,
+		maximum => 1800,
+		optional => 1,
+		default => 1800,
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		index => {
+		    description => "Time index.",
+		    type => 'integer',
+		},
+		time => {
+		    description => "Time (Unix epoch).",
+		    type => 'integer',
+		},
+		count => {
+		    description => "Overall mail count (in and out).",
+		    type => 'number',
+		},
+		count_in => {
+		    description => "Incoming mail count.",
+		    type => 'number',
+		},
+		count_out => {
+		    description => "Outgoing mail count.",
+		    type => 'number',
+		},
+		spam => {
+		    description => "Overall spam mail count (in and out).",
+		    type => 'number',
+		},
+		spam_in => {
+		    description => "Incoming spam mails (spamcount_in + glcount + spfcount).",
+		    type => 'number',
+		},
+		spam_out => {
+		    description => "Outgoing spam mails.",
+		    type => 'number',
+		},
+		bytes_in => {
+		    description => "Number of incoming bytes mails.",
+		    type => 'number',
+		},
+		bytes_out => {
+		    description => "Number of outgoing bytes mails.",
+		    type => 'number',
+		},
+		virus_in => {
+		    description => "Number of incoming virus mails.",
+		    type => 'number',
+		},
+		virus_out => {
+		    description => "Number of outgoing virus mails.",
+		    type => 'number',
+		},
+		timespan => {
+		    description => "Timespan in seconds for one data point",
+		    type => 'number',
+		}
+	    },
+	},
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $restenv = PMG::RESTEnvironment->get();
+
+	my $hours = $param->{hours} // 12;
+	my $span = $param->{timespan} // 1800;
+
+	my $end = time();
+	my $start = $end - 3600*$hours;
+
+	my $stat = PMG::Statistic->new($start, $end);
+	my $rdb = PMG::RuleDB->new();
+
+	my $res = $stat->recent_mailcount($rdb, $span);
 
 	return $res;
     }});

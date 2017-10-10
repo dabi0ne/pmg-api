@@ -777,6 +777,62 @@ sub rbl_count_stats {
     return $res;
 }
 
+sub recent_mailcount {
+    my ($self, $rdb, $span) = @_;
+    my $res;
+
+    my ($from, $to) = $self->timespan();
+
+    my $cmd = "SELECT".
+	"(time - $from) / $span AS index, ".
+	"COUNT (CASE WHEN direction THEN 1 ELSE NULL END) as count_in, ".
+	"COUNT (CASE WHEN NOT direction THEN 1 ELSE NULL END) as count_out, ".
+	"SUM (CASE WHEN direction THEN bytes ELSE 0 END) as bytes_in, ".
+	"SUM (CASE WHEN NOT direction THEN bytes ELSE 0 END) as bytes_out, ".
+	"SUM (ptime) / 1000.0 as ptimesum, ".
+	"COUNT (CASE WHEN virusinfo IS NOT NULL AND direction THEN 1 ELSE NULL END) as virus_in, ".
+	"COUNT (CASE WHEN virusinfo IS NOT NULL AND NOT direction THEN 1 ELSE NULL END) as virus_out, ".
+	"COUNT (CASE WHEN virusinfo IS NULL AND direction AND spamlevel >= 3 THEN 1 ELSE NULL END) as spam_in, ".
+	"COUNT (CASE WHEN virusinfo IS NULL AND NOT direction AND spamlevel >= 3 THEN 1 ELSE NULL END) as spam_out ".
+	"FROM cstatistic ".
+	"WHERE time >= $from ".
+	"GROUP BY index ORDER BY index";
+
+    my $sth =  $rdb->{dbh}->prepare($cmd);
+
+    $sth->execute ();
+
+    while (my $ref = $sth->fetchrow_hashref()) {
+	@$res[$ref->{index}] = $ref;
+    }
+
+    $sth->finish();
+
+    my $c = int(($to - $from) / $span);
+
+    for (my $i = 0; $i < $c; $i++) {
+	@$res[$i] //= {
+	    index => $i,
+	    count => 0, count_in => 0, count_out => 0,
+	    spam => 0, spam_in => 0, spam_out => 0,
+	    virus => 0, virus_in => 0, virus_out => 0,
+	    bytes => 0, bytes_in => 0, bytes_out => 0,
+	    };
+
+	my $d = @$res[$i];
+
+	$d->{time} = $from + $i*$span;
+	$d->{count} = $d->{count_in} + $d->{count_out};
+	$d->{spam} = $d->{spam_in} + $d->{spam_out};
+	$d->{virus} = $d->{virus_in} + $d->{virus_out};
+	$d->{bytes} = $d->{bytes_in} + $d->{bytes_out};
+	$d->{timespan} = $span+0;
+	$d->{ptimesum} += 0;
+    }
+
+    return $res;
+}
+
 sub traffic_stat_graph {
     my ($self, $rdb, $span) = @_;
     my $res;
