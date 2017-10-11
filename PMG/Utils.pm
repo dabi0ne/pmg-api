@@ -34,22 +34,12 @@ use PMG::AtomicFile;
 use PMG::MailQueue;
 use PMG::SMTPPrinter;
 
-my $realm_regex = qr/[A-Za-z][A-Za-z0-9\.\-_]+/;
-
-PVE::JSONSchema::register_format('pmg-realm', \&verify_realm);
-sub verify_realm {
-    my ($realm, $noerr) = @_;
-
-    if ($realm !~ m/^${realm_regex}$/) {
-	return undef if $noerr;
-	die "value does not look like a valid realm\n";
-    }
-    return $realm;
-}
+my $valid_pmg_realms = ['pam', 'pmg', 'quarantine'];
 
 PVE::JSONSchema::register_standard_option('realm', {
     description => "Authentication domain ID",
-    type => 'string', format => 'pmg-realm',
+    type => 'string',
+    enum => $valid_pmg_realms,
     maxLength => 32,
 });
 
@@ -87,7 +77,8 @@ sub verify_username {
     # colon separated lists)!
     # slash is not allowed because it is used as pve API delimiter
     # also see "man useradd"
-    if ($username =~ m!^([^\s:/]+)\@(${realm_regex})$!) {
+    my $realm_list = join('|', @$valid_pmg_realms);
+    if ($username =~ m!^([^\s:/]+)\@(${realm_list})$!) {
 	return wantarray ? ($username, $1, $2) : $username;
     }
 

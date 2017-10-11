@@ -9,6 +9,8 @@ use PVE::JSONSchema qw(get_standard_option);
 use PVE::Exception qw(raise raise_perm_exc);
 
 use PMG::UserConfig;
+use PMG::LDAPConfig;
+use PMG::LDAPSet;
 
 sub normalize_path {
     my $path = shift;
@@ -41,13 +43,21 @@ sub authenticate_user {
 	die "invalid pam user (only root allowed)\n" if $ruid ne 'root';
 	authenticate_pam_user($ruid, $password);
 	return $username;
-    }
-
-    if ($realm eq 'pmg') {
+    } elsif ($realm eq 'pmg') {
 	my $usercfg = PMG::UserConfig->new();
 	$usercfg->authenticate_user($username, $password);
 	return $username;
-     }
+    } elsif ($realm eq 'quarantine') {
+	my $ldap_cfg = PMG::LDAPConfig->new();
+	my $ldap = PMG::LDAPSet->new_from_ldap_cfg($ldap_cfg, 1);
+
+	if (my $ldapinfo = $ldap->account_info($ruid, $password)) {
+	    my $pmail = $ldapinfo->{pmail};
+	    return $pmail . '@quarantine';
+	} else {
+	    die "ldap login failed\n";
+	}
+    }
 
     die "no such realm '$realm'\n";
 }
@@ -93,6 +103,8 @@ sub check_user_enabled {
 	    my $usercfg = PMG::UserConfig->new();
 	    my $data = $usercfg->lookup_user_data($username, $noerr);
 	    return $data->{role} if $data && $data->{enable};
+	} elsif ($realm eq 'quarantine') {
+	    return 'quser';
 	}
     }
 

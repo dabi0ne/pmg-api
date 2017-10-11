@@ -155,7 +155,12 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $username = $param->{username};
-	$username .= "\@$param->{realm}" if $param->{realm};
+
+	if ($param->{realm}) {
+	    $username .= "\@$param->{realm}";
+	} elsif ($username !~ m/\@(pam|pve)$/) {
+	    $username .= "\@quarantine";
+	}
 
 	my $rpcenv = PMG::RESTEnvironment->get();
 
@@ -209,7 +214,7 @@ __PACKAGE__->register_method ({
 	if ($authuser eq 'root@pam') {
 	    # OK - root can change anything
 	} else {
-	    if ($authuser eq $userid) {
+	    if ($realm eq 'pmg' && $authuser eq $userid) {
 		# OK - each enable user can change its own password
 		PMG::AccessControl::check_user_enabled($rpcenv->{usercfg}, $userid);
 	    } else {
