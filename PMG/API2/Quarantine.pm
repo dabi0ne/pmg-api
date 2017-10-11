@@ -34,7 +34,11 @@ my $verify_optional_pmail = sub {
     if ($role eq 'quser') {
 	raise_param_exc({ pmail => "parameter not allwed with role '$role'"})
 	    if defined($pmail) && ($pmail ne $authuser);
-	$pmail = $authuser;
+	if ($authuser =~ m/^(.+)\@quarantine$/) {
+	    $pmail = $1;
+	} else {
+	    raise_param_exc({ pmail => "got unexpected authuser '$authuser' with role '$role'"});
+	}
     } else {
 	raise_param_exc({ pmail => "parameter required with role '$role'"})
 	    if !defined($pmail);
@@ -805,8 +809,9 @@ __PACKAGE__->register_method ({
 	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid);
 
 	if ($role eq 'quser') {
+	    my $quar_username = $ref->{pmail} . '@quarantine';
 	    raise_perm_exc("mail does not belong to user '$authuser'")
-		if $authuser ne $ref->{pmail};
+		if $authuser ne $quar_username;
 	}
 
 	my $res = $parse_header_info->($ref);
@@ -905,8 +910,9 @@ __PACKAGE__->register_method ({
 	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid);
 
 	if ($role eq 'quser') {
+	    my $quar_username = $ref->{pmail} . '@quarantine';
 	    raise_perm_exc("mail does not belong to user '$authuser'")
-		if $authuser ne $ref->{pmail};
+		if $authuser ne $quar_username;
 	}
 
 	my $sender = $get_real_sender->($ref);

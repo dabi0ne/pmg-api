@@ -64,16 +64,17 @@ my $create_ticket = sub {
     my $ticketuser;
 
     if ($pw_or_ticket =~ m/^PMGQUAR:/) {
-	PMG::Ticket::verify_quarantine_ticket($pw_or_ticket);
+	my $ticketuser = PMG::Ticket::verify_quarantine_ticket($pw_or_ticket);
+	if ($ticketuser eq $username) {
+	    my $csrftoken = PMG::Ticket::assemble_csrf_prevention_token($username);
 
-	my $csrftoken = PMG::Ticket::assemble_csrf_prevention_token($username);
-
-	return {
-	    role => 'quser',
-	    ticket => $pw_or_ticket,
-	    username => $username,
-	    CSRFPreventionToken => $csrftoken,
-	};
+	    return {
+		role => 'quser',
+		ticket => $pw_or_ticket,
+		username => $username,
+		CSRFPreventionToken => $csrftoken,
+	    };
+	}
     }
 
     my $role = PMG::AccessControl::check_user_enabled($rpcenv->{usercfg}, $username);

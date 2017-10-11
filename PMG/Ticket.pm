@@ -207,6 +207,8 @@ sub verify_vnc_ticket {
 	$rsa_pub, 'PMGVNC', $ticket, $secret_data, -20, 40, $noerr);
 }
 
+# Note: we only encode $pmail into the ticket,
+# and add '@quarantine' in verify_quarantine_ticket()
 sub assemble_quarantine_ticket {
     my ($pmail) = @_;
 
@@ -235,8 +237,12 @@ sub verify_quarantine_ticket {
 
     my $lifetime = $get_quarantine_lifetime->();
 
-    return PVE::Ticket::verify_rsa_ticket(
+    my ($username, $age) = PVE::Ticket::verify_rsa_ticket(
 	$rsa_pub, 'PMGQUAR', $ticket, undef, -20, $lifetime*86400, $noerr);
+
+    $username = "$username\@quarantine" if defined($username);
+
+    return wantarray ? ($username, $age) : $username;
 }
 
 1;
