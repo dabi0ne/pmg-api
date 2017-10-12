@@ -92,6 +92,22 @@ sub short_desc {
     return "active";
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return { };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return { };
+}
+
+sub update {
+    my ($self, $param) = @_;
+}
+
 1;
 
 __END__
