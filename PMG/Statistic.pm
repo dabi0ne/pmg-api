@@ -795,7 +795,7 @@ sub recent_mailcount {
 	"COUNT (CASE WHEN virusinfo IS NULL AND direction AND spamlevel >= 3 THEN 1 ELSE NULL END) as spam_in, ".
 	"COUNT (CASE WHEN virusinfo IS NULL AND NOT direction AND spamlevel >= 3 THEN 1 ELSE NULL END) as spam_out ".
 	"FROM cstatistic ".
-	"WHERE time >= $from ".
+	"WHERE time >= $from AND time < $to ".
 	"GROUP BY index ORDER BY index";
 
     my $sth =  $rdb->{dbh}->prepare($cmd);
