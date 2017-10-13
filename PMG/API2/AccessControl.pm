@@ -128,7 +128,7 @@ __PACKAGE__->register_method ({
 		type => 'string',
 		maxLength => 64,
 	    },
-	    realm =>  get_standard_option('realm', {
+	    realm => get_standard_option('realm', {
 		description => "You can optionally pass the realm using this parameter. Normally the realm is simply added to the username <username>\@<relam>.",
 		optional => 1,
 	    }),
@@ -157,11 +157,12 @@ __PACKAGE__->register_method ({
 
 	my $username = $param->{username};
 
-	if ($param->{realm}) {
-	    $username .= "\@$param->{realm}";
-	} elsif ($username !~ m/\@(pam|pve)$/) {
-	    $username .= "\@quarantine";
+	if ($username !~ m/\@(pam|pmg|quarantine)$/) {
+	    my $realm = $param->{realm} // 'quarantine';
+	    $username .= "\@$realm";
 	}
+
+	$username = 'root@pam' if $username eq 'root@pmg';
 
 	my $rpcenv = PMG::RESTEnvironment->get();
 
