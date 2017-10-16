@@ -18,6 +18,7 @@ use base qw(PVE::RESTHandler);
 my $service_name_list = [
     'clamav-daemon',
     'clamav-freshclam',
+    'fetchmail',
     'pmgproxy',
     'pmgdaemon',
     'pmgpolicy',
