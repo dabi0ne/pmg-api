@@ -75,6 +75,7 @@ LIBSOURCES =				\
 	PMG/RuleCache.pm		\
 	PMG/Statistic.pm		\
 	PMG/UserConfig.pm		\
+	PMG/Fetchmail.pm		\
 	PMG/LDAPConfig.pm		\
 	PMG/LDAPSet.pm			\
 	PMG/LDAPCache.pm		\
