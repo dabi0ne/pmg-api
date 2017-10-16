@@ -79,6 +79,7 @@ __PACKAGE__->register_method ({
 	    { subdir => 'field' },
 	    { subdir => 'notification' },
 	    { subdir => 'disclaimer' },
+	    { subdir => 'removeattachments' },
 	];
 
     }});
@@ -294,5 +295,6 @@ $register_action_api->('PMG::RuleDB::BCC', 'bcc');
 $register_action_api->('PMG::RuleDB::ModField', 'field');
 $register_action_api->('PMG::RuleDB::Notify', 'notification');
 $register_action_api->('PMG::RuleDB::Disclaimer', 'disclaimer');
+$register_action_api->('PMG::RuleDB::Remove', 'removeattachments');
 
 1;

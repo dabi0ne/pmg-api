@@ -218,6 +218,38 @@ sub short_desc {
     }
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	all => {
+	    description => "Remove all attachments",
+	    type => 'boolean',
+	    optional => 1,
+	},
+	text => {
+	    description => "The replacement text.",
+	    type => 'string',
+	    maxLength => 2048
+	}
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return {
+	text => $self->{text},
+	all => $self->{all},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{text} = $param->{text};
+    $self->{all} = $param->{all} ? 1 : 0;
+}
 
 1;
 __END__
