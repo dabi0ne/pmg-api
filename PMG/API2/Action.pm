@@ -76,6 +76,7 @@ __PACKAGE__->register_method ({
 	return [
 	    { subdir => 'objects' },
 	    { subdir => 'bcc' },
+	    { subdir => 'field' },
 	];
 
     }});
@@ -288,5 +289,6 @@ my $register_action_api = sub {
 };
 
 $register_action_api->('PMG::RuleDB::BCC', 'bcc');
+$register_action_api->('PMG::RuleDB::ModField', 'field');
 
 1;

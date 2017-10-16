@@ -121,6 +121,41 @@ sub short_desc {
     return "modify field: $self->{field}:$self->{field_value}";
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	field => {
+	    description => "The Field",
+	    type => 'string',
+	    pattern => '[0-9a-zA-Z\/\\\[\]\+\-\.\*\_]+',
+	    maxLength => 1024,
+	},
+	value => {
+	    description => "The Value",
+	    type => 'string',
+	    pattern => '[0-9a-zA-Z\/\\\[\]\+\-\.\*\_]+',
+	    maxLength => 1024,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return {
+	field => $self->{field},
+	value => $self->{field_value},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{field_value} = $param->{value};
+    $self->{field} = $param->{field};
+}
+
 1;
 
 __END__
