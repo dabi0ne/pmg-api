@@ -213,6 +213,31 @@ sub short_desc {
     return "disclaimer";
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	disclaimer => {
+	    description => "The Disclaimer",
+	    type => 'string',
+	    maxLength => 2048,
+	},
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return {
+	disclaimer => $self->{value},
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{value} = $param->{disclaimer};
+}
 
 1;
 

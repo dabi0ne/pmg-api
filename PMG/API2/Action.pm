@@ -78,6 +78,7 @@ __PACKAGE__->register_method ({
 	    { subdir => 'bcc' },
 	    { subdir => 'field' },
 	    { subdir => 'notification' },
+	    { subdir => 'disclaimer' },
 	];
 
     }});
@@ -292,5 +293,6 @@ my $register_action_api = sub {
 $register_action_api->('PMG::RuleDB::BCC', 'bcc');
 $register_action_api->('PMG::RuleDB::ModField', 'field');
 $register_action_api->('PMG::RuleDB::Notify', 'notification');
+$register_action_api->('PMG::RuleDB::Disclaimer', 'disclaimer');
 
 1;
