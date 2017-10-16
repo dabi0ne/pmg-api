@@ -303,6 +303,54 @@ sub short_desc {
     return "notify $self->{to}";
 }
 
+sub properties {
+    my ($class) = @_;
+
+    return {
+	to => {
+	    description => "The Receiver E-Mail address",
+	    type => 'string',
+	    maxLength => 200,
+	},
+	subject => {
+	    description => "The Notification subject",
+	    type => 'string',
+	    maxLength => 100,
+	},
+	attach => {
+	    description => "Attach original E-Mail",
+	    type => 'boolean',
+	    optional => 1,
+	    default => 0,
+	},
+	body => {
+	    description => "The Notification Body",
+	    type => 'string',
+	    maxLength => 2048
+	}
+    };
+}
+
+sub get {
+    my ($self) = @_;
+
+    return {
+	to => $self->{to},
+	subject => $self->{subject},
+	body => $self->{body},
+	attach => ($self->{attach} eq 'O') ? 1 : 0,
+    };
+}
+
+sub update {
+    my ($self, $param) = @_;
+
+    $self->{to} = $param->{to};
+    $self->{subject} = $param->{subject};
+    $self->{body} = $param->{body};
+    $self->{attach} = $param->{attach} ? 'O' : undef;
+}
+
 1;
 
 __END__
