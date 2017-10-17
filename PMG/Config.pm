@@ -590,6 +590,7 @@ sub options {
 	dnsbl_sites => { optional => 1 },
     };
 }
+
 package PMG::Config;
 
 use strict;
@@ -602,6 +603,8 @@ use PVE::SafeSyslog;
 use PVE::Tools qw($IPV4RE $IPV6RE);
 use PVE::INotify;
 use PVE::JSONSchema;
+
+use PMG::Cluster;
 
 PMG::Config::Admin->register();
 PMG::Config::Mail->register();
@@ -1070,10 +1073,7 @@ sub rewrite_config_file {
 
     my ($perm, $uid, $gid);
 
-    if ($dstfn eq '/etc/fetchmailrc') {
-	(undef, undef, $uid, $gid) = getpwnam('fetchmail');
-	$perm = 0600;
-    } elsif ($dstfn eq '/etc/clamav/freshclam.conf') {
+    if ($dstfn eq '/etc/clamav/freshclam.conf') {
 	# needed if file contains a HTTPProxyPasswort
 
 	$uid = getpwnam('clamav');
