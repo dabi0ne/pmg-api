@@ -6,7 +6,6 @@ use Data::Dumper;
 
 use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
-use HTTP::Status qw(:constants);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
