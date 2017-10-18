@@ -60,7 +60,6 @@ sub read_fetchmail_conf {
 	    do {
 		while ($data =~ /\G('([^']*)'|\S+|)(?:\s|$)/g) {
 		    if ($1 ne '') {
-			print "TOKEN:$linenr: $1\n";
 			return wantarray ? ($1, $2) : $1;
 		    }
 		}
@@ -89,6 +88,7 @@ sub read_fetchmail_conf {
 		$finalize_item->($item) if defined($item);
 		my $id = $get_token_argument->();
 		$item = { id => $id };
+		$item->{disabled} = $token eq 'skip' ? 1 : 0;
 		next;
 	    }
 

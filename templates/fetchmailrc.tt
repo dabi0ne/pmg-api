@@ -11,7 +11,7 @@ smtphost [% ipconfig.int_ip %]/[% pmg.mail.ext_port %]
 
 # proxmox settings (Do not delete this marker!!)
 [% FOREACH item IN fetchmail_users.list('values') %]
-[% IF item.interval %]poll[% ELSE %]skip[% END -%]
+[% IF item.disabled %]skip[% ELSE %]poll[% END -%]
  [% item.id %] via '[% item.server %]'
  user '[% item.user %]' pass '[% item.pass %]'
  to '[% item.target %]'
