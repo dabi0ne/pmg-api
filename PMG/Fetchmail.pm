@@ -17,6 +17,7 @@ my $set_fetchmail_defaults = sub {
 
     $item->{protocol} //= 'pop3';
     $item->{interval} //= 1;
+    $item->{enable} //= 0;
 
     if (!$item->{port}) {
 	if ($item->{protocol} eq 'pop3') {
@@ -88,7 +89,7 @@ sub read_fetchmail_conf {
 		$finalize_item->($item) if defined($item);
 		my $id = $get_token_argument->();
 		$item = { id => $id };
-		$item->{disabled} = $token eq 'skip' ? 1 : 0;
+		$item->{enable} = $token eq 'pass' ? 1 : 0;
 		next;
 	    }
 
