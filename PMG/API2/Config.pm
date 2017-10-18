@@ -21,6 +21,7 @@ use PMG::API2::Cluster;
 use PMG::API2::MyNetworks;
 use PMG::API2::SMTPWhitelist;
 use PMG::API2::MimeTypes;
+use PMG::API2::Fetchmail;
 
 use base qw(PVE::RESTHandler);
 
@@ -44,6 +45,11 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::Domains",
     path => 'domains',
+			      });
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Fetchmail",
+    path => 'fetchmail',
 });
 
 __PACKAGE__->register_method ({
@@ -99,6 +105,7 @@ __PACKAGE__->register_method ({
 	push @$res, { section => 'mimetypes' };
 	push @$res, { section => 'users' };
 	push @$res, { section => 'domains' };
+	push @$res, { section => 'fetchmail' };
 	push @$res, { section => 'cluster' };
 	push @$res, { section => 'ruledb' };
 	push @$res, { section => 'transport' };
