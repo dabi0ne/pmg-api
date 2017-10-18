@@ -129,8 +129,6 @@ __PACKAGE__->register_method ({
 	    if !$domains->{$param->{domain}};
 
 	return $domains->{$param->{domain}};
-
-	return undef;
     }});
 
 __PACKAGE__->register_method ({
