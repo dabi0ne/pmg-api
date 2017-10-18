@@ -59,10 +59,11 @@ sub read_fetchmail_conf {
 	my $get_next_token = sub {
 
 	    do {
-		while ($data =~ /\G('([^']*)'|\S+|)(?:\s|$)/g) {
+		while ($data =~ /\G("([^"]*)"|\S+|)(?:\s|$)/g) {
 		    my ($token, $string) = ($1, $2);
 		    if ($1 ne '') {
-			$string =~ s/\\x([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+			$string =~ s/\\x([0-9A-Fa-f]{2})/chr(hex($1))/eg 
+			    if defined($string);
 			return wantarray ? ($token, $string) : $token;
 		    }
 		}
@@ -137,7 +138,7 @@ sub write_fetchmail_conf {
 	my $item = { id => $id };
 	foreach my $k (keys %$org) {
 	    my $v = $org->{$k};
-	    $v =~ s/([^A-Za-z0-9\@\-\._~])/sprintf "\\x%02x",ord($1)/eg;
+	    $v =~ s/([^A-Za-z0-9\:\@\-\._~])/sprintf "\\x%02x",ord($1)/eg;
 	    $item->{$k} = $v;
 	}
 	$set_fetchmail_defaults->($item);
