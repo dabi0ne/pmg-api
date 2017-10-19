@@ -239,14 +239,16 @@ sub queryusers {
 
 	# Get cookie from paged control
 	my ($resp) = $mesg->control(LDAP_CONTROL_PAGED) or last;
-	$cookie = $resp->cookie or last;
+	$cookie = $resp->cookie;
+
+	last if (!defined($cookie) || !length($cookie));
 
 	# Set cookie in paged control
 	$page->cookie($cookie);
     }
 
 
-    if ($cookie) {
+    if (defined($cookie) && length($cookie)) {
 	# We had an abnormal exit, so let the server know we do not want any more
 	$page->cookie($cookie);
 	$page->size(0);
