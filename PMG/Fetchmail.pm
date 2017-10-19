@@ -92,7 +92,7 @@ sub read_fetchmail_conf {
 		$finalize_item->($item) if defined($item);
 		my $id = $get_token_argument->();
 		$item = { id => $id };
-		$item->{enable} = $token eq 'pass' ? 1 : 0;
+		$item->{enable} = $token eq 'poll' ? 1 : 0;
 		next;
 	    }
 
