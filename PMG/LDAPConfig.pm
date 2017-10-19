@@ -92,6 +92,11 @@ sub properties {
 	    pattern => '[a-zA-Z0-9]+',
 	    default => "mail, userPrincipalName, proxyAddresses, othermailbox",
 	},
+	groupclass => {
+	    description => "List of objectclasses for groups.",
+	    type => 'string', format => 'string-list',
+	    default => "group, univentionGroup, ipausergroup",
+	},
     };
 }
 
@@ -110,6 +115,7 @@ sub options {
 	filter => { optional => 1 },
 	accountattr => { optional => 1 },
 	mailattr => { optional => 1 },
+	groupclass => { optional => 1 },
     };
 }
 

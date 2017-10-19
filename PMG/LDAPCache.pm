@@ -65,6 +65,7 @@ sub new {
     # split list returns an array not a reference
     $self->{accountattr} = [split_list($self->{accountattr})];
     $self->{mailattr} = [split_list($self->{mailattr})];
+    $self->{groupclass} = [split_list($self->{groupclass})];
 
     $self->{server1} = $args{server1};
     $self->{server2} = $args{server2};
@@ -261,7 +262,13 @@ sub querygroups {
 
     return undef if !$self->{groupbasedn};
 
-    my $filter = "(|(objectclass=group)(objectclass=univentionGroup))";
+    my $filter = "(|";
+
+    for my $class (@{$self->{groupclass}}) {
+	$filter .= "(objectclass=$class)";
+    }
+
+    $filter .= ")";
 
     my $page = Net::LDAP::Control::Paged->new(size => 100);
 
