@@ -166,16 +166,17 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
+	my $id = extract_param($param, 'id');
+
 	my $code = sub {
 
 	    my $fmcfg = PVE::INotify::read_file('fetchmailrc');
 
-	    my $data = $fmcfg->{$param->{id}};
-	    die "Fetchmail entry '$param->{id}' does not exist\n"
+	    my $data = $fmcfg->{$id};
+	    die "Fetchmail entry '$id' does not exist\n"
 		if !$data;
 
-	    foreach my $k (qw(server enable)) {
-		next if ! defined($param->{$k});
+	    foreach my $k (keys %$param) {
 		$data->{$k} = $param->{$k};
 	    }
 
