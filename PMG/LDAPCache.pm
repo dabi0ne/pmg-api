@@ -11,8 +11,10 @@ use Net::LDAP::Constant qw (LDAP_CONTROL_PAGED);
 use DB_File;
 
 use PVE::SafeSyslog;
+use PVE::Tools qw(split_list);
 
 use PMG::Utils;
+use PMG::LDAPConfig;
 
 $DB_HASH->{'cachesize'} = 10000;
 $DB_RECNO->{'cachesize'} = 10000;
@@ -51,20 +53,19 @@ sub new {
 	$self->{id} = $id;
     }
 
-    if (!$args{mailattr}) {
-	$args{mailattr} = "mail, userPrincipalName, proxyAddresses, othermailbox";
-    }
-    $args{mailattr} =~ s/[\,\;]/ /g;
-    $args{mailattr} =~ s/\s+/,/g;
+    my $config_properties = PMG::LDAPConfig::properties();
 
-    if ($args{mode} && ($args{mode} eq 'ldap' ||  $args{mode} eq 'ldaps')) {
-	$self->{mode} = $args{mode};
-    } else {
-	$self->{mode} = 'ldap';
+    # set defaults for the fields that have one
+    foreach my $property (keys %$config_properties) {
+	my $d = $config_properties->{$property};
+	next if !defined($d->{default});
+	$self->{$property} = $args{$property} || $d->{default};
     }
 
-    $self->{accountattr} = $args{accountattr} || 'sAMAccountName';
-    @{$self->{mailattr}} = split(/,/, $args{mailattr});
+    # split list returns an array not a reference
+    $self->{accountattr} = [split_list($self->{accountattr})];
+    $self->{mailattr} = [split_list($self->{mailattr})];
+
     $self->{server1} = $args{server1};
     $self->{server2} = $args{server2};
     $self->{binddn} = $args{binddn};
@@ -156,7 +157,7 @@ sub queryusers {
 	scope    => "subtree",
 	filter   => $filter,
 	control  => [ $page ],
-	attrs  => [ @{$self->{mailattr}}, $self->{accountattr}, 'memberOf' ]
+	attrs  => [ @{$self->{mailattr}}, @{$self->{accountattr}}, 'memberOf' ]
 	);
 
     my $cookie;
@@ -207,12 +208,14 @@ sub queryusers {
 		$self->{dbstat}->{dnames}->{dbh}->put($dn, $cuid);
 	    }
 
-	    my $account = $entry->get_value($self->{accountattr});
-	    if ($account && ($account =~ m/^\S+$/s)) {
-		$account = lc($account);
-		$self->{dbstat}->{accounts}->{dbh}->put($account, $cuid);
-		my $data = pack('n/a* n/a* n/a*', $pmail, $account, $dn);
-		$self->{dbstat}->{users}->{dbh}->put($cuid, $data);
+	    foreach my $attr (@{$self->{accountattr}}) {
+		my $account = $entry->get_value($attr);
+		if ($account && ($account =~ m/^\S+$/s)) {
+		    $account = lc($account);
+		    $self->{dbstat}->{accounts}->{dbh}->put($account, $cuid);
+		    my $data = pack('n/a* n/a* n/a*', $pmail, $account, $dn);
+		    $self->{dbstat}->{users}->{dbh}->put($cuid, $data);
+		}
 	    }
 
 	    foreach my $mail (@$addresses) {

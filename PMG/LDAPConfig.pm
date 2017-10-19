@@ -82,9 +82,9 @@ sub properties {
 	},
 	accountattr => {
 	    description => "Account attribute name name.",
-	    type => 'string',
+	    type => 'string', format => 'string-list',
 	    pattern => '[a-zA-Z0-9]+',
-	    default => 'sAMAccountName',
+	    default => 'sAMAccountName, uid',
 	},
 	mailattr => {
 	    description => "List of mail attribute names.",
