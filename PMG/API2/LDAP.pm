@@ -367,6 +367,7 @@ __PACKAGE__->register_method ({
 		pmail => { type => 'string'},
 	    },
 	},
+	links => [ { rel => 'child', href => "{pmail}" } ],
     },
     code => sub {
 	my ($param) = @_;
