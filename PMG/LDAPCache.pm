@@ -562,10 +562,10 @@ sub loaddata {
     }
 }
 
-sub list_groups {
+sub get_groups {
     my ($self) = @_;
 
-    my $res = [];
+    my $res = {};
 
     my $dbh = $self->{dbstat}->{groups}->{dbh};
 
@@ -574,22 +574,19 @@ sub list_groups {
     my $key = 0 ;
     my $value = "" ;
     my $status = $dbh->seq($key, $value, R_FIRST());
-    my $keys;
 
     while ($status == 0) {
-	push @$res, {
-	    dn => $key,
-	};
+	$res->{$value} = $key;
         $status = $dbh->seq($key, $value, R_NEXT());
     }
 
     return $res;
 }
 
-sub list_users {
+sub get_users {
     my ($self) = @_;
 
-    my $res = [];
+    my $res = {};
 
     my $dbh = $self->{dbstat}->{users}->{dbh};
 
@@ -602,12 +599,74 @@ sub list_users {
 
     while ($status == 0) {
 	my ($pmail, $account, $dn) = unpack('n/a* n/a* n/a*', $value);
-	push @$res, {
+	$res->{$key} = {
 	    pmail => $pmail,
 	    account => $account,
 	    dn => $dn,
 	};
         $status = $dbh->seq($key, $value, R_NEXT());
+    }
+
+    return $res;
+}
+
+sub get_gid_uid_map {
+    my ($self) = @_;
+
+    my $dbh = $self->{dbstat}->{memberof}->{dbh};
+
+    return [] if !$dbh;
+
+    my $key = 0 ;
+    my $value = "" ;
+
+    my $map = {};
+
+    if($dbh->seq($key, $value, R_FIRST()) == 0) {
+	do {
+	    push @{$map->{$value}}, $key;
+	} while($dbh->seq($key, $value, R_NEXT()) == 0);
+    }
+
+    return $map;
+}
+
+sub list_groups {
+    my ($self) = @_;
+
+    my $res = [];
+
+    my $groups = $self->get_groups();
+
+    for my $gid (sort keys %$groups) {
+	push @$res, {
+	    dn => $groups->{$gid},
+	    gid => $gid,
+	};
+    }
+
+    return $res;
+}
+
+sub list_users {
+    my ($self, $gid) = @_;
+
+    my $res = [];
+
+    my $users = $self->get_users();
+
+    if (!defined($gid)) {
+	$res = [values %$users];
+    } else {
+	my $gid_uid_map = $self->get_gid_uid_map();
+	my $groups = $self->get_groups();
+	die "No such Group ID\n"
+	    if !defined($groups->{$gid});
+	my $memberuids = $gid_uid_map->{$gid};
+	for my $uid (@$memberuids) {
+	    next if !defined($users->{$uid});
+	    push @$res, $users->{$uid};
+	}
     }
 
     return $res;

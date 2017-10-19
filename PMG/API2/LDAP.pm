@@ -471,6 +471,61 @@ __PACKAGE__->register_method ({
 	    type => "object",
 	    properties => {
 		dn => { type => 'string'},
+		gid => { type => 'number' },
+	    },
+	},
+	links => [ { rel => 'child', href => "{gid}" } ],
+    },
+    code => sub {
+	my ($param) = @_;
+
+	my $cfg = PMG::LDAPConfig->new();
+	my $ids = $cfg->{ids};
+
+	my $profile = $param->{profile};
+
+	die "LDAP profile '$profile' does not exist\n"
+	    if !$ids->{$profile};
+
+	my $config = $ids->{$profile};
+
+	return [] if $config->{disable};
+
+	my $ldapcache = PMG::LDAPCache->new(
+	    id => $profile, syncmode => 1, %$config);
+
+	return $ldapcache->list_groups();
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'profile_list_group_members',
+    path => '{profile}/groups/{gid}',
+    method => 'GET',
+    description => "List LDAP group members.",
+    permissions => { check => [ 'admin' ] },
+    protected => 1,
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    profile => {
+		description => "Profile ID.",
+		type => 'string', format => 'pve-configid',
+	    },
+	    gid => {
+		description => "Group ID",
+		type => 'number',
+	    },
+	},
+    },
+    returns => {
+	type => 'array',
+	items => {
+	    type => "object",
+	    properties => {
+		dn => { type => 'string'},
+		account => { type => 'string' },
+		pmail => { type => 'string' },
 	    },
 	},
     },
@@ -492,7 +547,7 @@ __PACKAGE__->register_method ({
 	my $ldapcache = PMG::LDAPCache->new(
 	    id => $profile, syncmode => 1, %$config);
 
-	return $ldapcache->list_groups();
+	return $ldapcache->list_users($param->{gid});
     }});
 
 1;
