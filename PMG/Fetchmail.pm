@@ -62,7 +62,7 @@ sub read_fetchmail_conf {
 		while ($data =~ /\G("([^"]*)"|\S+|)(?:\s|$)/g) {
 		    my ($token, $string) = ($1, $2);
 		    if ($1 ne '') {
-			$string =~ s/\\x([0-9A-Fa-f]{2})/chr(hex($1))/eg 
+			$string =~ s/\\x([0-9A-Fa-f]{2})/chr(hex($1))/eg
 			    if defined($string);
 			return wantarray ? ($token, $string) : $token;
 		    }
