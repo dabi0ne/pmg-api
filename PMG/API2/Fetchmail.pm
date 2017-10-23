@@ -3,6 +3,7 @@ package PMG::API2::Fetchmail;
 use strict;
 use warnings;
 use Data::Dumper;
+use Clone 'clone';
 
 use PVE::SafeSyslog;
 use PVE::Tools qw(extract_param);
@@ -82,9 +83,13 @@ my $fetchmail_properties = {
 	description => "The target email address (where to deliver fetched mails).",
 	optional => 1,
     }),
-
-
 };
+
+my $fetchmail_create_properties = clone($fetchmail_properties);
+delete $fetchmail_create_properties->{id};
+foreach my $k (qw(server protocol user pass target)) {
+    delete $fetchmail_create_properties->{$k}->{optional};
+}
 
 __PACKAGE__->register_method ({
     name => 'index',
@@ -148,6 +153,53 @@ __PACKAGE__->register_method ({
 	    if !$data;
 
 	return $data;
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'create',
+    path => '',
+    method => 'POST',
+    description => "Create fetchmail user configuration.",
+    protected => 1,
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => $fetchmail_create_properties,
+    },
+    returns => $fetchmail_properties->{id},
+    code => sub {
+	my ($param) = @_;
+
+	my $id;
+
+	my $code = sub {
+
+	    my $fmcfg = PVE::INotify::read_file('fetchmailrc');
+
+	    for (my $i = 0; $i < 9999; $i++) {
+		my $tmpid = sprintf("proxmox%04d", $i);
+		if (!defined($fmcfg->{$tmpid})) {
+		    $id = $tmpid;
+		    last;
+		}
+	    }
+	    die "unable to find free Fetchmail entry ID\n"
+		if !defined($id);
+
+	    my $entry = { id => $id };
+	    foreach my $k (keys %$param) {
+		$entry->{$k} = $param->{$k};
+	    }
+
+	    $fmcfg->{$id} = $entry;
+
+	    PVE::INotify::write_file('fetchmailrc', $fmcfg);
+	};
+
+	PMG::Config::lock_config($code, "update fechtmail configuration failed");
+
+	return $id;
     }});
 
 __PACKAGE__->register_method ({
