@@ -188,4 +188,41 @@ __PACKAGE__->register_method ({
 	return undef;
     }});
 
+__PACKAGE__->register_method ({
+    name => 'delete',
+    path => '{id}',
+    method => 'DELETE',
+    description => "Delete a fetchmail configuration entry.",
+    protected => 1,
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    id => $fetchmail_properties->{id},
+	}
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $id = extract_param($param, 'id');
+
+	my $code = sub {
+
+	    my $fmcfg = PVE::INotify::read_file('fetchmailrc');
+
+	    die "Fetchmail entry '$id' does not exist\n"
+		if !$fmcfg->{$id};
+
+	    delete $fmcfg->{$id};
+
+	    PVE::INotify::write_file('fetchmailrc', $fmcfg);
+	};
+
+	PMG::Config::lock_config($code, "delete fechtmail configuration failed");
+
+	return undef;
+    }});
+
 1;
