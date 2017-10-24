@@ -373,6 +373,7 @@ sub sync_config_from_master {
 	'domains',
 	'mynetworks',
 	'transport',
+	'fetchmailrc',
 	];
 
     foreach my $filename (@$files) {
