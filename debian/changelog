@@ -1,3 +1,33 @@
+proxmox-mailgateway (5.0-6) unstable; urgency=medium
+
+  * add date to the mail link for the verbose report
+
+  * implement fetchmail API
+
+  * add new LDAP group member api call
+
+  * implement missing rule database api calls
+
+  * implement user quarantine
+
+  * fix api call permissions
+
+  * add subscription api
+
+  * add apt api
+
+  * do not depend on clamav-unofficial-sigs
+
+  * implement mail tracker
+
+  * implement pmgqm - quarantine management tool
+
+  * improve statistic api
+
+  * countless other fixes and improvements
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 24 Oct 2017 08:30:23 +0200
+
 proxmox-mailgateway (5.0-5) unstable; urgency=medium
 
   * improved database security
