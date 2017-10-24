@@ -10,6 +10,7 @@ use Time::HiRes qw (gettimeofday tv_interval);
 use PVE::SafeSyslog;
 use PVE::Tools;
 use PVE::INotify;
+use PVE::APIClient::LWP;
 
 use PMG::Utils;
 use PMG::Config;
@@ -17,7 +18,7 @@ use PMG::ClusterConfig;
 use PMG::RuleDB;
 use PMG::RuleCache;
 use PMG::MailQueue;
-use PVE::APIClient::LWP;
+use PMG::Fetchmail;
 
 sub remote_node_ip {
     my ($nodename, $noerr) = @_;
@@ -364,6 +365,8 @@ sub sync_config_from_master {
 
     $cond_commit_synced_file->('cluster.conf');
 
+    PMG::Fetchmail::update_fetchmail_default(0); # disable on slave
+
     my $files = [
 	'pmg-authkey.key',
 	'pmg-authkey.pub',
@@ -379,6 +382,7 @@ sub sync_config_from_master {
     foreach my $filename (@$files) {
 	$cond_commit_synced_file->($filename);
     }
+
 
     my $force_restart = {};
 

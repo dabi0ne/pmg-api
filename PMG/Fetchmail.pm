@@ -8,9 +8,67 @@ use PVE::Tools;
 use PVE::INotify;
 
 use PMG::Config;
+use PMG::ClusterConfig;
 
 my $inotify_file_id = 'fetchmailrc';
 my $config_filename = '/etc/pmg/fetchmailrc';
+my $config_link_filename = '/etc/fetchmailrc';
+
+my $fetchmail_default_id = 'fetchmail_default';
+my $fetchmail_default_filename = '/etc/default/fetchmail';
+
+sub read_fetchmail_default {
+    my ($filename, $fh) = @_;
+
+    if (defined($fh)) {
+	while (defined(my $line = <$fh>)) {
+	    if ($line =~ m/^START_DAEMON=yes\s*$/) {
+		return 1;
+	    }
+	}
+    }
+
+    return 0;
+}
+
+sub write_fetchmail_default {
+    my ($filename, $fh, $enable) = @_;
+
+    open (my $orgfh, "<", $filename);
+
+    my $wrote_start_daemon = 0;
+
+    my $write_start_daemon_line = sub {
+
+	return if $wrote_start_daemon;  # only once
+	$wrote_start_daemon = 1;
+
+	if ($enable) {
+	    print $fh "START_DAEMON=yes\n";
+	} else {
+	    print $fh "START_DAEMON=no\n";
+	}
+    };
+
+    if (defined($orgfh)) {
+	while (defined(my $line = <$orgfh>)) {
+	    if ($line =~ m/^#?START_DAEMON=.*$/) {
+		$write_start_daemon_line->();
+	    } else {
+		print $fh $line;
+	    }
+	}
+    } else {
+	$write_start_daemon_line->();
+    }
+}
+
+PVE::INotify::register_file(
+    $fetchmail_default_id, $fetchmail_default_filename,
+    \&read_fetchmail_default,
+    \&write_fetchmail_default,
+    undef,
+    always_call_parser => 1);
 
 my $set_fetchmail_defaults = sub {
     my ($item) = @_;
@@ -133,9 +191,12 @@ sub write_fetchmail_conf {
 
     # Note: we correctly quote data here to make fetchmailrc.tt simpler
 
+    my $entry_count = 0;
+
     foreach my $id (keys %$fmcfg) {
 	my $org = $fmcfg->{$id};
 	my $item = { id => $id };
+	$entry_count++;
 	foreach my $k (keys %$org) {
 	    my $v = $org->{$k};
 	    $v =~ s/([^A-Za-z0-9\:\@\-\._~])/sprintf "\\x%02x",ord($1)/eg;
@@ -164,6 +225,32 @@ sub write_fetchmail_conf {
     chmod(0600, $fh);
 
     PVE::Tools::safe_print($filename, $fh, $raw);
+
+    update_fetchmail_default($entry_count);
+}
+
+sub update_fetchmail_default {
+    my ($enable) = @_;
+
+    my $cinfo = PMG::ClusterConfig->new();
+
+    my $is_enabled = PVE::INotify::read_file('fetchmail_default');
+    my $role = $cinfo->{local}->{type} // '-';
+    if (($role eq '-') || ($role eq 'master')) {
+	if (!!$enable != !!$is_enabled) {
+	    PVE::INotify::write_file('fetchmail_default', $enable);
+	}
+	if (! -e $config_link_filename) {
+	    symlink ($config_filename, $config_link_filename);
+	}
+    } else {
+	if ($is_enabled) {
+	    PVE::INotify::write_file('fetchmail_default', 0);
+	}
+	if (-e $config_link_filename) {
+	    unlink $config_link_filename;
+	}
+    }
 }
 
 PVE::INotify::register_file(
