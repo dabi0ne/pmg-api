@@ -8,6 +8,7 @@ use Data::Dumper;
 use Encode;
 
 use Mail::Header;
+use Mail::SpamAssassin;
 
 use PVE::SafeSyslog;
 use PVE::Exception qw(raise_param_exc raise_perm_exc);
@@ -49,7 +50,11 @@ my $verify_optional_pmail = sub {
 sub decode_spaminfo {
     my ($info) = @_;
 
-    $spamdesc = PMG::Utils::load_sa_descriptions() if !$spamdesc;
+    my $saversion = Mail::SpamAssassin->VERSION;
+
+    my $salocaldir = "/var/lib/spamassassin/$saversion/updates_spamassassin_org";
+
+    $spamdesc = PMG::Utils::load_sa_descriptions([$salocaldir]) if !$spamdesc;
 
     my $res = [];
 

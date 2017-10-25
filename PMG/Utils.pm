@@ -963,9 +963,12 @@ sub bencode_header {
 }
 
 sub load_sa_descriptions {
+    my ($additional_dirs) = @_;
 
     my @dirs = ('/usr/share/spamassassin',
 		'/usr/share/spamassassin-extra');
+
+    push @dirs, @$additional_dirs if @$additional_dirs;
 
     my $res = {};
 
