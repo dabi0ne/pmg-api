@@ -50,6 +50,13 @@ if (my $statlifetime = $cfg->get ('admin', 'statlifetime')) {
 # rotate razor log file
 rename('/root/.razor/razor-agent.log', '/root/.razor/razor-agent.log.0');
 
+# update spamassassin rules
+if (system('sa-update') == 0) {
+    # if the exit code is 0, new updates were downloaded
+    # then restart the pmg-smtp-filter to load the new rules
+    PMG::Utils::service_cmd('pmg-smtp-filter', 'restart');
+}
+
 # run bayes database maintainance
 system('sa-learn --force-expire >/dev/null 2>&1');
 
