@@ -42,7 +42,7 @@ __PACKAGE__->register_method ({
 
 	my $res = [];
 
-	push @$res, { subdir => "dbstat" };
+	push @$res, { subdir => "database" };
 
 	return $res;
     }});
