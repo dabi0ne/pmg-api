@@ -24,8 +24,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "Directory index.",
-    proxyto => 'node',
-    protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -54,7 +53,9 @@ __PACKAGE__->register_method({
     name => 'rules_status',
     path => 'rules',
     method => 'GET',
-    description => "SpamAssassin virus rules status.",
+    description => "SpamAssassin rules status.",
+    permissions => { check => [ 'admin', 'audit' ] },
+    proxyto => 'node',
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -130,6 +131,8 @@ __PACKAGE__->register_method({
     method => 'POST',
     description => "Update SpamAssassin rules.",
     protected => 1,
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'node',
     parameters => {
 	additionalProperties => 0,
 	properties => {

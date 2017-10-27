@@ -21,8 +21,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'GET',
     description => "Directory index.",
-    proxyto => 'node',
-    protected => 1,
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -58,6 +57,8 @@ __PACKAGE__->register_method({
 	    node => get_standard_option('pve-node'),
 	},
     },
+    permissions => { check => [ 'admin', 'audit' ] },
+    proxyto => 'node',
     returns => {
 	type => 'array',
 	items => {
@@ -81,6 +82,8 @@ __PACKAGE__->register_method({
     path => 'database',
     method => 'POST',
     description => "Update ClamAV virus databases.",
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'node',
     protected => 1,
     parameters => {
 	additionalProperties => 0,
