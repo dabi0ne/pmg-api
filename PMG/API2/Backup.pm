@@ -10,7 +10,9 @@ use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
 
+use PMG::RESTEnvironment;
 use PMG::Config;
+use PMG::Backup;
 
 use base qw(PVE::RESTHandler);
 
@@ -63,6 +65,7 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
+	    node => get_standard_option('pve-node'),
 	    statistic => $include_statistic_property,
 	},
     },
@@ -70,11 +73,28 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	die "implement me";
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
 
-	my $res = "test";
+	my $bkdir = "/var/lib/pmg/tmp";
 
-	return $res;
+	my (undef, undef, undef, $mday, $mon, $year) = localtime(time);
+	my $bkfile = sprintf("pmg-backup_%04d_%02d_%02d.tgz", $year + 1900, $mon + 1, $mday);
+	my $filename = "$bkdir/$bkfile";
+
+	my $worker = sub {
+	    my $upid = shift;
+
+	    print "starting backup\n";
+	    print "target file: $filename\n";
+
+	    PMG::Backup::pmg_backup($filename, $param->{statistic});
+	    print "backup finished\n";
+
+	    return;
+	};
+
+	return $rpcenv->fork_worker('backup', undef, $authuser, $worker);
     }});
 
 
@@ -89,6 +109,7 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
+	    node => get_standard_option('pve-node'),
 	    filename => {
 		description => "The backup file you want to retore.",
 		type => "string",
@@ -120,3 +141,5 @@ __PACKAGE__->register_method ({
 
 	return $res;
     }});
+
+1;
