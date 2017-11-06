@@ -2,6 +2,7 @@ package PMG::API2::Backup;
 
 use strict;
 use warnings;
+use Time::Local;
 use Data::Dumper;
 
 use PVE::SafeSyslog;
@@ -16,6 +17,8 @@ use PMG::Backup;
 
 use base qw(PVE::RESTHandler);
 
+my $backup_dir = "/var/lib/pmg/tmp";
+
 __PACKAGE__->register_method ({
     name => 'list',
     path => '',
@@ -26,23 +29,49 @@ __PACKAGE__->register_method ({
     protected => 1,
     parameters => {
 	additionalProperties => 0,
-	properties => {},
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
     },
    returns => {
 	type => "array",
 	items => {
 	    type => "object",
 	    properties => {
-		filename => { type => 'string'},
+		filename => {
+		    description => "File name.",
+		    type => 'string',
+		},
+		size => {
+		    description => "Size of backup file in bytes.",
+		    type => 'integer',
+		},
+		day => {
+		    description => "Backup timestamp (Day as Unix epoch).",
+		    type => 'integer',
+		},
 	    },
 	},
     },
     code => sub {
 	my ($param) = @_;
 
-	die "implement me";
-
 	my $res = [];
+
+	PVE::Tools::dir_glob_foreach(
+	    $backup_dir,
+	    'pmg-backup_(\d{4})_(\d\d)_(\d\d)\.tgz',
+	    sub {
+		my ($filename, $year, $mon, $mday) = @_;
+		push @$res, {
+		    filename => $filename,
+		    size => -s "$backup_dir/$filename",
+		    year => int($year),
+		    mon => int($mon),
+		    mday => int($mday),
+		    day => timelocal(0, 0, 0, int($mday), int($mon), int($year)),
+		};
+	    });
 
 	return $res;
     }});
@@ -76,11 +105,9 @@ __PACKAGE__->register_method ({
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
 
-	my $bkdir = "/var/lib/pmg/tmp";
-
 	my (undef, undef, undef, $mday, $mon, $year) = localtime(time);
 	my $bkfile = sprintf("pmg-backup_%04d_%02d_%02d.tgz", $year + 1900, $mon + 1, $mday);
-	my $filename = "$bkdir/$bkfile";
+	my $filename = "${backup_dir}/$bkfile";
 
 	my $worker = sub {
 	    my $upid = shift;

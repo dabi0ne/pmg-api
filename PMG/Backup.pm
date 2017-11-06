@@ -145,7 +145,7 @@ sub pmg_backup {
 	my $targetdir = dirname($filename);
 	mkdir $targetdir; # try to create target dir
 	-d $targetdir ||
-	    "unable to access target directory '$targetdir'\n";
+	    die "unable to access target directory '$targetdir'\n";
 
 	# create a temporary directory
 	mkdir $dirname;
