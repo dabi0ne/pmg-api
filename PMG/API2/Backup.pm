@@ -18,6 +18,15 @@ use PMG::Backup;
 use base qw(PVE::RESTHandler);
 
 my $backup_dir = "/var/lib/pmg/tmp";
+my $backup_filename_pattern = 'pmg-backup_(\d{4})_(\d\d)_(\d\d)\.tgz';
+
+my $backup_filename_property = {
+    description => "The backup file name.",
+    type => "string",
+    pattern => $backup_filename_pattern,
+    minLength => 4,
+    maxLength => 256,
+};
 
 __PACKAGE__->register_method ({
     name => 'list',
@@ -38,10 +47,7 @@ __PACKAGE__->register_method ({
 	items => {
 	    type => "object",
 	    properties => {
-		filename => {
-		    description => "File name.",
-		    type => 'string',
-		},
+		filename => $backup_filename_property,
 		size => {
 		    description => "Size of backup file in bytes.",
 		    type => 'integer',
@@ -60,7 +66,7 @@ __PACKAGE__->register_method ({
 
 	PVE::Tools::dir_glob_foreach(
 	    $backup_dir,
-	    'pmg-backup_(\d{4})_(\d\d)_(\d\d)\.tgz',
+	    $backup_filename_pattern,
 	    sub {
 		my ($filename, $year, $mon, $mday) = @_;
 		push @$res, {
@@ -124,6 +130,30 @@ __PACKAGE__->register_method ({
 	return $rpcenv->fork_worker('backup', undef, $authuser, $worker);
     }});
 
+__PACKAGE__->register_method ({
+    name => 'delete',
+    path => '{filename}',
+    method => 'DELETE',
+    description => "Delete a backup file.",
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    filename => $backup_filename_property,
+	},
+    },
+    returns => { type => "null" },
+    code => sub {
+	my ($param) = @_;
+
+	my $filename = "${backup_dir}/$param->{filename}";
+	unlink($filename) || die "delete backup file '$filename' failed - $!\n";
+
+	return undef;
+    }});
 
 __PACKAGE__->register_method ({
     name => 'restore',
@@ -137,12 +167,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    node => get_standard_option('pve-node'),
-	    filename => {
-		description => "The backup file you want to retore.",
-		type => "string",
-		minLength => 4,
-		maxLength => 256,
-	    },
+	    filename => $backup_filename_property,
 	    statistic => $include_statistic_property,
 	    config => {
 		description => "Restore system configuration.",
