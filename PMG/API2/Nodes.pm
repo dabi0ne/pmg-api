@@ -24,6 +24,7 @@ use PMG::API2::ClamAV;
 use PMG::API2::SpamAssassin;
 use PMG::API2::Postfix;
 use PMG::API2::MailTracker;
+use PMG::API2::Backup;
 
 use base qw(PVE::RESTHandler);
 
@@ -73,6 +74,11 @@ __PACKAGE__->register_method ({
 });
 
 __PACKAGE__->register_method ({
+    subclass => "PMG::API2::Backup",
+    path => 'backup',
+});
+
+__PACKAGE__->register_method ({
     name => 'index',
     path => '',
     method => 'GET',
@@ -97,6 +103,7 @@ __PACKAGE__->register_method ({
 
 	my $result = [
 	    { name => 'apt' },
+	    { name => 'backup' },
 	    { name => 'clamav' },
 	    { name => 'spamassassin' },
 	    { name => 'postfix' },
