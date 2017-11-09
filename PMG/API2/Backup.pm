@@ -42,7 +42,7 @@ __PACKAGE__->register_method ({
 	    node => get_standard_option('pve-node'),
 	},
     },
-   returns => {
+    returns => {
 	type => "array",
 	items => {
 	    type => "object",
@@ -58,6 +58,7 @@ __PACKAGE__->register_method ({
 		},
 	    },
 	},
+	links => [ { rel => 'child', href => "{filename}" } ],
     },
     code => sub {
 	my ($param) = @_;
@@ -104,7 +105,7 @@ __PACKAGE__->register_method ({
 	    statistic => $include_statistic_property,
 	},
     },
-   returns => { type => "string" },
+    returns => { type => "string" },
     code => sub {
 	my ($param) = @_;
 
@@ -128,6 +129,31 @@ __PACKAGE__->register_method ({
 	};
 
 	return $rpcenv->fork_worker('backup', undef, $authuser, $worker);
+    }});
+
+__PACKAGE__->register_method ({
+    name => 'download',
+    path => '{filename}',
+    method => 'GET',
+    description => "Download a backup file.",
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'node',
+    protected => 1,
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    filename => $backup_filename_property,
+	},
+    },
+    download => 1,
+    returns => { type => "string" },
+    code => sub {
+	my ($param) = @_;
+
+	my $filename = "${backup_dir}/$param->{filename}";
+
+	return $filename;
     }});
 
 __PACKAGE__->register_method ({

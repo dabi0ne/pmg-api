@@ -27,7 +27,7 @@ sub new {
     my $class = ref($this) || $this;
 
     my $self = $class->SUPER::new(%args);
-    
+
     $self->{rpcenv} = PMG::RESTEnvironment->init(
 	$self->{trusted_env} ? 'priv' : 'pub', atfork =>  sub { $self->atfork_handler() });
 
@@ -153,11 +153,21 @@ sub rest_handler {
 	    }
 	}
 
+
+	my $result = $handler->handle($info, $uri_param);
+
 	$resp = {
-	    data => $handler->handle($info, $uri_param),
 	    info => $info, # useful to format output
 	    status => HTTP_OK,
 	};
+
+	if ($info->{download}) {
+	    die "download methods should have return type 'string' - internal error"
+		if ($info->{returns}->{type} ne 'string');
+	    $resp->{download} = $result;
+	} else {
+	    $resp->{data} = $result;
+	}
 
 	if (my $count = $rpcenv->get_result_attrib('total')) {
 	    $resp->{total} = $count;
