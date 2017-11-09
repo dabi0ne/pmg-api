@@ -219,4 +219,103 @@ sub pmg_backup {
     }
 }
 
+sub pmg_restore {
+    my ($filename, $restore_database, $restore_config, $restore_statistics) = @_;
+
+    my $dbname = 'Proxmox_ruledb';
+
+    my $time = time;
+    my $dirname = "/tmp/proxrestore_$$.$time";
+    my $dbfn = "Proxmox_ruledb.sql";
+    my $statfn = "Proxmox_statdb.sql";
+    my $tarfn = "config_backup.tar";
+    my $sigfn = "proxmox_backup_v1.md5";
+
+    eval {
+	# create a temporary directory
+	mkdir $dirname;
+
+	system("cd $dirname; tar xzf $filename >/dev/null 2>&1") == 0 ||
+	    die "unable to extract backup archive: ERROR";
+
+	system("cd $dirname; md5sum -c $sigfn") == 0 ||
+	    die "proxmox backup signature check failed: ERROR";
+
+	if ($restore_config) {
+	    # restore the tar file
+	    mkdir "$dirname/config/";
+	    system("tar xpf $dirname/$tarfn -C $dirname/config/") == 0 ||
+		die "unable to restore configuration tar archive: ERROR";
+
+	    -d "$dirname/config/etc/pmg" ||
+		die "backup does not contain a valid system configuration directory (/etc/pmg)\n";
+	    # unlink unneeded files
+	    unlink "$dirname/config/etc/pmg/cluster.conf"; # never restore cluster config
+	    rmtree "$dirname/config/etc/pmg/master";
+
+	    # backup old config to /etc/pmg.oldremove current config
+	    rmtree "/etc/pmg";
+	    mkdir "/etc/pmg";
+	    # copy files
+	    system("cp -a $dirname/config/etc/pmg/* /etc/pmg/") == 0 ||
+		die "unable to restore system configuration: ERROR";
+
+	    my $cfg = PMG::Config->new();
+	    my $ruledb = PMG::RuleDB->new();
+	    my $rulecache = PMG::RuleCache->new($ruledb);
+	    $cfg->rewrite_config($rulecache, 1);
+	}
+
+	if ($restore_database) {
+	    # recreate the database
+
+	    # stop all services accessing the database
+	    PMG::Utils::service_wait_stopped(40, $PMG::Utils::db_service_list);
+
+	    print "Destroy existing rule database\n";
+	    PMG::DBTools::delete_ruledb($dbname);
+
+	    print "Create new database\n";
+	    my $dbh = PMG::DBTools::create_ruledb($dbname);
+	    my $ruledb = PMG::RuleDB->new($dbh);
+	    PMG::DBTools::init_ruledb($ruledb);
+
+	    system("cat $dirname/$dbfn|psql $dbname >/dev/null 2>&1") == 0 ||
+		die "unable to restore rule database: ERROR";
+
+	    if ($restore_statistics) {
+		if (-f "$dirname/$statfn") {
+		    system("cat $dirname/$statfn|psql $dbname >/dev/null 2>&1") == 0 ||
+			die "unable to restore statistic database: ERROR";
+		}
+	    }
+
+	    print STDERR "run analyze to speed up database queries\n";
+	    PMG::DBTools::postgres_admin_cmd('psql', { input => 'analyze;' }, $dbname);
+
+	    print "Analyzing/Upgrading existing Databases...";
+	    PMG::DBTools::upgradedb($ruledb);
+	    print "done\n";
+
+	    # cleanup old spam/virus storage
+	    PMG::MailQueue::create_spooldirs(0, 1);
+
+	    my $cfg = PMG::Config->new();
+	    my $rulecache = PMG::RuleCache->new($ruledb);
+	    $cfg->rewrite_config($rulecache, 1);
+
+	    # and restart services as soon as possible
+	    foreach my $service (reverse @$PMG::Utils::db_service_list) {
+		eval { PVE::Tools::run_command(['systemctl', 'start', $service]); };
+		warn $@ if $@;
+	    }
+	}
+    };
+    my $err = $@;
+
+    rmtree $dirname;
+
+    die $err if $err;
+}
+
 1;

@@ -202,7 +202,7 @@ __PACKAGE__->register_method ({
 		default => 0,
 	    },
 	    database => {
-		description => "Restore the rule database.",
+		description => "Restore the rule database. This is the default.",
 		type => 'boolean',
 		optional => 1,
 		default => 1,
@@ -213,11 +213,30 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	die "implement me";
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
 
-	my $res = "test";
+	my $filename = "${backup_dir}/$param->{filename}";
+	-f $filename || die "backup file '$filename' does not exist - $!\n";
 
-	return $res;
+	$param->{database} //= 1;
+
+	die "nothing selected - please select what you want to restore (config or database?)\n"
+	    if !($param->{database} || $param->{config});
+
+	my $worker = sub {
+	    my $upid = shift;
+
+	    print "starting restore: $filename\n";
+
+	    PMG::Backup::pmg_restore($filename, $param->{database},
+				     $param->{config}, $param->{statistic});
+	    print "restore finished\n";
+
+	    return;
+	};
+
+	return $rpcenv->fork_worker('restore', undef, $authuser, $worker);
     }});
 
 1;
