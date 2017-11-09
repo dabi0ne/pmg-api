@@ -17,7 +17,7 @@ use PMG::Backup;
 
 use base qw(PVE::RESTHandler);
 
-my $backup_dir = "/var/lib/pmg/tmp";
+my $backup_dir = "/var/lib/pmg/backup";
 my $backup_filename_pattern = 'pmg-backup_(\d{4})_(\d\d)_(\d\d)\.tgz';
 
 my $backup_filename_property = {
