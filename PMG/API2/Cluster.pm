@@ -22,9 +22,6 @@ use PMG::API2::Nodes;
 
 use base qw(PVE::RESTHandler);
 
-my $db_service_list = [
-    'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
-
 sub cluster_join {
     my ($cinfo, $conn_setup) = @_;
 
@@ -41,7 +38,7 @@ sub cluster_join {
     eval {
 	print STDERR "stop all services accessing the database\n";
 	# stop all services accessing the database
-	PMG::Utils::service_wait_stopped(40, $db_service_list);
+	PMG::Utils::service_wait_stopped(40, $PMG::Utils::db_service_list);
 
 	print STDERR "save new cluster configuration\n";
 	$cinfo->write();
@@ -67,7 +64,7 @@ sub cluster_join {
 
 	PMG::DBTools::init_nodedb($cinfo);
 
-	my $cfg = PMG::ClusterConfig->new();
+	my $cfg = PMG::Config->new();
 	my $ruledb = PMG::RuleDB->new();
 	my $rulecache = PMG::RuleCache->new($ruledb);
 
@@ -79,7 +76,7 @@ sub cluster_join {
     };
     my $err = $@;
 
-    foreach my $service (reverse @$db_service_list) {
+    foreach my $service (reverse @$PMG::Utils::db_service_list) {
 	eval { PVE::Tools::run_command(['systemctl', 'start', $service]); };
 	warn $@ if $@;
     }
@@ -346,7 +343,7 @@ __PACKAGE__->register_method({
 	    eval {
 		print STDERR "stop all services accessing the database\n";
 		# stop all services accessing the database
-		PMG::Utils::service_wait_stopped(40, $db_service_list);
+		PMG::Utils::service_wait_stopped(40, $PMG::Utils::db_service_list);
 
 		print STDERR "save new cluster configuration\n";
 		$cinfo->write();
@@ -359,7 +356,7 @@ __PACKAGE__->register_method({
 	    };
 	    my $err = $@;
 
-	    foreach my $service (reverse @$db_service_list) {
+	    foreach my $service (reverse @$PMG::Utils::db_service_list) {
 		eval { PVE::Tools::run_command(['systemctl', 'start', $service]); };
 		warn $@ if $@;
 	    }

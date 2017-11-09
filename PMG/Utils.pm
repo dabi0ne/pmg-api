@@ -531,6 +531,9 @@ sub get_full_service_state {
     return $res;
 }
 
+our $db_service_list = [
+    'pmgpolicy', 'pmgmirror', 'pmgtunnel', 'pmg-smtp-filter' ];
+
 sub service_wait_stopped {
     my ($timeout, $service_list) = @_;
 
