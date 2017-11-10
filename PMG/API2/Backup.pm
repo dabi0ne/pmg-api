@@ -18,7 +18,7 @@ use PMG::Backup;
 use base qw(PVE::RESTHandler);
 
 my $backup_dir = "/var/lib/pmg/backup";
-my $backup_filename_pattern = 'pmg-backup_(\d{4})_(\d\d)_(\d\d)\.tgz';
+my $backup_filename_pattern = 'pmg-backup_(\d{4})_(\d\d)_(\d\d)_([0-9A-F]+)\.tgz';
 
 my $backup_filename_property = {
     description => "The backup file name.",
@@ -52,8 +52,8 @@ __PACKAGE__->register_method ({
 		    description => "Size of backup file in bytes.",
 		    type => 'integer',
 		},
-		day => {
-		    description => "Backup timestamp (Day as Unix epoch).",
+		timestamp => {
+		    description => "Backup timestamp (Unix epoch).",
 		    type => 'integer',
 		},
 	    },
@@ -69,14 +69,14 @@ __PACKAGE__->register_method ({
 	    $backup_dir,
 	    $backup_filename_pattern,
 	    sub {
-		my ($filename, $year, $mon, $mday) = @_;
+		my ($filename, $year, $mon, $mday, $timestamp_hex) = @_;
 		push @$res, {
 		    filename => $filename,
 		    size => -s "$backup_dir/$filename",
 		    year => int($year),
 		    mon => int($mon),
 		    mday => int($mday),
-		    day => timelocal(0, 0, 0, int($mday), int($mon), int($year)),
+		    timestamp => hex($timestamp_hex),
 		};
 	    });
 
@@ -113,16 +113,16 @@ __PACKAGE__->register_method ({
 	my $authuser = $rpcenv->get_user();
 
 	my (undef, undef, undef, $mday, $mon, $year) = localtime(time);
-	my $bkfile = sprintf("pmg-backup_%04d_%02d_%02d.tgz", $year + 1900, $mon + 1, $mday);
+	my $bkfile = sprintf("pmg-backup_%04d_%02d_%02d_%08X.tgz", $year + 1900, $mon + 1, $mday, time());
 	my $filename = "${backup_dir}/$bkfile";
 
 	my $worker = sub {
 	    my $upid = shift;
 
-	    print "starting backup\n";
-	    print "target file: $filename\n";
+	    print "starting backup to: $filename\n";
 
 	    PMG::Backup::pmg_backup($filename, $param->{statistic});
+
 	    print "backup finished\n";
 
 	    return;
