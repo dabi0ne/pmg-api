@@ -11,6 +11,8 @@ use PVE::Tools;
 use PMG::pmgcfg;
 use PMG::AtomicFile;
 
+my $sa_custon_config_fn = "/etc/mail/spamassassin/custom.cf";
+
 sub dump_table {
     my ($dbh, $table, $ofh, $seq, $seqcol) = @_;
 
@@ -181,7 +183,7 @@ sub pmg_backup {
 
 	my $extra_cfgs =  [];
 
-	push @$extra_cfgs, '/etc/mail/spamassassin/custom.cf';
+	push @$extra_cfgs, $sa_custon_config_fn;
 
 	#push @$extra_cfgs, '/etc/postfix/tls_policy';
 
@@ -249,6 +251,12 @@ sub pmg_restore {
 	    # copy files
 	    system("cp -a $dirname/config/etc/pmg/* /etc/pmg/") == 0 ||
 		die "unable to restore system configuration: ERROR";
+
+	    if (-f "$dirname/config/${sa_custon_config_fn}") {
+		my $data = PVE::Tools::file_get_contents(
+		    "$dirname/config/${sa_custon_config_fn}", 1024*1024);
+		PVE::Tools::file_set_contents($sa_custon_config_fn, $data);
+	    }
 
 	    my $cfg = PMG::Config->new();
 	    my $ruledb = PMG::RuleDB->new();
