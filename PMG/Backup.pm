@@ -179,28 +179,18 @@ sub pmg_backup {
 	print $vfh "product: $pkg\nversion: $ver\nbackuptime:$time:$now\n";
 	$vfh->close(1);
 
-	my $sshfiles = -d '/root/.ssh' ? '/root/.ssh' : '';
+	my $extra_cfgs =  [];
 
-	my $extra_cfgs = '/etc/passwd /etc/group';
+	push @$extra_cfgs, '/etc/mail/spamassassin/custom.cf';
 
-	my $extra_fn = '/etc/shadow';
-	$extra_cfgs .= " $extra_fn" if -e $extra_fn;
-
-	$extra_fn = '/etc/gshadow';
-	$extra_cfgs .= " $extra_fn" if -e $extra_fn;
-
-	$extra_fn = '/etc/mail/spamassassin/custom.cf';
-	$extra_cfgs .= " $extra_fn" if -e $extra_fn;
-
-	#$extra_fn = '/etc/postfix/tls_policy';
-	#$extra_cfgs .= " $extra_fn" if -e $extra_fn;
+	#push @$extra_cfgs, '/etc/postfix/tls_policy';
 
 	my $extradb = $include_statistics ? $statfn : '';
 
-	# we do not store cluster configurations (cluster.cfg)
+	my $extra = join(' ', @$extra_cfgs);
 
 	system("/bin/tar cf $dirname/$tarfn -C / " .
-	       "/etc/pmg $sshfiles $extra_cfgs>/dev/null 2>&1") == 0 ||
+	       "/etc/pmg $extra>/dev/null 2>&1") == 0 ||
 	       die "unable to create system configuration backup: ERROR";
 
 	system("cd $dirname; md5sum $tarfn $dbfn $extradb $verfn> $sigfn") == 0 ||
