@@ -112,8 +112,9 @@ __PACKAGE__->register_method ({
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
 
-	my (undef, undef, undef, $mday, $mon, $year) = localtime(time);
-	my $bkfile = sprintf("pmg-backup_%04d_%02d_%02d_%08X.tgz", $year + 1900, $mon + 1, $mday, time());
+	my $ctime = time();
+	my (undef, undef, undef, $mday, $mon, $year) = localtime($ctime);
+	my $bkfile = sprintf("pmg-backup_%04d_%02d_%02d_%08X.tgz", $year + 1900, $mon + 1, $mday, $ctime);
 	my $filename = "${backup_dir}/$bkfile";
 
 	my $worker = sub {
