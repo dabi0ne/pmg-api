@@ -18,7 +18,7 @@ use PMG::Backup;
 use base qw(PVE::RESTHandler);
 
 my $backup_dir = "/var/lib/pmg/backup";
-my $backup_filename_pattern = 'pmg-backup_(\d{4})_(\d\d)_(\d\d)_([0-9A-F]+)\.tgz';
+my $backup_filename_pattern = 'pmg-backup_[0-9A-Za-z_-]+\.tgz';
 
 my $backup_filename_property = {
     description => "The backup file name.",
@@ -69,14 +69,23 @@ __PACKAGE__->register_method ({
 	    $backup_dir,
 	    $backup_filename_pattern,
 	    sub {
-		my ($filename, $year, $mon, $mday, $timestamp_hex) = @_;
+		my ($filename) = @_;
+
+		my $path = "$backup_dir/$filename";
+		my @sa = stat($path);
+
+		my $timestamp = $sa[9] // 0; # mtime
+		my $size = $sa[7] // 0; # size
+
+		# prefer timestamp from filename
+		if ($filename =~ m/.*_([0-9A-F]+)\.tgz/) {
+		    $timestamp = hex($1);
+		}
+
 		push @$res, {
 		    filename => $filename,
-		    size => -s "$backup_dir/$filename",
-		    year => int($year),
-		    mon => int($mon),
-		    mday => int($mday),
-		    timestamp => hex($timestamp_hex),
+		    size => $size,
+		    timestamp => $timestamp,
 		};
 	    });
 
