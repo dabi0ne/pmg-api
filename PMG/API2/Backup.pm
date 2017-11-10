@@ -83,13 +83,6 @@ __PACKAGE__->register_method ({
 	return $res;
     }});
 
-my $include_statistic_property = {
-    description => "Backup/Restore statistic databases.",
-    type => 'boolean',
-    optional => 1,
-    default => 0,
-};
-
 __PACKAGE__->register_method ({
     name => 'backup',
     path => '',
@@ -102,7 +95,12 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    node => get_standard_option('pve-node'),
-	    statistic => $include_statistic_property,
+	    statistic => {
+		description => "Backup statistic databases.",
+		type => 'boolean',
+		optional => 1,
+		default => 1,
+	    },
 	},
     },
     returns => { type => "string" },
@@ -111,6 +109,8 @@ __PACKAGE__->register_method ({
 
 	my $rpcenv = PMG::RESTEnvironment->get();
 	my $authuser = $rpcenv->get_user();
+
+	$param->{statistic} //= 1;
 
 	my $ctime = time();
 	my (undef, undef, undef, $mday, $mon, $year) = localtime($ctime);
@@ -195,7 +195,6 @@ __PACKAGE__->register_method ({
 	properties => {
 	    node => get_standard_option('pve-node'),
 	    filename => $backup_filename_property,
-	    statistic => $include_statistic_property,
 	    config => {
 		description => "Restore system configuration.",
 		type => 'boolean',
@@ -207,6 +206,12 @@ __PACKAGE__->register_method ({
 		type => 'boolean',
 		optional => 1,
 		default => 1,
+	    },
+	    statistic => {
+		description => "Restore statistic databases. Only considered when you restore the 'database'.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
 	    },
 	},
     },
