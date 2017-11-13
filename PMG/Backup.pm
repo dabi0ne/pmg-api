@@ -245,9 +245,8 @@ sub pmg_restore {
 	    unlink "$dirname/config/etc/pmg/cluster.conf"; # never restore cluster config
 	    rmtree "$dirname/config/etc/pmg/master";
 
-	    # backup old config to /etc/pmg.oldremove current config
-	    rmtree "/etc/pmg";
-	    mkdir "/etc/pmg";
+	    # remove current config, but keep directory for INotify
+	    rmtree("/etc/pmg", { keep_root => 1 });
 	    # copy files
 	    system("cp -a $dirname/config/etc/pmg/* /etc/pmg/") == 0 ||
 		die "unable to restore system configuration: ERROR";
