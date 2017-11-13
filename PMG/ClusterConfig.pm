@@ -206,8 +206,9 @@ sub read_cluster_conf {
 	$cinfo->{master}->{maxcid} = $maxcid;
     }
 
+    my $local_cid = $cinfo->{local}->{cid};
     foreach my $cid (sort keys %{$cinfo->{ids}}) {
-	if ($cinfo->{'local'}->{cid} != $cid) {
+	if ($local_cid != $cid) {
 	    push @{$cinfo->{remnodes}}, $cid;
 	}
     }
