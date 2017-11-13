@@ -125,7 +125,7 @@ __PACKAGE__->register_method({
 	additionalProperties => 0,
 	properties => {},
     },
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
     returns => {
 	type => 'array',
 	items => {
@@ -140,7 +140,6 @@ __PACKAGE__->register_method({
 		fingerprint => { type => 'string' },
 	    },
 	},
-	links => [ { rel => 'child', href => "{cid}" } ],
     },
     code => sub {
 	my ($param) = @_;
@@ -167,7 +166,7 @@ __PACKAGE__->register_method({
 	additionalProperties => 0,
 	properties => {},
     },
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
     returns => {
 	type => 'array',
 	items => {
