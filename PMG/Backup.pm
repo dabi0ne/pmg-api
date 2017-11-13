@@ -275,8 +275,6 @@ sub pmg_restore {
 
 	    print "Create new database\n";
 	    my $dbh = PMG::DBTools::create_ruledb($dbname);
-	    my $ruledb = PMG::RuleDB->new($dbh);
-	    PMG::DBTools::init_ruledb($ruledb);
 
 	    system("cat $dirname/$dbfn|psql $dbname >/dev/null 2>&1") == 0 ||
 		die "unable to restore rule database: ERROR";
@@ -292,6 +290,7 @@ sub pmg_restore {
 	    PMG::DBTools::postgres_admin_cmd('psql', { input => 'analyze;' }, $dbname);
 
 	    print "Analyzing/Upgrading existing Databases...";
+	    my $ruledb = PMG::RuleDB->new($dbh);
 	    PMG::DBTools::upgradedb($ruledb);
 	    print "done\n";
 
