@@ -17,6 +17,7 @@ use PMG::RESTEnvironment;
 use PMG::ClusterConfig;
 use PMG::Cluster;
 use PMG::DBTools;
+use PMG::MailQueue;
 
 use PMG::API2::Nodes;
 
@@ -58,7 +59,7 @@ sub cluster_join {
 
 	my $cid = $cinfo->{'local'}->{cid};
 
-	PMG::Cluster::create_needed_dirs($cid, 1);
+	PMG::MailQueue::create_spooldirs($cid, 1);
 
 	PMG::Cluster::sync_config_from_master($cinfo->{master}->{name}, $cinfo->{master}->{ip});
 
@@ -367,7 +368,7 @@ __PACKAGE__->register_method({
 
 		PMG::DBTools::init_masterdb($cid);
 
-		PMG::Cluster::create_needed_dirs($cid, 1);
+		PMG::MailQueue::create_spooldirs($cid, 1);
 
 		print STDERR "cluster master successfully created\n";
 	    };
