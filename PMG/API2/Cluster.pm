@@ -164,7 +164,14 @@ __PACKAGE__->register_method({
     # alway read local file
     parameters => {
 	additionalProperties => 0,
-	properties => {},
+	properties => {
+	    list_single_node => {
+		description => "List local node if there is no cluster defined. Please note that RSA keys and fingerprint are not valid in that case.",
+		type => 'boolean',
+		optional => 1,
+		default => 0,
+	    },
+	},
     },
     permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
     returns => {
@@ -187,15 +194,26 @@ __PACKAGE__->register_method({
 	my ($param) = @_;
 
 	my $cinfo = PMG::ClusterConfig->new();
+	my $nodename = PVE::INotify::nodename();
 
+	my $res = [];
 	if (scalar(keys %{$cinfo->{ids}})) {
 	    my $role = $cinfo->{local}->{type} // '-';
 	    if ($role eq '-') {
 		die "local node '$cinfo->{local}->{name}' not part of cluster\n";
 	    }
-	}
+	    $res = PVE::RESTHandler::hash_to_array($cinfo->{ids}, 'cid');
 
-	my $res = PVE::RESTHandler::hash_to_array($cinfo->{ids}, 'cid');
+	} elsif ($param->{list_single_node}) {
+	    my $ni = { type => '-' };
+	    foreach my $k (qw(ip name cid)) {
+		$ni->{$k} = $cinfo->{local}->{$k};
+	    }
+	    foreach my $k (qw(hostrsapubkey rootrsapubkey fingerprint)) {
+		$ni->{$k} = '-'; # invalid
+	    }
+	    $res = [ $ni ];
+	}
 
 	my $rpcenv = PMG::RESTEnvironment->get();
         my $authuser = $rpcenv->get_user();
@@ -205,7 +223,7 @@ __PACKAGE__->register_method({
 	    my $info;
 	    eval {
 		if ($ni->{cid} eq $cinfo->{local}->{cid}) {
-		    $info = PMG::API2::NodeInfo->status({ node => PVE::INotify::nodename()});
+		    $info = PMG::API2::NodeInfo->status({ node => $nodename });
 		} else {
 		    my $conn = PVE::APIClient::LWP->new(
 			ticket => $ticket,
