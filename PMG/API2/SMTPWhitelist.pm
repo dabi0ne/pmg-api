@@ -108,6 +108,7 @@ __PACKAGE__->register_method ({
     description => "Remove an object from the SMTP whitelist.",
     proxyto => 'master',
     permissions => { check => [ 'admin' ] },
+    protected => 1,
     parameters => {
 	additionalProperties => 0,
 	properties => {
