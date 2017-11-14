@@ -1,4 +1,4 @@
-Source: proxmox-mailgateway
+Source: pmg-api
 Section: perl
 Priority: optional
 Maintainer: Proxmox Support Team <support@proxmox.com>
@@ -6,8 +6,8 @@ Build-Depends: debhelper (>= 9), perl (>= 5.10.0-19), dh-systemd, libdbi-perl, l
 Standards-Version: 3.9.5
 Homepage: http://www.proxmox.com
 
-Package: proxmox-mailgateway
+Package: pmg-api
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, libpve-common-perl, libpve-http-server-perl, libpve-apiclient-perl, libauthen-pam-perl, proxmox-mailgateway-gui, libtemplate-perl, fonts-font-awesome, novnc-pve, libfile-readbackwards-perl, libnet-ip-perl, libdbi-perl, libdbd-pg-perl, postgresql-9.6, libmime-tools-perl, shared-mime-info, proxmox-spamassassin, libhtml-parser-perl, libhtml-tree-perl, libhtml-scrubber-perl, libnet-cidr-lite-perl, libnet-ldap-perl, liblockfile-simple-perl, libnet-server-perl, clamav-daemon, clamav-freshclam, libfile-sync-perl, libcompress-bzip2-perl, libarchive-zip-perl, libarchive-perl, p7zip-full, tnef, postfix (>= 2.5.5), libterm-readline-gnu-perl, libmail-spf-perl, spf-tools-perl, libxdgmime-perl, librrds-perl, rrdcached, libfilesys-df-perl, pmg-docs, sudo, pmg-log-tracker, libapt-pkg-perl, vncterm
+Depends: ${perl:Depends}, ${misc:Depends}, libpve-common-perl, libpve-http-server-perl, libpve-apiclient-perl, libauthen-pam-perl, pmg-gui, libtemplate-perl, fonts-font-awesome, novnc-pve, libfile-readbackwards-perl, libnet-ip-perl, libdbi-perl, libdbd-pg-perl, postgresql-9.6, libmime-tools-perl, shared-mime-info, proxmox-spamassassin, libhtml-parser-perl, libhtml-tree-perl, libhtml-scrubber-perl, libnet-cidr-lite-perl, libnet-ldap-perl, liblockfile-simple-perl, libnet-server-perl, clamav-daemon, clamav-freshclam, libfile-sync-perl, libcompress-bzip2-perl, libarchive-zip-perl, libarchive-perl, p7zip-full, tnef, postfix (>= 2.5.5), libterm-readline-gnu-perl, libmail-spf-perl, spf-tools-perl, libxdgmime-perl, librrds-perl, rrdcached, libfilesys-df-perl, pmg-docs, sudo, pmg-log-tracker, libapt-pkg-perl, vncterm
 Description: Proxmox Mailgateway API Server Implementation
  This implements a REST API to configure Proxmox Mailgateway.

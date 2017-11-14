@@ -1,3 +1,9 @@
+pmg-api (5.0-8) unstable; urgency=medium
+
+  * rename package to pmg-api
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 14 Nov 2017 11:48:41 +0100
+
 proxmox-mailgateway (5.0-7) unstable; urgency=medium
 
   * PMG/API2/SMTPWhitelist.pm - update postfix files after modifications
