@@ -45,7 +45,7 @@ sub add_dirs {
     PVE::APIServer::AnyEvent::add_dirs($result_hash, $alias, $subdir);
 }
 
-my $gui_base_dir = "/usr/share/javascript/proxmox-mailgateway-gui";
+my $gui_base_dir = "/usr/share/javascript/pmg-gui";
 my $fontawesome_dir = "/usr/share/fonts-font-awesome";
 my $novnc_dir = '/usr/share/novnc-pve';
 
@@ -100,7 +100,7 @@ sub init {
 	    '/quarantine' => sub { get_index($self->{nodename}, @_) },
 	    # avoid authentication when accessing favicon
 	    '/favicon.ico' => {
-		file => '/usr/share/doc/proxmox-mailgateway/favicon.ico',
+		file => '/usr/share/doc/pmg-api/favicon.ico',
 	    },
 	    '/proxmoxlib.js' => {
 		file => '/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js',
