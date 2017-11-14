@@ -1,3 +1,29 @@
+proxmox-mailgateway (5.0-7) unstable; urgency=medium
+
+  * PMG/API2/SMTPWhitelist.pm - update postfix files after modifications
+
+  * PMG/Backup.pm - restore: keep directory /etc/pmg
+
+  * PMG/API2/Cluster.pm - use PMG::MailQueue::create_spooldirs
+
+  * PMG/API2/SMTPWhitelist.pm - fix delete object
+
+  * implement backup/restore
+
+  * PMG/API2/Cluster.pm - new option list_single_node
+
+  * improve permissions
+
+  * correct child link for the clamav api
+
+  * add spamassassin update api calls
+
+  * update spamassassin rules daily
+
+  * implement fetchmail api
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 14 Nov 2017 08:30:06 +0100
+
 proxmox-mailgateway (5.0-6) unstable; urgency=medium
 
   * add date to the mail link for the verbose report
