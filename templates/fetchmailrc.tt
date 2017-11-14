@@ -13,11 +13,11 @@ smtphost [% ipconfig.int_ip %]/[% pmg.mail.ext_port %]
 [% FOREACH item IN fetchmail_users.list('values') %]
 [% IF item.enable %]poll[% ELSE %]skip[% END -%]
  [% item.id %] via "[% item.server %]"
- user "[% item.user %]" pass "[% item.pass %]"
- to "[% item.target %]"
  protocol [% item.protocol %] port [% item.port %]
 [% IF item.interval %] interval [% item.interval %]
 [% END -%]
+ user "[% item.user %]" pass "[% item.pass %]"
+ to "[% item.target %]"
 [% IF item.options %] [% item.options %]
 [% END -%]
 [% END %]
