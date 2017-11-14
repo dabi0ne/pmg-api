@@ -1,3 +1,15 @@
+pmg-api (5.0-9) unstable; urgency=medium
+
+  * debian/pmgbanner.service - setup login banner
+
+  * templates/fetchmailrc.tt - fix syntax
+
+  * PMG/API2/APT.pm - fix package names
+
+  * PMG/Service/pmgproxy.pm - fix package names
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 14 Nov 2017 13:08:35 +0100
+
 pmg-api (5.0-8) unstable; urgency=medium
 
   * rename package to pmg-api
