@@ -29,10 +29,8 @@ my $print_status = sub {
 	$version = $pkginfo->{OldVersion};
     }
 
-    if ($pkginfo->{RunningKernel}) {
-	print "$pkg: $version (running kernel: $pkginfo->{RunningKernel})\n";
-    } elsif ($pkginfo->{ManagerVersion}) {
-	print "$pkg: $version (running version: $pkginfo->{ManagerVersion})\n";
+    if ($pkginfo->{RunningKernel} && $pkginfo->{ManagerVersion}) {
+	print "$pkg: $version (API: $pkginfo->{ManagerVersion}, running kernel: $pkginfo->{RunningKernel})\n";
     } else {
 	print "$pkg: $version\n";
     }
