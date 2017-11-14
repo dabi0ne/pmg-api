@@ -14,6 +14,7 @@ use PVE::Tools;
 use PMG::Utils;
 use PMG::RuleDB;
 use PMG::MailQueue;
+use PMG::Config;
 
 our $default_db_name = "Proxmox_ruledb";
 
@@ -1205,6 +1206,19 @@ sub load_mail_data {
 }
 
 sub reload_ruledb {
+    my ($ruledb) = @_;
+
+    # Note: we pass $ruledb when modifying SMTP whitelist
+    if (defined($ruledb)) {
+	eval {
+	    my $rulecache = PMG::RuleCache->new($ruledb);
+	    PMG::Config::rewrite_postfix_whitelist($rulecache);
+	};
+	if (my $err = $@) {
+	    warn "problems updating SMTP whitelist - $err";
+	}
+    }
+
     my $pid_file = '/var/run/pmg-smtp-filter.pid';
     my $pid = PVE::Tools::file_read_firstline($pid_file);
 

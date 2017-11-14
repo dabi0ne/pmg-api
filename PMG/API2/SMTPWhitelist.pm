@@ -130,7 +130,7 @@ __PACKAGE__->register_method ({
 
 	$rdb->delete_object($obj);
 
-	PMG::DBTools::reload_ruledb();
+	PMG::DBTools::reload_ruledb($rdb);
 
 	return undef;
     }});

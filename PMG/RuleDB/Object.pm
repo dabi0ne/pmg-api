@@ -197,7 +197,11 @@ sub register_api {
 
 	    my $id = $obj->save($rdb);
 
-	    PMG::DBTools::reload_ruledb();
+	    if ($use_greylist_gid) {
+		PMG::DBTools::reload_ruledb($rdb);
+	    } else {
+		PMG::DBTools::reload_ruledb();
+	    }
 
 	    return $id;
 	}});
@@ -257,7 +261,11 @@ sub register_api {
 
 	    $obj->save($rdb);
 
-	    PMG::DBTools::reload_ruledb();
+	    if ($use_greylist_gid) {
+		PMG::DBTools::reload_ruledb($rdb);
+	    } else {
+		PMG::DBTools::reload_ruledb();
+	    }
 
 	    return undef;
 	}});

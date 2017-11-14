@@ -1236,7 +1236,7 @@ my $write_smtp_whitelist = sub {
     return 1;
 };
 
-my $rewrite_config_whitelist = sub {
+sub rewrite_postfix_whitelist {
     my ($rulecache) = @_;
 
     # see man page for regexp_table for postfix regex table format
@@ -1313,7 +1313,7 @@ sub rewrite_config_postfix {
     $changes = 1 if $self->rewrite_config_file(
 	'master.cf.in', '/etc/postfix/master.cf');
 
-    $rewrite_config_whitelist->($rulecache) if $rulecache;
+    rewrite_postfix_whitelist($rulecache) if $rulecache;
 
     # fixme: rewrite_config_tls_policy ($class);
 
