@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use PVE::INotify;
+use PMG::Cluster;
+
+my $nodename = PVE::INotify::nodename();
+my $localip = PMG::Cluster::remote_node_ip($nodename, 1);
+
+my $xline = '-' x 78;
+
+my $banner = '';
+
+if ($localip) {
+    $banner .= <<__EOBANNER;
+
+$xline
+
+Welcome to the Proxmox Mail Gateway. Please use your web browser to 
+configure this server - connect to:
+
+  https://${localip}:8006/
+
+$xline
+
+__EOBANNER
+
+}
+
+open(ISSUE, ">/etc/issue");
+
+print ISSUE $banner;
+
+close(ISSUE);
+
+exit (0);
