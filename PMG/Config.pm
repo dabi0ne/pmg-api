@@ -977,14 +977,15 @@ sub get_template_vars {
 
     my $transportnets = [];
 
-    my $tmap = PVE::INotify::read_file('transport');
-    foreach my $domain (sort keys %$tmap) {
-	my $data = $tmap->{$domain};
-	my $host = $data->{host};
-	if ($host =~ m/^$IPV4RE$/) {
-	    push @$transportnets, "$host/32";
-	} elsif ($host =~ m/^$IPV6RE$/) {
-	    push @$transportnets, "[$host]/128";
+    if (my $tmap = PVE::INotify::read_file('transport')) {
+	foreach my $domain (sort keys %$tmap) {
+	    my $data = $tmap->{$domain};
+	    my $host = $data->{host};
+	    if ($host =~ m/^$IPV4RE$/) {
+		push @$transportnets, "$host/32";
+	    } elsif ($host =~ m/^$IPV6RE$/) {
+		push @$transportnets, "[$host]/128";
+	    }
 	}
     }
 
