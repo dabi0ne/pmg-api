@@ -29,7 +29,7 @@ case "$1" in
 		pmgconfig sync
 	    else
 		if systemctl --quiet is-active pmgpolicy.service ; then
-		    deb-systemd-invoke reload-or-try-restart postgres.service
+		    deb-systemd-invoke reload-or-try-restart postgresql.service
 		fi
 		pmgconfig sync --restart
 	    fi
