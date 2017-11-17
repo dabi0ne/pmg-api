@@ -21,7 +21,7 @@ case "$1" in
     configure)
 
 	if test -e /proxmox_install_mode ; then
-	    # do nothing in test mode here, but setup services in #DEBHELPER# below
+	    # do nothing in test mode here, but setup services below
 	else
 
 	    pmgconfig init
