@@ -20,9 +20,7 @@ case "$1" in
 
     configure)
 
-	if test -e /proxmox_install_mode ; then
-	    # do nothing in test mode here, but setup services below
-	else
+	if test ! -e /proxmox_install_mode ; then
 
 	    pmgconfig init
 	    pmgdb init
