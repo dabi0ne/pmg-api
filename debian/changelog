@@ -1,3 +1,9 @@
+pmg-api (5.0-11) unstable; urgency=medium
+
+  * debian/postinst - do not use #DEBHELPER# macro inside comment
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 17 Nov 2017 11:20:22 +0100
+
 pmg-api (5.0-10) unstable; urgency=medium
 
   * debian/postinst - do not skip service setup in /proxmox_install_mode
