@@ -20,23 +20,26 @@ case "$1" in
 
     configure)
 
-	test -e /proxmox_install_mode && exit 0;
-
-	pmgconfig init
-	pmgdb init
-
-	if [ -n "$2" ]; then
-	    pmgconfig sync
+	if test -e /proxmox_install_mode ; then
+	    # do nothing in test mode here, but setup services in #DEBHELPER# below
 	else
-	    if systemctl --quiet is-active pmgpolicy.service ; then
-		deb-systemd-invoke reload-or-try-restart postgres.service
+
+	    pmgconfig init
+	    pmgdb init
+
+	    if [ -n "$2" ]; then
+		pmgconfig sync
+	    else
+		if systemctl --quiet is-active pmgpolicy.service ; then
+		    deb-systemd-invoke reload-or-try-restart postgres.service
+		fi
+		pmgconfig sync --restart
 	    fi
-	    pmgconfig sync --restart
+
+	    pmgdb update  >/dev/null 2>&1 &
+
+	    update-mime-database /usr/share/mime
 	fi
-
-	pmgdb update  >/dev/null 2>&1 &
-
-	update-mime-database /usr/share/mime
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
