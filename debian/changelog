@@ -1,8 +1,10 @@
-pmg-api (5.0-11) unstable; urgency=medium
+pmg-api (5.0-12) unstable; urgency=medium
 
+  * debian/postinst - fix postgres service name (postgresql.service)
+  
   * debian/postinst - do not use #DEBHELPER# macro inside comment
 
- -- Proxmox Support Team <support@proxmox.com>  Fri, 17 Nov 2017 11:20:22 +0100
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 17 Nov 2017 11:30:26 +0100
 
 pmg-api (5.0-10) unstable; urgency=medium
 
