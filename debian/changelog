@@ -1,3 +1,9 @@
+pmg-api (5.0-10) unstable; urgency=medium
+
+  * debian/postinst - do not skip service setup in /proxmox_install_mode
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 17 Nov 2017 09:31:32 +0100
+
 pmg-api (5.0-9) unstable; urgency=medium
 
   * debian/pmgbanner.service - setup login banner
