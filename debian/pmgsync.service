@@ -1,0 +1,29 @@
+[Unit]
+Description=Sync Proxmox Configuration
+ConditionPathExists=/usr/bin/pmgdb
+ConditionPathExists=/usr/bin/pmgconfig
+DefaultDependencies=no
+Wants=remote-fs.target
+After=remote-fs.target
+Wants=postgresql.service
+After=postgresql.service
+Before=postfix.service
+Before=clamav-daemon.service
+Before=clamav-freshclam.service
+Before=pmgdaemon.service
+Before=fetchmail.service
+Before=pmgpolicy.service
+Before=pmgproxy.service
+Before=pmg-smtp-filter.service
+Before=pmgmirror.service
+
+[Service]
+ExecStart=/usr/bin/pmgdb init
+ExecStart=/usr/bin/pmgconfig sync
+Type=oneshot
+RemainAfterExit=yes
+
+
+[Install]
+WantedBy=multi-user.target
+

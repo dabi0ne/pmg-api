@@ -20,10 +20,11 @@ override_dh_installinit:
 	dh_systemd_enable --name=pmg-daily pmg-daily.service
 	dh_systemd_enable --name=pmgspamreport pmgspamreport.service
 	dh_systemd_enable --name=pmgreport pmgreport.service
+	dh_systemd_enable --name=pmgsync pmgsync.service
 
 override_dh_systemd_start:
 	dh_systemd_start pmg-hourly.timer pmg-daily.timer pmgspamreport.timer pmgreport.timer
-	dh_systemd_start --no-restart-on-upgrade --no-start pmgnetcommit.service pmgbanner.service
+	dh_systemd_start --no-restart-on-upgrade --no-start pmgnetcommit.service pmgbanner.service pmgsync.service
 	dh_systemd_start pmgdaemon.service pmgproxy.service pmg-smtp-filter.service pmgpolicy.service pmgtunnel.service pmgmirror.service
 
 override_dh_fixperms:
