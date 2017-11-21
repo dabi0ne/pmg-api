@@ -19,6 +19,7 @@ Before=pmgmirror.service
 
 [Service]
 ExecStart=/usr/bin/pmgdb init
+ExecStart=/usr/bin/pmgconfig init
 ExecStart=/usr/bin/pmgconfig sync
 Type=oneshot
 RemainAfterExit=yes
