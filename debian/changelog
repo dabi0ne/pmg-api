@@ -1,3 +1,9 @@
+pmg-api (5.0-13) unstable; urgency=medium
+
+  * add pmgsync service
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 21 Nov 2017 09:15:18 +0100
+
 pmg-api (5.0-12) unstable; urgency=medium
 
   * debian/postinst - fix postgres service name (postgresql.service)
