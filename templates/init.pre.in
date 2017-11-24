@@ -26,5 +26,5 @@ loadplugin Mail::SpamAssassin::Plugin::Hashcash
 loadplugin Mail::SpamAssassin::Plugin::SPF
 [% END %]
 
-# we do not load dkim currently
-#loadplugin Mail::SpamAssassin::Plugin::DKIM 
+# always load dkim to improve accuracy
+loadplugin Mail::SpamAssassin::Plugin::DKIM
