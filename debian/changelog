@@ -1,3 +1,9 @@
+pmg-api (5.0-15) unstable; urgency=medium
+
+  * always load SA dkim to improve accuracy
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 24 Nov 2017 07:25:38 +0100
+
 pmg-api (5.0-14) unstable; urgency=medium
 
   * pmgsync.service - run pmgconfig init to generate required files
