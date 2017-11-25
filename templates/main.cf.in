@@ -66,7 +66,6 @@ postscreen_dnsbl_sites = [% pmg.mail.dnsbl_sites %]
 
 postscreen_dnsbl_action = enforce
 postscreen_greet_action = enforce
-postscreen_dnsbl_reply_map = texthash:/etc/postfix/dnsbl_reply
 
 smtpd_sender_restrictions = 
         permit_mynetworks
