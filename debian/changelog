@@ -1,3 +1,11 @@
+pmg-api (5.0-16) unstable; urgency=medium
+
+  * depend on clamdscan
+
+  * do not set postscreen_dnsbl_reply_map
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 25 Nov 2017 09:36:02 +0100
+
 pmg-api (5.0-15) unstable; urgency=medium
 
   * always load SA dkim to improve accuracy
