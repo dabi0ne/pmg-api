@@ -1,3 +1,9 @@
+pmg-api (5.0-17) unstable; urgency=medium
+
+  * support postfix tls policy map /etc/pmg/tls_policy
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 27 Nov 2017 06:45:41 +0100
+
 pmg-api (5.0-16) unstable; urgency=medium
 
   * depend on clamdscan
