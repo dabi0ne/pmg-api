@@ -25,10 +25,6 @@ sub otype_text {
     return 'Block';
 }
 
-sub oicon {
-    return 'block.gif';
-}
-
 sub oisedit {
     return 0;   
 }

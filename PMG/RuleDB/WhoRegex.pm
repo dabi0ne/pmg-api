@@ -22,10 +22,6 @@ sub otype_text {
     return 'Regular Expression';
 }
 
-sub oicon {
-    return 'regexp.gif';
-}
-
 sub new {
     my ($type, $address, $ogroup) = @_;
     

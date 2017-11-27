@@ -19,10 +19,6 @@ sub otype_text {
     return 'Archive Filter';
 }
 
-sub oicon {
-    return 'contentfilter.gif';
-}
-
 my $pmtypes = {
     'proxmox/unreadable-archive' => undef,
 };

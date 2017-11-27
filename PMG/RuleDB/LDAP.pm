@@ -25,10 +25,6 @@ sub otype_text {
     return 'LDAP Group';
 }
 
-sub oicon {
-    return 'group.gif';
-}
-
 sub new {
     my ($type, $ldapgroup, $profile, $ogroup) = @_;
 

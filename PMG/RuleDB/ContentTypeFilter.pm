@@ -25,10 +25,6 @@ sub otype_text {
     return 'ContentType Filter';
 }
 
-sub oicon {
-    return 'contentfilter.gif';
-}
-
 sub new {
     my ($type, $fvalue, $ogroup) = @_;
 

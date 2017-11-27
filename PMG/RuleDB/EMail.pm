@@ -16,10 +16,6 @@ sub otype_text {
     return 'Mail address';
 }
 
-sub oicon {
-    return 'mail.gif';
-}
-
 sub new {
     my ($type, $address, $ogroup) = @_;
     my $class = ref($type) || $type;

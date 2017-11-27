@@ -17,10 +17,6 @@ sub otype_text {
     return 'IP Address';
 }
 
-sub oicon {
-    return 'ip.gif';
-}
-
 sub new {
     my ($type, $address, $ogroup) = @_;
     

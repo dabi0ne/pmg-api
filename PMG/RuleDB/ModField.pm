@@ -23,10 +23,6 @@ sub otype_text {
     return 'Header Attribute';
 }
 
-sub oicon {
-    return 'modfield.gif';
-}
-
 sub final {
     return 0;
 }

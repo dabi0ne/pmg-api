@@ -24,10 +24,6 @@ sub otype_text {
     return 'BCC';
 }
 
-sub oicon {
-    return 'bcc.gif';
-}
-
 sub oisedit {
     return 1;
 }

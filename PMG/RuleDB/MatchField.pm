@@ -25,10 +25,6 @@ sub otype_text {
     return 'Match Field';
 }
 
-sub oicon {
-    return 'matchfield.gif';
-}
-
 sub new {
     my ($type, $field, $field_value, $ogroup) = @_;
 

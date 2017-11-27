@@ -28,10 +28,6 @@ sub otype_text {
     return 'Notification';
 }
 
-sub oicon {
-    return 'notify.gif';
-}
-
 sub final {
     return 0;
 }

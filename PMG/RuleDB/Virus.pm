@@ -22,10 +22,6 @@ sub otype_text {
     return 'Virus Filter';
 }
 
-sub oicon {
-    return 'virusdetect.gif';
-}
-
 sub oisedit {
     return 0;   
 }
