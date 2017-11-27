@@ -1323,8 +1323,6 @@ sub rewrite_config_postfix {
 
     rewrite_postfix_whitelist($rulecache) if $rulecache;
 
-    # fixme: rewrite_config_tls_policy ($class);
-
     # make sure aliases.db is up to date
     system('/usr/bin/newaliases');
 

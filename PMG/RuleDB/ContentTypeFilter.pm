@@ -26,7 +26,6 @@ sub otype_text {
 }
 
 sub oicon {
-    #fixme:
     return 'contentfilter.gif';
 }
 

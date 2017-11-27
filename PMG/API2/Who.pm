@@ -61,7 +61,6 @@ __PACKAGE__->register_method ({
 	    { subdir => 'ip' },
 	    { subdir => 'network' },
 	    { subdir => 'ldap' },
-	    # fixme: ldap
 	];
 
     }});

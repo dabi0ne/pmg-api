@@ -36,10 +36,6 @@ sub new {
 sub who_match {
     my ($self, $addr, $ip) = @_;
 
-    # fixme: implement me
-    # use queue->{xforward}->{addr} for from match
-    # dont know what to do in To match
-
     return 0 if !$ip;
 
     return $self->{address} eq $ip;
