@@ -501,11 +501,6 @@ sub properties {
 	    minimum => 0,
 	    default => 4,
 	},
-	use_rbl => {
-	    description => "Use Realtime Blacklists.",
-	    type => 'boolean',
-	    default => 1,
-	},
 	tls => {
 	    description => "Enable TLS.",
 	    type => 'boolean',
@@ -571,7 +566,6 @@ sub options {
 	max_smtpd_out => { optional => 1 },
 	greylist => { optional => 1 },
 	helotests => { optional => 1 },
-	use_rbl => { optional => 1 },
 	tls => { optional => 1 },
 	tlslog => { optional => 1 },
 	tlsheader => { optional => 1 },
@@ -1041,7 +1035,7 @@ sub get_template_vars {
 
     my $usepolicy = 0;
     $usepolicy = 1 if $self->get('mail', 'greylist') ||
-	$self->get('mail', 'spf') ||  $self->get('mail', 'use_rbl');
+	$self->get('mail', 'spf');
     $vars->{postfix}->{usepolicy} = $usepolicy;
 
     my $resolv = PVE::INotify::read_file('resolvconf');
