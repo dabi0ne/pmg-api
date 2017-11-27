@@ -632,12 +632,12 @@ PVE::JSONSchema::register_format(
 sub pmg_verify_dnsbl_entry {
     my ($name, $noerr) = @_;
 
-    # like dns-name, but can contain trasiling weight: 'domain*<WEIGHT>'
+    # like dns-name, but can contain trailing weight: 'domain*<WEIGHT>'
     my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
 
     if ($name !~ /^(${namere}\.)*${namere}(\*\-?\d+)?$/) {
 	   return undef if $noerr;
-	   die "value does not look like a valid dnsbl entry\n";
+	   die "value '$name' does not look like a valid dnsbl entry\n";
     }
     return $name;
 }
