@@ -1,3 +1,11 @@
+pmg-api (5.0-18) unstable; urgency=medium
+
+  * remove mail/use_rbl config - we use dnsbl_sites instead
+
+  * PMG/Config.pm - register/use format dnsbl-entry
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 27 Nov 2017 11:41:19 +0100
+
 pmg-api (5.0-17) unstable; urgency=medium
 
   * support postfix tls policy map /etc/pmg/tls_policy
