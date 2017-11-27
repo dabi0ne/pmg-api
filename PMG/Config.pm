@@ -553,7 +553,7 @@ sub properties {
 	},
 	dnsbl_sites => {
 	    description => "Optional list of DNS white/blacklist domains (see postscreen_dnsbl_sites parameter).",
-	    type => 'string',
+	    type => 'string', format => 'dnsbl-entry-list',
 	},
     };
 }
@@ -618,6 +618,7 @@ PMG::Config::Base->init();
 
 PVE::JSONSchema::register_format(
     'transport-domain', \&pmg_verify_transport_domain);
+
 sub pmg_verify_transport_domain {
     my ($name, $noerr) = @_;
 
@@ -627,6 +628,22 @@ sub pmg_verify_transport_domain {
     if ($name !~ /^\.?(${namere}\.)*${namere}$/) {
 	   return undef if $noerr;
 	   die "value does not look like a valid transport domain\n";
+    }
+    return $name;
+}
+
+PVE::JSONSchema::register_format(
+    'dnsbl-entry', \&pmg_verify_dnsbl_entry);
+
+sub pmg_verify_dnsbl_entry {
+    my ($name, $noerr) = @_;
+
+    # like dns-name, but can contain trasiling weight: 'domain*<WEIGHT>'
+    my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
+
+    if ($name !~ /^(${namere}\.)*${namere}(\*\-?\d+)?$/) {
+	   return undef if $noerr;
+	   die "value does not look like a valid dnsbl entry\n";
     }
     return $name;
 }
