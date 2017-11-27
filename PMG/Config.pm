@@ -1016,6 +1016,12 @@ sub get_template_vars {
 
     $vars->{postfix}->{mynetworks} = join(' ', @$mynetworks);
 
+    # normalize dnsbl_sites
+    my @dnsbl_sites = PVE::Tools::split_list($vars->{pmg}->{mail}->{dnsbl_sites});
+    if (scalar(@dnsbl_sites)) {
+	$vars->{postfix}->{dnsbl_sites} = join(',', @dnsbl_sites);
+    }
+
     my $usepolicy = 0;
     $usepolicy = 1 if $self->get('mail', 'greylist') ||
 	$self->get('mail', 'spf') ||  $self->get('mail', 'use_rbl');

@@ -60,8 +60,8 @@ postscreen_access_list =
 	permit_mynetworks,
 	cidr:/etc/postfix/postscreen_access
 
-[% IF pmg.mail.dnsbl_sites %]
-postscreen_dnsbl_sites = [% pmg.mail.dnsbl_sites %]
+[% IF postfix.dnsbl_sites %]
+postscreen_dnsbl_sites = [% postfix.dnsbl_sites %]
 [% END %]
 
 postscreen_dnsbl_action = enforce
