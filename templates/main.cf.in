@@ -97,7 +97,7 @@ smtpd_client_message_rate_limit = [% pmg.mail.message_rate_limit %]
 
 [% IF pmg.mail.tls %]
 smtp_tls_security_level = may
-smtp_tls_policy_maps = hash:/etc/postfix/tls_policy
+smtp_tls_policy_maps = hash:/etc/pmg/tls_policy
 smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
 smtpd_tls_security_level = may
 smtpd_tls_cert_file = /etc/pmg/pmg-tls.pem

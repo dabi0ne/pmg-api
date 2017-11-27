@@ -866,6 +866,12 @@ PVE::INotify::register_file('mynetworks', $mynetworks_filename,
 			    \&write_pmg_mynetworks,
 			    undef, always_call_parser => 1);
 
+my $tls_policy_map_filename = "/etc/pmg/tls_policy";
+
+sub postmap_tls_policy {
+    PMG::Utils::run_postmap($tls_policy_map_filename);
+}
+
 my $transport_map_filename = "/etc/pmg/transport";
 
 sub postmap_pmg_transport {
@@ -1296,6 +1302,7 @@ sub rewrite_config_postfix {
     postmap_pmg_domains();
     postmap_pmg_transport();
     postmap_pmg_mynetworks();
+    postmap_tls_policy();
 
     IO::File->new($transport_map_filename, 'a', 0644);
 
