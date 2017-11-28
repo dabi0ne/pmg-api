@@ -112,6 +112,8 @@ sub save {
     defined($self->{subject}) || die "undefined object attribute: ERROR";
     defined($self->{body}) || die "undefined object attribute: ERROR";
 
+    $self->{attach} //= 'N';
+
     if (defined ($self->{id})) {
 	# update
 	
@@ -304,7 +306,7 @@ sub update {
     $self->{to} = $param->{to};
     $self->{subject} = $param->{subject};
     $self->{body} = $param->{body};
-    $self->{attach} = $param->{attach} ? 'O' : undef;
+    $self->{attach} = $param->{attach} ? 'O' : 'N';
 }
 
 1;
