@@ -1,3 +1,9 @@
+pmg-api (5.0-20) unstable; urgency=medium
+
+  * use google safe browsing hits to icrease spam score
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 28 Nov 2017 13:46:13 +0100
+
 pmg-api (5.0-19) unstable; urgency=medium
 
   * PMG/RuleDB/Notify.pm - avoid use of undefined values
