@@ -1,6 +1,6 @@
 PACKAGE=pmg-api
 PKGVER=5.0
-PKGREL=18
+PKGREL=19
 
 # this requires package pmg-doc-generator
 export NOVIEW=1

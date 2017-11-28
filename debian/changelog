@@ -1,3 +1,9 @@
+pmg-api (5.0-19) unstable; urgency=medium
+
+  * PMG/RuleDB/Notify.pm - avoid use of undefined values
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 28 Nov 2017 12:19:21 +0100
+
 pmg-api (5.0-18) unstable; urgency=medium
 
   * remove mail/use_rbl config - we use dnsbl_sites instead
