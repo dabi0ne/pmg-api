@@ -624,6 +624,7 @@ sub handle_smtp {
 
     $queue = $smtp->{queue};
     $queue->{sa} = $self->{sa};
+    $queue->{safe_browsing_score} = $pmg_cfg->get('spam', 'safe_browsing_score');
 
     $queue->{lic_valid} = 1;
 
@@ -669,8 +670,17 @@ sub handle_smtp {
 
 
 	# test for virus first
-	$queue->{vinfo} = PMG::Utils::analyze_virus(
+	my $vinfo = PMG::Utils::analyze_virus(
 	    $queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
+
+	if ($vinfo =~ m/^Safebrowsing\.(.+)$/) {
+	    my $hit = $1;
+	    $self->log(3, "$queue->{logid}: Google Safe Browsing database hit '%s'", $hit);
+	    $queue->{safe_browsing} = $hit;
+	    $vinfo = undef;
+	}
+
+	$queue->{vinfo} = $vinfo;
 
 	# always add this headers to incoming mails
 	# to enable user to report false negatives

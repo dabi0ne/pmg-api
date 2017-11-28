@@ -1000,6 +1000,8 @@ sub load_sa_descriptions {
 	}
     }
 
+    $res->{'Safebrowsing'}->{desc} = "Found in Google Safe Browsing database.";
+
     return $res;
 }
 
