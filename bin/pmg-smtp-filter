@@ -673,7 +673,7 @@ sub handle_smtp {
 	my $vinfo = PMG::Utils::analyze_virus(
 	    $queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
 
-	if ($vinfo =~ m/^Safebrowsing\.(.+)$/) {
+	if ($vinfo && $vinfo =~ m/^Safebrowsing\.(.+)$/) {
 	    my $hit = $1;
 	    $self->log(3, "$queue->{logid}: Google Safe Browsing database hit '%s'", $hit);
 	    $queue->{safe_browsing} = $hit;
