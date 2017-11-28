@@ -790,7 +790,7 @@ sub update_node_status_rrd {
     my $netin = 0;
     my $netout = 0;
     foreach my $dev (keys %$netdev) {
-	next if $dev !~ m/^eth\d+$/;
+	next if $dev !~ m/^$PVE::Network::PHYSICAL_NIC_RE$/;
 	$netin += $netdev->{$dev}->{receive};
 	$netout += $netdev->{$dev}->{transmit};
     }
