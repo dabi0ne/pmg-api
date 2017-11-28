@@ -99,7 +99,7 @@ sub load_attr {
     $obj->{id} = $id;
 
     $obj->{digest} = Digest::SHA::sha1_hex(
-	$id, $value, $subject, $body, $attach, $ogroup);
+	$id, $obj->{to}, $obj->{subject}, $obj->{body}, $obj->{attach}, $ogroup);
 
     return $obj;
 }
