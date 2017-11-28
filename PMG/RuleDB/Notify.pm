@@ -253,46 +253,6 @@ sub execute {
     }
 }
 
-sub to { 
-    my ($self, $v) = @_; 
-
-    if (defined ($v)) {
-	$self->{to} = $v;
-    }
-
-    $self->{to}; 
-}
-
-sub subject { 
-    my ($self, $v) = @_; 
-
-    if (defined ($v)) {
-	$self->{subject} = $v;
-    }
-
-    $self->{subject}; 
-}
-
-sub body { 
-    my ($self, $v) = @_; 
-
-    if (defined ($v)) {
-	$self->{body} = $v;
-    }
-
-    $self->{body}; 
-}
-
-sub attach { 
-    my ($self, $v) = @_; 
-
-    if (defined ($v)) {
-	$self->{attach} = $v;
-    }
-
-    $self->{attach}; 
-}
-
 sub short_desc {
     my $self = shift;
 
