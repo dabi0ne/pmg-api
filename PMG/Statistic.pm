@@ -393,7 +393,7 @@ sub total_mail_stat {
     my $cmds = "SELECT sum(CountIn) + $glcount AS count_in, sum(CountOut) AS count_out, " .
 	"sum (VirusIn) AS viruscount_in, sum (VirusOut) AS viruscount_out, " .
 	"sum (SpamIn) AS spamcount_in, sum (SpamOut) AS spamcount_out, " .
-	"sum (BytesIn) AS bytes_in, sum (BytesOut) AS bytes_out, " .
+	"sum (BytesIn)*1024*1024 AS bytes_in, sum (BytesOut)*1024*1024 AS bytes_out, " .
 	"sum (BouncesIn) AS bounces_in, sum (BouncesOut) AS bounces_out, " .
 	"sum (GreylistCount) + $glcount as glcount, " .
 	"sum (SPFCount) as spfcount, " .

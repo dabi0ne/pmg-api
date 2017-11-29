@@ -145,7 +145,7 @@ my $get_incoming_table_data = sub {
 
     push @$data, {
 	text => 'Mail Traffic',
-	value => sprintf ("%.3f MByte", $totals->{traffic_in}),
+	value => sprintf ("%.3f MByte", $totals->{traffic_in}/(1024*1024)),
     };
 
     return $data;
@@ -170,7 +170,7 @@ my $get_outgoing_table_data = sub {
 
     push @$data, {
 	text => 'Mail Traffic',
-	value => sprintf ("%.3f MByte", $totals->{traffic_out}),
+	value => sprintf ("%.3f MByte", $totals->{bytes_out}/(1024*1024)),
     };
 
     return $data;
