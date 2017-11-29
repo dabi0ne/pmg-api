@@ -661,12 +661,12 @@ __PACKAGE__->register_method ({
 		    description => "Outgoing spam mails.",
 		    type => 'number',
 		},
-		mbytes_in => {
-		    description => "Incoming mail traffic (Mebibytes).",
+		bytes_in => {
+		    description => "Incoming mail traffic (Bytes).",
 		    type => 'number',
 		},
-		mbytes_out => {
-		    description => "Outgoing mail traffic (Mebibytes).",
+		bytes_out => {
+		    description => "Outgoing mail traffic (Bytes).",
 		    type => 'number',
 		},
 		viruscount_in => {

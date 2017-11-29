@@ -484,7 +484,7 @@ sub total_domain_stat {
     my ($from, $to) = $self->localdayspan();
 
     my $query = "SELECT domain, SUM (CountIn) AS count_in, SUM (CountOut) AS count_out," .
-	"SUM (BytesIn) AS mbytes_in, SUM (BytesOut) AS mbytes_out, " .
+	"SUM (BytesIn)*1024*1024 AS bytes_in, SUM (BytesOut)*1024*1024 AS bytes_out, " .
 	"SUM (VirusIn) AS viruscount_in, SUM (VirusOut) AS viruscount_out," .
 	"SUM (SpamIn) as spamcount_in, SUM (SpamOut) as spamcount_out " .
 	"FROM DomainStat where time >= $from AND time < $to " .
