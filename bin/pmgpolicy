@@ -626,7 +626,14 @@ sub greylist_value {
     }
 
 
-    my $res = $spf_header ? "prepend $spf_header" : 'dunno';
+    my $res = 'dunno';
+
+    # add spf_header once - SA can re-use this information
+    if (!defined($self->{cache}->{$instance}) ||
+	!$self->{cache}->{$instance}->{spf_header_added}) {
+	$res = "prepend $spf_header" if $spf_header;
+	$self->{cache}->{$instance}->{spf_header_added} = 1;
+    }
 
     return $res if !$self->{use_greylist};
 
