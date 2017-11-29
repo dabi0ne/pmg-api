@@ -1,3 +1,9 @@
+pmg-api (5.0-24) unstable; urgency=medium
+
+  * total_mail_stat: return bytes_in/bytes_out in bytes (instead of MBytes)
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 29 Nov 2017 11:37:07 +0100
+
 pmg-api (5.0-23) unstable; urgency=medium
 
   * avoid repeated SPF headers
