@@ -1,3 +1,9 @@
+pmg-api (5.0-23) unstable; urgency=medium
+
+  * avoid repeated SPF headers
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 29 Nov 2017 10:38:16 +0100
+
 pmg-api (5.0-22) unstable; urgency=medium
 
   * fix network stats
