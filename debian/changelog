@@ -1,3 +1,9 @@
+pmg-api (5.0-26) unstable; urgency=medium
+
+  * increase deafult maxspamsize to 512*1024
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 30 Nov 2017 09:56:50 +0100
+
 pmg-api (5.0-25) unstable; urgency=medium
 
   * templates/local.cf.in: include KAM.cf
