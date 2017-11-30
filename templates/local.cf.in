@@ -24,3 +24,6 @@ use_bayes [% pmg.spam.use_bayes %]
 whitelist_bounce_relays [% composed.wl_bounce_relays %]
 score ANY_BOUNCE_MESSAGE [% pmg.spam.bounce_score %]
 [% END %]
+
+include /usr/share/spamassassin-extra/KAM.cf
+
