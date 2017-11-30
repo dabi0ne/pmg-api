@@ -167,7 +167,7 @@ sub properties {
 	    description => "Maximum size of spam messages in bytes.",
 	    type => 'integer',
 	    minimum => 64,
-	    default => 200*1024,
+	    default => 512*1024,
 	},
     };
 }
