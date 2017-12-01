@@ -1,3 +1,9 @@
+pmg-api (5.0-28) unstable; urgency=medium
+
+  * pmg-smtp-filter: fix safebrowsing hit detection
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 01 Dec 2017 13:17:24 +0100
+
 pmg-api (5.0-27) unstable; urgency=medium
 
   * do not use .db file for mynetworks
