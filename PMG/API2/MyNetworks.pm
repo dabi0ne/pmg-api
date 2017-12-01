@@ -89,7 +89,11 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('mynetworks', $mynetworks);
 
-	    PMG::Config::postmap_pmg_mynetworks();
+	    my $cfg = PMG::Config->new();
+
+	    if ($cfg->rewrite_config_postfix()) {
+		PMG::Utils::service_cmd('postfix', 'restart');
+	    }
 	};
 
 	PMG::Config::lock_config($code, "add trusted network failed");
@@ -166,8 +170,6 @@ __PACKAGE__->register_method ({
 	    $mynetworks->{$param->{cidr}}->{comment} = $param->{comment};
 
 	    PVE::INotify::write_file('mynetworks', $mynetworks);
-
-	    PMG::Config::postmap_pmg_mynetworks();
 	};
 
 	PMG::Config::lock_config($code, "update trusted network failed");
@@ -207,7 +209,11 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('mynetworks', $mynetworks);
 
-	    PMG::Config::postmap_pmg_mynetworks();
+	    my $cfg = PMG::Config->new();
+
+	    if ($cfg->rewrite_config_postfix()) {
+		PMG::Utils::service_cmd('postfix', 'restart');
+	    }
 	};
 
 	PMG::Config::lock_config($code, "delete trusted network failed");

@@ -838,10 +838,6 @@ PVE::INotify::register_file('domains', $domainsfilename,
 
 my $mynetworks_filename = "/etc/pmg/mynetworks";
 
-sub postmap_pmg_mynetworks {
-    PMG::Utils::run_postmap($mynetworks_filename);
-}
-
 sub read_pmg_mynetworks {
     my ($filename, $fh) = @_;
 
@@ -1017,11 +1013,13 @@ sub get_template_vars {
     $vars->{postfix}->{transportnets} = join(' ', @$transportnets);
 
     my $mynetworks = [ '127.0.0.0/8', '[::1]/128' ];
-    push @$mynetworks, @$transportnets;
     push @$mynetworks, $int_net_cidr;
-    push @$mynetworks, 'hash:/etc/pmg/mynetworks';
 
     my $netlist = PVE::INotify::read_file('mynetworks');
+    push @$mynetworks, keys %$netlist;
+
+    push @$mynetworks, @$transportnets;
+
     # add default relay to mynetworks
     if (my $relay = $self->get('mail', 'relay')) {
 	if ($relay =~ m/^$IPV4RE$/) {
@@ -1326,7 +1324,6 @@ sub rewrite_config_postfix {
     # make sure we have required files (else postfix start fails)
     postmap_pmg_domains();
     postmap_pmg_transport();
-    postmap_pmg_mynetworks();
     postmap_tls_policy();
 
     IO::File->new($transport_map_filename, 'a', 0644);
