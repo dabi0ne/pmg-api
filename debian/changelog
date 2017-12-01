@@ -1,3 +1,9 @@
+pmg-api (5.0-27) unstable; urgency=medium
+
+  * do not use .db file for mynetworks
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 01 Dec 2017 10:57:42 +0100
+
 pmg-api (5.0-26) unstable; urgency=medium
 
   * increase deafult maxspamsize to 512*1024
