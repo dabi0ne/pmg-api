@@ -102,7 +102,7 @@ sub properties {
 	mailattr => {
 	    description => "List of mail attribute names.",
 	    type => 'string', format => 'ldap-simple-attr-list',
-	    default => "mail, userPrincipalName, proxyAddresses, othermailbox",
+	    default => "mail, userPrincipalName, proxyAddresses, othermailbox, mailAlternativeAddress",
 	},
 	groupclass => {
 	    description => "List of objectclasses for groups.",
