@@ -37,6 +37,9 @@ case "$1" in
 	    pmgdb update  >/dev/null 2>&1 &
 
 	    update-mime-database /usr/share/mime
+	else
+	    # rewrite banner
+	    pmgbanner || true
 	fi
     ;;
 
