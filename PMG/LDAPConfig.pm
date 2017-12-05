@@ -12,6 +12,19 @@ use PVE::SectionConfig;
 
 use base qw(PVE::SectionConfig);
 
+PVE::JSONSchema::register_format('ldap-simple-attr', \&verify_ldap_simple_attr);
+sub verify_ldap_simple_attr {
+    my ($attr, $noerr) = @_;
+
+    if ($attr =~ m/^[a-zA-Z0-9]+$/) {
+	return $attr;
+    }
+
+    die "value '$attr' does not look like a simple ldap attribute name\n" if !$noerr;
+
+    return undef;
+}
+
 my $inotify_file_id = 'pmg-ldap.conf';
 my $config_filename = '/etc/pmg/ldap.conf';
 
@@ -24,6 +37,7 @@ my $defaultData = {
 	},
     },
 };
+
 
 sub properties {
     return {
@@ -82,19 +96,17 @@ sub properties {
 	},
 	accountattr => {
 	    description => "Account attribute name name.",
-	    type => 'string', format => 'string-list',
-	    pattern => '[a-zA-Z0-9]+',
+	    type => 'string', format => 'ldap-simple-attr-list',
 	    default => 'sAMAccountName, uid',
 	},
 	mailattr => {
 	    description => "List of mail attribute names.",
-	    type => 'string', format => 'string-list',
-	    pattern => '[a-zA-Z0-9]+',
+	    type => 'string', format => 'ldap-simple-attr-list',
 	    default => "mail, userPrincipalName, proxyAddresses, othermailbox",
 	},
 	groupclass => {
 	    description => "List of objectclasses for groups.",
-	    type => 'string', format => 'string-list',
+	    type => 'string', format => 'ldap-simple-attr-list',
 	    default => "group, univentionGroup, ipausergroup",
 	},
     };
