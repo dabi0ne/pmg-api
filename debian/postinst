@@ -57,4 +57,17 @@ esac
 
 #DEBHELPER#
 
+if test ! -e /proxmox_install_mode ; then
+    for service in pmgdaemon pmgproxy; do
+	if [ -n "$2" ]; then
+	    # Note: reload-or-try-restart fails if service is not active
+	    if systemctl --quiet is-active $service.service ; then
+		deb-systemd-invoke reload-or-try-restart $service.service
+	    fi
+	else
+	    deb-systemd-invoke start $service.service
+	fi
+    done
+fi
+
 exit 0

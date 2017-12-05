@@ -25,7 +25,8 @@ override_dh_installinit:
 override_dh_systemd_start:
 	dh_systemd_start pmg-hourly.timer pmg-daily.timer pmgspamreport.timer pmgreport.timer
 	dh_systemd_start --no-restart-on-upgrade --no-start pmgnetcommit.service pmgbanner.service pmgsync.service
-	dh_systemd_start pmgdaemon.service pmgproxy.service pmg-smtp-filter.service pmgpolicy.service pmgtunnel.service pmgmirror.service
+	dh_systemd_start pmg-smtp-filter.service pmgpolicy.service pmgtunnel.service pmgmirror.service
+	# we handle pmgproxy/pmgdaemon manually (use reload instead of restart to keep vnc connection active)
 
 override_dh_fixperms:
 	dh_fixperms --exclude /var/log/pmgproxy
