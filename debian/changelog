@@ -1,3 +1,10 @@
+pmg-api (5.0-30) unstable; urgency=medium
+
+  * debian/postinst/prerm - handle pmgproxy/pmgdaemon manually
+    to keep VNC connections during upgrades.
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 05 Dec 2017 14:12:04 +0100
+
 pmg-api (5.0-29) unstable; urgency=medium
 
   * LDAP: add mailAlternativeAddress to mailattr default
