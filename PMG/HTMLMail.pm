@@ -216,9 +216,7 @@ my $read_part = sub {
 };
 
 my $find_images = sub {
-    my ($entity) = @_;
-
-    my $res = {};
+    my ($cid_hash, $entity) = @_;
 
     foreach my $part ($entity->parts)  {
 	if (my $rawcid = $part->head->get('Content-Id')) {
@@ -227,14 +225,12 @@ my $find_images = sub {
 		my $ctype = $part->head->mime_attr('Content-type') // '';
 		if ($ctype =~ m!^image/!) {
 		    if (defined(my $raw = $read_part->($part))) {
-			$res->{$cid} = "data:$ctype;base64," . encode_base64($raw, '');
+			$cid_hash->{$cid} = "data:$ctype;base64," . encode_base64($raw, '');
 		    }
 		}
 	    }
 	}
     }
-
-    return $res;
 };
 
 sub entity_to_html {
@@ -288,11 +284,11 @@ sub entity_to_html {
 	}
 
 	# get related/embedded images as data uris
-	my $cid_hash = $find_images->($entity);
+	$find_images->($cid_hash, $entity);
 
 	my $alt = $multi_part || $html_part || $text_part;
 
-	return entity_to_html ($alt, $cid_hash, $viewimages, $allowhref) if $alt;
+	return entity_to_html($alt, $cid_hash, $viewimages, $allowhref) if $alt;
     }
 
     return undef;
