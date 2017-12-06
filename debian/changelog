@@ -1,3 +1,9 @@
+pmg-api (5.0-31) unstable; urgency=medium
+
+  * PMG/HTMLMail.pm - use global hash to store inlined images
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 06 Dec 2017 06:31:52 +0100
+
 pmg-api (5.0-30) unstable; urgency=medium
 
   * debian/postinst/prerm - handle pmgproxy/pmgdaemon manually
