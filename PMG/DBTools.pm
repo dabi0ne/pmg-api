@@ -1188,10 +1188,11 @@ sub cluster_sync_status {
 }
 
 sub load_mail_data {
-    my ($dbh, $cid, $rid) = @_;
+    my ($dbh, $cid, $rid, $pmail) = @_;
 
     my $sth = $dbh->prepare(
 	"SELECT * FROM CMailStore, CMSReceivers WHERE " .
+	($pmail ? 'pmail = ' . $dbh->quote($pmail) . " AND " : '') .
 	"CID = $cid and RID = $rid AND " .
 	"CID = CMailStore_CID AND RID = CMailStore_RID");
     $sth->execute ();

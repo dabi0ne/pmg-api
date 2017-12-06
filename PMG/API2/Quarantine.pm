@@ -29,17 +29,22 @@ use base qw(PVE::RESTHandler);
 
 my $spamdesc;
 
+my $extract_pmail = sub {
+    my ($authuser, $role) = @_;
+
+    if ($authuser =~ m/^(.+)\@quarantine$/) {
+	return $1;
+    }
+    raise_param_exc({ pmail => "got unexpected authuser '$authuser' with role '$role'"});
+};
+
 my $verify_optional_pmail = sub {
     my ($authuser, $role, $pmail) = @_;
 
     if ($role eq 'quser') {
 	raise_param_exc({ pmail => "parameter not allwed with role '$role'"})
 	    if defined($pmail) && ($pmail ne $authuser);
-	if ($authuser =~ m/^(.+)\@quarantine$/) {
-	    $pmail = $1;
-	} else {
-	    raise_param_exc({ pmail => "got unexpected authuser '$authuser' with role '$role'"});
-	}
+	$pmail = $extract_pmail->($authuser, $role);
     } else {
 	raise_param_exc({ pmail => "parameter required with role '$role'"})
 	    if !defined($pmail);
@@ -809,13 +814,15 @@ __PACKAGE__->register_method ({
 	$cid = int($cid);
 	$rid = int($rid);
 
+	my $pmail = $role eq 'quser' ? $extract_pmail->($authuser, $role) : undef;
+
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid);
+	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $pmail);
 
 	if ($role eq 'quser') {
 	    my $quar_username = $ref->{pmail} . '@quarantine';
-	    raise_perm_exc("mail does not belong to user '$authuser'")
+	    raise_perm_exc("mail does not belong to user '$authuser' ($quar_username, $pmail)")
 		if $authuser ne $quar_username;
 	}
 
