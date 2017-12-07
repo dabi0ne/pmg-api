@@ -397,7 +397,7 @@ sub total_mail_stat {
 	"sum (BouncesIn) AS bounces_in, sum (BouncesOut) AS bounces_out, " .
 	"sum (GreylistCount) + $glcount as glcount, " .
 	"sum (SPFCount) as spfcount, " .
-	"sum (RBLCount) as rblcount, " .
+	"sum (RBLCount) as rbl_rejects, " .
 	"sum(PTimeSum)/(sum(CountIn) + $glcount + sum(CountOut)) AS avptime " .
 	"FROM DailyStat where time >= $from and time < $to";
 
@@ -411,14 +411,14 @@ sub total_mail_stat {
     if (!$ref->{avptime}) {
 	$ref->{count_in} = $ref->{count_out} = $ref->{viruscount_in} = $ref->{viruscount_out} =
 	    $ref->{spamcount_in} = $ref->{spamcount_out} = $ref->{glcount} = $ref->{spfcount} =
-	    $ref->{rblcount} = $ref->{bounces_in} = $ref->{bounces_out} = $ref->{bytes_in} =
+	    $ref->{rbl_rejects} = $ref->{bounces_in} = $ref->{bounces_out} = $ref->{bytes_in} =
 	    $ref->{bytes_out} = $ref->{avptime} = 0;
     }
 
     $ref->{count} = $ref->{count_in} + $ref->{count_out};
 
     $ref->{junk_in} = $ref->{viruscount_in} + $ref->{spamcount_in} + $ref->{glcount} +
-	$ref->{spfcount} + $ref->{rblcount};
+	$ref->{spfcount} + $ref->{rbl_rejects};
 
     $ref->{junk_out} = $ref->{viruscount_out} + $ref->{spamcount_out};
 
@@ -744,7 +744,26 @@ sub user_stat_receiver {
     return $res;
 }
 
-sub postscreen_stats {
+sub postscreen_stat {
+    my ($self, $rdb) = @_;
+
+    my ($from, $to) = $self->localhourspan();
+    my $timezone = tz_local_offset();;
+
+    my $cmd = "SELECT " .
+	"sum(rblcount) as rbl_rejects, " .
+	"sum(PregreetCount) as pregreet_rejects " .
+	"FROM LocalStat WHERE time >= $from AND time < $to";
+
+    my $sth = $rdb->{dbh}->prepare($cmd);
+    $sth->execute();
+    my $res = $sth->fetchrow_hashref();
+    $sth->finish();
+
+    return $res;
+}
+
+sub postscreen_stat_graph {
     my ($self, $rdb, $span) = @_;
     my $res;
 

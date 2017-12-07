@@ -741,8 +741,16 @@ __PACKAGE__->register_method ({
 		description => "Number of greylisted mails.",
 		type => 'number',
 	    },
+	    rbl_rejects => {
+		description => "Number of RBL rejects.",
+		type => 'integer',
+	    },
+	    pregreet_rejects => {
+		description => "PREGREET recject count.",
+		type => 'integer',
+	    },
 	    junk_in => {
-		description => "Incoming junk mail count (viruscount_in + spamcount_in + glcount + spfcount).",
+		description => "Incoming junk mail count (viruscount_in + spamcount_in + glcount + spfcount + rbl_rejects + pregreet_rejects).",
 		type => 'number',
 	    },
 	    junk_out => {
@@ -791,6 +799,22 @@ __PACKAGE__->register_method ({
 	my $rdb = PMG::RuleDB->new();
 
 	my $res = $stat->total_mail_stat($rdb);
+
+	my $rejects = $stat->postscreen_stat($rdb);
+
+	$res->{rbl_rejects} //= 0;
+	if (defined(my $rbl_rejects = $rejects->{rbl_rejects})) {
+	    foreach my $k (qw(rbl_rejects junk_in count_in count)) {
+		$res->{$k} += $rbl_rejects;
+	    }
+	}
+
+	$res->{pregreet_rejects} //= 0;
+	if (defined(my $pregreet_rejects = $rejects->{pregreet_rejects})) {
+	    foreach my $k (qw(pregreet_rejects junk_in count_in count)) {
+		$res->{$k} += $pregreet_rejects;
+	    }
+	}
 
 	return $res;
     }});
@@ -1009,7 +1033,7 @@ __PACKAGE__->register_method ({
 		    type => 'number',
 		},
 		spamcount_in => {
-		    description => "Incoming spam mails (spamcount_in + glcount + spfcount).",
+		    description => "Incoming spam mails (spamcount_in + glcount + spfcount + rbl_rejects + pregreet_rejects).",
 		    type => 'number',
 		},
 		spamcount_out => {
@@ -1023,6 +1047,14 @@ __PACKAGE__->register_method ({
 		viruscount_out => {
 		    description => "Number of outgoing virus mails.",
 		    type => 'number',
+		},
+		rbl_rejects => {
+		    description => "Number of RBL rejects.",
+		    type => 'integer',
+		},
+		pregreet_rejects => {
+		    description => "PREGREET recject count.",
+		    type => 'integer',
 		},
 		bounces_in => {
 		    description => "Incoming bounce mail count (sender = <>).",
@@ -1054,7 +1086,24 @@ __PACKAGE__->register_method ({
 
 	#PMG::Statistic::update_stats_dailystat($rdb->{dbh}, $cinfo);
 
+	my $rejects = $stat->postscreen_stat_graph($rdb, $span);
+
 	my $res = $stat->traffic_stat_graph ($rdb, $span);
+
+	my $element_count = scalar(@$res);
+
+	for (my $i = 0; $i < $element_count; $i++) {
+	    my $el = $rejects->[$i];
+	    next if !$el;
+	    my $d = $res->[$i];
+	    foreach my $k ('rbl_rejects', 'pregreet_rejects') {
+		my $count = $el->{$k} // 0;
+		$d->{$k} = $count;
+		foreach my $k (qw(count count_in spamcount_in)) {
+		    $d->{$k} += $count;
+		}
+	    }
+	}
 
 	return $res;
     }});
@@ -1308,7 +1357,7 @@ __PACKAGE__->register_method ({
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
-	my $res = $stat->postscreen_stats($rdb, $span);
+	my $res = $stat->postscreen_stat_graph($rdb, $span);
 
 	return $res;
     }});
