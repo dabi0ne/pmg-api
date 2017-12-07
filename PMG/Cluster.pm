@@ -727,15 +727,15 @@ sub sync_localstat_db {
     };
 
     my $merge_sth = $dbh->prepare(
-	'INSERT INTO LocalStat (Time, RBLCount, CID, MTime) ' .
-	'VALUES (?, ?, ?, ?) ' .
+	'INSERT INTO LocalStat (Time, RBLCount, PregreetCount, CID, MTime) ' .
+	'VALUES (?, ?, ?, ?, ?) ' .
 	'ON CONFLICT (Time, CID) DO UPDATE SET ' .
-	'RBLCount = excluded.RBLCount, MTime = excluded.MTime');
+	'RBLCount = excluded.RBLCount, PregreetCount = excluded.PregreetCount, MTime = excluded.MTime');
 
     my $mergefunc = sub {
 	my ($ref) = @_;
 
-	$merge_sth->execute($ref->{time}, $ref->{rblcount}, $ref->{cid}, $ref->{mtime});
+	$merge_sth->execute($ref->{time}, $ref->{rblcount}, $ref->{pregreetcount}, $ref->{cid}, $ref->{mtime});
     };
 
     return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'LocalStat', $selectfunc, $mergefunc);
