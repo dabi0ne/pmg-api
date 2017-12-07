@@ -744,7 +744,7 @@ sub user_stat_receiver {
     return $res;
 }
 
-sub rbl_count_stats {
+sub postscreen_stats {
     my ($self, $rdb, $span) = @_;
     my $res;
 
@@ -753,7 +753,8 @@ sub rbl_count_stats {
 
     my $cmd = "SELECT " .
 	"(time - $from) / $span AS index, " .
-	"sum(rblcount) as count " .
+	"sum(rblcount) as rbl_rejects, " .
+	"sum(PregreetCount) as pregreet_rejects " .
 	"FROM LocalStat WHERE time >= $from AND time < $to " .
 	"GROUP BY index ORDER BY index";
 
@@ -767,7 +768,7 @@ sub rbl_count_stats {
     my $c = int (($to - $from) / $span);
 
     for (my $i = 0; $i < $c; $i++) {
-	@$res[$i] //= { index => $i, count => 0, };
+	@$res[$i] //= { index => $i, rbl_rejects => 0, pregreet_rejects => 0};
 
 	my $d = @$res[$i];
 	$d->{time} = $from + $i*$span - $timezone;

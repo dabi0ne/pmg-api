@@ -1249,16 +1249,16 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
-    name => 'rblcount',
-    path => 'rblcount',
+    name => 'rejectcount',
+    path => 'rejectcount',
     method => 'GET',
-    description => "Mail RBL Count Statistics.",
+    description => "Early SMTP reject count statistic (RBL, PREGREET rejects with postscreen)",
     permissions => { check => [ 'admin', 'qmanager', 'audit'] },
     parameters => {
 	additionalProperties => 0,
 	properties => $default_properties->({
 	    timespan => {
-		description => "Return RBL rejects/<timespan>, where <timespan> is specified in seconds.",
+		description => "Return RBL/PREGREET rejects/<timespan>, where <timespan> is specified in seconds.",
 		type => 'integer',
 		minimum => 3600,
 		maximum => 366*86400,
@@ -1280,9 +1280,13 @@ __PACKAGE__->register_method ({
 		    description => "Time (Unix epoch).",
 		    type => 'integer',
 		},
-		count => {
+		rbl_rejects => {
 		    description => "RBL recject count.",
-		    type => 'number',
+		    type => 'integer',
+		},
+		pregreet_rejects => {
+		    description => "PREGREET recject count.",
+		    type => 'integer',
 		},
 	    },
 	},
@@ -1304,7 +1308,7 @@ __PACKAGE__->register_method ({
 	my $stat = PMG::Statistic->new($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
-	my $res = $stat->rbl_count_stats($rdb, $span);
+	my $res = $stat->postscreen_stats($rdb, $span);
 
 	return $res;
     }});
