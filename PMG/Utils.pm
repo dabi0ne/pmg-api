@@ -1091,9 +1091,13 @@ sub scan_journal_for_rbl_rejects {
     # example postscreen log entry for RBL rejects
     # Aug 29 08:00:36 proxmox postfix/postscreen[11266]: NOQUEUE: reject: RCPT from [x.x.x.x]:1234: 550 5.7.1 Service unavailable; client [x.x.x.x] blocked using zen.spamhaus.org; from=<xxxx>, to=<yyyy>, proto=ESMTP, helo=<zzz>
 
+    # example for PREGREET reject
+    # Dec  7 06:57:11 proxmox postfix/postscreen[32084]: PREGREET 14 after 0.23 from [x.x.x.x]:63492: EHLO yyyyy\r\n
+
     my $identifier = 'postfix/postscreen';
 
-    my $count = 0;
+    my $rbl_count = 0;
+    my $pregreet_count = 0;
 
     my $parser = sub {
 	my $line = shift;
@@ -1103,8 +1107,11 @@ sub scan_journal_for_rbl_rejects {
 	    return;
 	}
 
-	return if $line !~ m/\s$identifier\[\d+\]:\sNOQUEUE:\sreject:.*550 5.7.1 Service unavailable;/;
-	$count++;
+	if ($line =~ m/\s$identifier\[\d+\]:\sNOQUEUE:\sreject:.*550 5.7.1 Service unavailable;/) {
+	    $rbl_count++;
+	} elsif ($line =~ m/\s$identifier\[\d+\]:\sPREGREET\s\d+\safter\s/) {
+	    $pregreet_count++;
+	}
     };
 
     # limit to last 5000 lines to avoid long delays
@@ -1119,7 +1126,7 @@ sub scan_journal_for_rbl_rejects {
 
     PVE::Tools::run_command($cmd, outfunc => $parser);
 
-    return $count;
+    return ($rbl_count, $pregreet_count);
 }
 
 my $hwaddress;

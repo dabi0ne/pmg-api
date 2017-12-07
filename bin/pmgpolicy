@@ -103,20 +103,21 @@ $SIG{'__WARN__'} = sub {
 sub update_rbl_stats {
     my ($dbh, $lcid) = @_;
 
-    my $rblcount = PMG::Utils::scan_journal_for_rbl_rejects();
-    return if !$rblcount;
+    my ($rbl_count, $pregreet_count) = PMG::Utils::scan_journal_for_rbl_rejects();
+    return if !$rbl_count && !$pregreet_count;
 
     my $timezone = tz_local_offset();;
     my $hour = int((time() + $timezone)/3600) * 3600;
 
     my $sth = $dbh->prepare(
-	'INSERT INTO LocalStat (Time, RBLCount, CID, MTime) ' .
-	'VALUES (?, ?, ?, EXTRACT(EPOCH FROM now())) ' .
+	'INSERT INTO LocalStat (Time, RBLCount, PregreetCount, CID, MTime) ' .
+	'VALUES (?, ?, ?, ?, EXTRACT(EPOCH FROM now())) ' .
 	'ON CONFLICT (Time, CID) DO UPDATE SET ' .
 	'RBLCount = LocalStat.RBLCount + excluded.RBLCount, ' .
+	'PregreetCount = LocalStat.PregreetCount + excluded.PregreetCount, ' .
 	'MTime = excluded.MTime');
 
-    $sth->execute($hour, $rblcount, $lcid);
+    $sth->execute($hour, $rbl_count, $pregreet_count, $lcid);
     $sth->finish();
 };
 
