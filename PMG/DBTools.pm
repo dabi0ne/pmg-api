@@ -148,6 +148,7 @@ my $local_stat_ctablecmd =  <<__EOD;
     CREATE TABLE LocalStat
     (Time INTEGER NOT NULL UNIQUE,
      RBLCount INTEGER DEFAULT 0 NOT NULL,
+     PregreetCount INTEGER DEFAULT 0 NOT NULL,
      CID INTEGER NOT NULL,
      MTime INTEGER NOT NULL,
      PRIMARY KEY (Time, CID));
@@ -473,6 +474,9 @@ sub upgradedb {
     cond_create_std_actions($ruledb);
 
     # upgrade tables here if necessary
+
+    $dbh->do("ALTER TABLE LocalStat ADD COLUMN IF NOT EXISTS " .
+	     "PregreetCount INTEGER DEFAULT 0 NOT NULL");
 
     # update obsolete content type names
     eval {
