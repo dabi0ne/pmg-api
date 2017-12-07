@@ -1,3 +1,9 @@
+pmg-api (5.0-34) unstable; urgency=medium
+
+  * PMG/API2/Statistics.pm - include postscreen stats in mail/mailcount
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 07 Dec 2017 11:27:49 +0100
+
 pmg-api (5.0-33) unstable; urgency=medium
 
   * bin/pmgpolicy - count PREGREET rejects (postscreen)
