@@ -1,3 +1,13 @@
+pmg-api (5.0-33) unstable; urgency=medium
+
+  * bin/pmgpolicy - count PREGREET rejects (postscreen)
+
+  * PMG/API2/Statistics.pm - rename rblcount to rejectcount, include PREGREET
+
+  * depend on: openssh-client, openssh-server, apt
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 07 Dec 2017 07:59:11 +0100
+
 pmg-api (5.0-32) unstable; urgency=medium
 
   * PMG::DBTool::load_mail_data - add optional $pmail parameter
