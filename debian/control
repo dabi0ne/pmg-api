@@ -2,12 +2,75 @@ Source: pmg-api
 Section: perl
 Priority: optional
 Maintainer: Proxmox Support Team <support@proxmox.com>
-Build-Depends: debhelper (>= 9), perl (>= 5.10.0-19), dh-systemd, libdbi-perl, libdbd-pg-perl, postgresql-9.6, proxmox-spamassassin, libnet-server-perl, libfile-sync-perl, libcompress-bzip2-perl, libarchive-zip-perl, libarchive-perl, p7zip-full, tnef, pmg-doc-generator, libxdgmime-perl
+Build-Depends: debhelper (>= 9),
+               dh-systemd,
+               libarchive-perl,
+               libarchive-zip-perl,
+               libcompress-bzip2-perl,
+               libdbd-pg-perl,
+               libdbi-perl,
+               libfile-sync-perl,
+               libnet-server-perl,
+               libxdgmime-perl,
+               p7zip-full,
+               perl (>= 5.10.0-19),
+               pmg-doc-generator,
+               postgresql-9.6,
+               proxmox-spamassassin,
+               tnef
 Standards-Version: 3.9.5
 Homepage: http://www.proxmox.com
 
 Package: pmg-api
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, libpve-common-perl, libpve-http-server-perl, libpve-apiclient-perl, libauthen-pam-perl, pmg-gui, libtemplate-perl, fonts-font-awesome, novnc-pve, libfile-readbackwards-perl, libnet-ip-perl, libdbi-perl, libdbd-pg-perl, postgresql-9.6, libmime-tools-perl, shared-mime-info, proxmox-spamassassin, libhtml-parser-perl, libhtml-tree-perl, libhtml-scrubber-perl, libnet-cidr-lite-perl, libnet-ldap-perl, liblockfile-simple-perl, libnet-server-perl, clamav-daemon, clamdscan, clamav-freshclam, libfile-sync-perl, libcompress-bzip2-perl, libarchive-zip-perl, libarchive-perl, p7zip-full, tnef, postfix (>= 2.5.5), libterm-readline-gnu-perl, libmail-spf-perl, spf-tools-perl, libxdgmime-perl, librrds-perl, rrdcached, libfilesys-df-perl, pmg-docs, sudo, pmg-log-tracker, libapt-pkg-perl, vncterm, openssh-client, openssh-server, apt
+Depends: apt,
+         clamav-daemon,
+         clamav-freshclam,
+         clamdscan,
+         fonts-font-awesome,
+         libapt-pkg-perl,
+         libarchive-perl,
+         libarchive-zip-perl,
+         libauthen-pam-perl,
+         libcompress-bzip2-perl,
+         libdbd-pg-perl,
+         libdbi-perl,
+         libfile-readbackwards-perl,
+         libfile-sync-perl,
+         libfilesys-df-perl,
+         libhtml-parser-perl,
+         libhtml-scrubber-perl,
+         libhtml-tree-perl,
+         liblockfile-simple-perl,
+         libmail-spf-perl,
+         libmime-tools-perl,
+         libnet-cidr-lite-perl,
+         libnet-ip-perl,
+         libnet-ldap-perl,
+         libnet-server-perl,
+         libpve-apiclient-perl,
+         libpve-common-perl,
+         libpve-http-server-perl,
+         librrds-perl,
+         libtemplate-perl,
+         libterm-readline-gnu-perl,
+         libxdgmime-perl,
+         openssh-client,
+         openssh-server,
+         p7zip-full,
+         pmg-docs,
+         pmg-gui,
+         pmg-log-tracker,
+         postfix (>= 2.5.5),
+         postgresql-9.6,
+         proxmox-spamassassin,
+         pve-xtermjs (>= 1.0-1),
+         rrdcached,
+         shared-mime-info,
+         spf-tools-perl,
+         sudo,
+         tnef,
+         ${misc:Depends},
+         ${perl:Depends}
 Description: Proxmox Mailgateway API Server Implementation
  This implements a REST API to configure Proxmox Mailgateway.
