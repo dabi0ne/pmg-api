@@ -58,8 +58,8 @@ __PACKAGE__->register_method ({
     }});
 
 
-my $create_ticket = sub {
-    my ($rpcenv, $username, $pw_or_ticket, $otp) = @_;
+my $create_or_verify_ticket = sub {
+    my ($rpcenv, $username, $pw_or_ticket, $otp, $path) = @_;
 
     my $ticketuser;
 
@@ -82,8 +82,15 @@ my $create_ticket = sub {
     if (($ticketuser = PMG::Ticket::verify_ticket($pw_or_ticket, 1)) &&
 	($ticketuser eq 'root@pam' || $ticketuser eq $username)) {
 	# valid ticket. Note: root@pam can create tickets for other users
+    } elsif (PMG::Ticket::verify_vnc_ticket($pw_or_ticket, $username, $path, 1)) {
+	# valid vnc ticket for $path
     } else {
 	$username = PMG::AccessControl::authenticate_user($username, $pw_or_ticket, $otp);
+    }
+
+    if (defined($path)) {
+	# verify only
+	return { username => $username };
     }
 
     my $ticket = PMG::Ticket::assemble_ticket($username);
@@ -141,6 +148,12 @@ __PACKAGE__->register_method ({
 		type => 'string',
 		optional => 1,
 	    },
+	    path => {
+		description => "Verify ticket, and check if user have access on 'path'",
+		type => 'string',
+		optional => 1,
+		maxLength => 64,
+	    },
 	}
     },
     returns => {
@@ -168,7 +181,8 @@ __PACKAGE__->register_method ({
 
 	my $res;
 	eval {
-	    $res = &$create_ticket($rpcenv, $username, $param->{password}, $param->{otp});
+	    $res = &$create_or_verify_ticket($rpcenv, $username,
+		    $param->{password}, $param->{otp}, $param->{path});
 	};
 	if (my $err = $@) {
 	    my $clientip = $rpcenv->get_client_ip() || '';
