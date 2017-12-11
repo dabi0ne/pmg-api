@@ -1,3 +1,11 @@
+pmg-api (5.0-35) unstable; urgency=medium
+
+  * rename safe_browsing_score to clamav_heuristic_score
+
+  * use clamav_heuristic_score for heuristics results
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Dec 2017 13:39:06 +0100
+
 pmg-api (5.0-34) unstable; urgency=medium
 
   * PMG/API2/Statistics.pm - include postscreen stats in mail/mailcount
