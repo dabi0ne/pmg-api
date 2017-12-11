@@ -1,3 +1,9 @@
+pmg-api (5.0-36) unstable; urgency=medium
+
+  * replace novnc with xtermjs
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Dec 2017 14:48:32 +0100
+
 pmg-api (5.0-35) unstable; urgency=medium
 
   * rename safe_browsing_score to clamav_heuristic_score
