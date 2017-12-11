@@ -348,10 +348,10 @@ sub analyze_spam {
     }
     $queue->{all_from_addrs} = [ keys %$fromhash ];
 
-    if (my $hit = $queue->{safe_browsing}) {
-	my $score = $queue->{safe_browsing_score};
-	my $descr = "Found in Google Safe Browsing database.";
-	my $rule = 'Safebrowsing';
+    if (my $hit = $queue->{clamav_heuristic}) {
+	my $score = $queue->{clamav_heuristic_score};
+	my $descr = "ClamAV heuristic test: $hit";
+	my $rule = 'ClamAVHeuristics';
 	$sa_score += $score;
 	$list .= $list ? ",$rule" : $rule;
 	push @$sa_scores, { score => $score, rule => $rule, desc => $descr };
@@ -361,7 +361,7 @@ sub analyze_spam {
 
     my $spamtest = $queue->{sa};
 
-    # only run SA in testmode or when safe_browsing did not confirm spam (score < 5)
+    # only run SA in testmode or when clamav_heuristic did not confirm spam (score < 5)
     # do not run SA if mail is too large
     if (($queue->{bytes} <= $maxspamsize) && 
 	($msginfo->{testmode} || ($sa_score < 5))) {

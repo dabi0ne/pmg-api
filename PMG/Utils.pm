@@ -1000,7 +1000,7 @@ sub load_sa_descriptions {
 	}
     }
 
-    $res->{'Safebrowsing'}->{desc} = "Found in Google Safe Browsing database.";
+    $res->{'ClamAVHeuristics'}->{desc} = "ClamAV heuristic tests";
 
     return $res;
 }

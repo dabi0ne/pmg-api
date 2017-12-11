@@ -624,8 +624,8 @@ sub handle_smtp {
 
     $queue = $smtp->{queue};
     $queue->{sa} = $self->{sa};
-    $queue->{safe_browsing_score} =
-	$opt_testmode ? 100 : $pmg_cfg->get('spam', 'safe_browsing_score');
+    $queue->{clamav_heuristic_score} =
+	$opt_testmode ? 100 : $pmg_cfg->get('spam', 'clamav_heuristic_score');
 
     $queue->{lic_valid} = 1;
 
@@ -674,10 +674,9 @@ sub handle_smtp {
 	my $vinfo = PMG::Utils::analyze_virus(
 	    $queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
 
-	if ($vinfo && $vinfo =~ m/^Heuristics\.Safebrowsing\.(.+)$/) {
+	if ($vinfo && $vinfo =~ m/^Heuristics\.(.+)$/) {
 	    my $hit = $1;
-	    $self->log(3, "$queue->{logid}: Google Safe Browsing database hit '%s'", $hit);
-	    $queue->{safe_browsing} = $hit;
+	    $queue->{clamav_heuristic} = $hit;
 	    $vinfo = undef;
 	}
 

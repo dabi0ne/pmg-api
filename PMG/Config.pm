@@ -144,8 +144,8 @@ sub properties {
 	    description => "Whitelist legitimate bounce relays.",
 	    type => 'string',
 	},
-	safe_browsing_score => {
-	    description => "Score for mails listed in Google Safe Browsing database.",
+	clamav_heuristic_score => {
+	    description => "Score for ClamaAV heuristics (Google Safe Browsing database, PhishingScanURLs, ...).",
 	    type => 'integer',
 	    minimum => 0,
 	    maximum => 1000,
@@ -179,7 +179,7 @@ sub options {
 	wl_bounce_relays => { optional => 1 },
 	languages => { optional => 1 },
 	use_bayes => { optional => 1 },
-	safe_browsing_score => { optional => 1 },
+	clamav_heuristic_score => { optional => 1 },
 	bounce_score => { optional => 1 },
 	rbl_checks => { optional => 1 },
 	maxspamsize => { optional => 1 },
