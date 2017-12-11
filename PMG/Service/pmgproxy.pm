@@ -47,7 +47,7 @@ sub add_dirs {
 
 my $gui_base_dir = "/usr/share/javascript/pmg-gui";
 my $fontawesome_dir = "/usr/share/fonts-font-awesome";
-my $novnc_dir = '/usr/share/novnc-pve';
+my $xtermjs_dir = '/usr/share/pve-xtermjs';
 
 sub init {
     my ($self) = @_;
@@ -69,7 +69,7 @@ sub init {
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
     add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css/");
     add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts/");
-    add_dirs($dirs, '/novnc/' => "$novnc_dir/");
+    add_dirs($dirs, '/xtermjs/' => "$xtermjs_dir/");
     add_dirs($dirs, '/pmg-docs/' => '/usr/share/pmg-docs/');
 
     $self->{server_config} = {
@@ -136,7 +136,7 @@ sub get_template_toolkit {
     return $template_toolkit if $template_toolkit;
 
     $template_toolkit = Template->new(
-	{ INCLUDE_PATH => [$gui_base_dir, $novnc_dir]});
+	{ INCLUDE_PATH => [$gui_base_dir, $xtermjs_dir]});
 
     return $template_toolkit;
 }
@@ -192,7 +192,7 @@ sub get_index {
     };
 
     my $template_name;
-    if (defined($args->{console}) && $args->{novnc}) {
+    if (defined($args->{console}) && $args->{xtermjs}) {
 	$template_name = "index.html.tpl"; # fixme: use better name
     } else {
 	$template_name = "pmg-index.html.tt";

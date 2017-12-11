@@ -114,7 +114,7 @@ __PACKAGE__->register_method ({
 	    { name => 'time' },
 	    { name => 'status' },
 	    { name => 'subscription' },
-	    { name => 'vncshell' },
+	    { name => 'termproxy' },
 	    { name => 'rrddata' },
 	];
 
@@ -237,12 +237,13 @@ __PACKAGE__->register_method({
 	return $lines;
     }});
 
+
 __PACKAGE__->register_method ({
-    name => 'vncshell',
-    path => 'vncshell',
+    name => 'termproxy',
+    path => 'termproxy',
     method => 'POST',
     protected => 1,
-    description => "Creates a VNC Shell proxy.",
+    description => "Creates a Terminal proxy.",
     parameters => {
     	additionalProperties => 0,
 	properties => {
@@ -252,12 +253,6 @@ __PACKAGE__->register_method ({
 		description => "Run 'apt-get dist-upgrade' instead of normal shell.",
 		optional => 1,
 		default => 0,
-	    },
-	    websocket => {
-		optional => 1,
-		type => 'boolean',
-		description => "use websocket instead of standard vnc.",
-		default => 1,
 	    },
 	},
     },
@@ -276,12 +271,8 @@ __PACKAGE__->register_method ({
 	my $node = $param->{node};
 
 	if ($node ne PVE::INotify::nodename()) {
-	    die "vncproxy to remote node not implemented";
+	    die "termproxy to remote node not implemented";
 	}
-
-	# we only implement the websocket based VNC here
-	my $websocket = $param->{websocket} // 1;
-	die "standard VNC not implemented" if !$websocket;
 
 	my $authpath = "/nodes/$node";
 
@@ -309,37 +300,23 @@ __PACKAGE__->register_method ({
 	    $shcmd = [ '/bin/login' ];
 	}
 
-	my $cmd = ['/usr/bin/vncterm', '-rfbport', $port,
-		   '-timeout', 10, '-notls', '-listen', 'localhost',
-		   '-c', @$shcmd];
+	my $cmd = ['/usr/bin/termproxy', $port, '--path', $authpath,
+		   '--', @$shcmd];
 
 	my $realcmd = sub {
 	    my $upid = shift;
 
-	    syslog ('info', "starting vnc proxy $upid\n");
+	    syslog ('info', "starting termproxy $upid\n");
 
 	    my $cmdstr = join (' ', @$cmd);
 	    syslog ('info', "launch command: $cmdstr");
 
-	    eval {
-		foreach my $k (keys %ENV) {
-		    next if $k eq 'PATH' || $k eq 'TERM' || $k eq 'USER' || $k eq 'HOME';
-		    delete $ENV{$k};
-		}
-		$ENV{PWD} = '/';
-
-		$ENV{PVE_VNC_TICKET} = $ticket; # pass ticket to vncterm
-
-		PVE::Tools::run_command($cmd, errmsg => "vncterm failed");
-	    };
-	    if (my $err = $@) {
-		syslog('err', $err);
-	    }
+	    PVE::Tools::run_command($cmd);
 
 	    return;
 	};
 
-	my $upid = $restenv->fork_worker('vncshell', "", $user, $realcmd);
+	my $upid = $restenv->fork_worker('termproxy', "", $user, $realcmd);
 
 	PVE::Tools::wait_for_vnc_port($port);
 

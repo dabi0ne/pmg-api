@@ -511,7 +511,7 @@ __PACKAGE__->register_method({
 
 	my @opt_pack = ('zfsutils-linux', 'libpve-apiclient-perl');
 
-	push @list, qw(libpve-http-server-perl lvm2 pve-firmware libpve-common-perl vncterm pmg-docs novnc-pve libarchive-perl libxdgmime-perl );
+	push @list, qw(libpve-http-server-perl lvm2 pve-firmware libpve-common-perl vncterm pmg-docs pve-xtermjs libarchive-perl libxdgmime-perl );
 
 	@list = (@list, @opt_pack);
 	my $pkglist = [];
