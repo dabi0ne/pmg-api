@@ -20,6 +20,7 @@ use PMG::API2::Cluster;
 use PMG::RuleDB;
 use PMG::DBTools;
 use PMG::Statistic;
+use PMG::API2::Statistics;
 
 use base qw(PVE::CLIHandler);
 
@@ -122,30 +123,59 @@ my $get_incoming_table_data = sub {
     push @$data, {
 	text => 'Incoming Mails',
 	value => $totals->{count_in},
-	percentage => $totals->{count_in_per},
     };
+
+    my $count_in = $totals->{count_in};
+
+    my $junk_in_per = $count_in ? sprintf("%0.2f", ($totals->{junk_in}*100)/$count_in) : undef;
+
+    push @$data, {
+	text => 'Junk Mails',
+	value => $totals->{junk_in},
+	percentage => $junk_in_per,
+    };
+
+    my $glcount_per = $count_in ? sprintf("%0.2f", ($totals->{glcount}*100)/$count_in) : undef;
+    push @$data, {
+	text => 'Greylisted Mails',
+	value => $totals->{glcount},
+	percentage => $glcount_per,
+    };
+
+    my $spamcount_in_per = $count_in ? sprintf("%0.2f", ($totals->{spamcount_in}*100)/$count_in) : undef;
 
     push @$data, {
 	text => 'Spam Mails',
 	value => $totals->{spamcount_in},
-	percentage => $totals->{spamcount_in_per},
+	percentage => $spamcount_in_per,
     };
 
-    push @$data, {
-	text => 'Virus Mails',
-	value => $totals->{viruscount_in},
-	percentage => $totals->{viruscount_in_per},
-    };
+    my $spfcount_per = $count_in ? sprintf("%0.2f", ($totals->{spfcount}*100)/$count_in) : undef;
 
     push @$data, {
 	text => 'SPF rejects',
 	value => $totals->{spfcount},
-	percentage => $totals->{spfcount_per},
+	percentage => $spfcount_per,
+    };
+
+    my $bounces_in_per = $count_in ? sprintf("%0.2f", ($totals->{bounces_in}*100)/$count_in) : undef;
+
+    push @$data, {
+	text => 'Bounces',
+	value => $totals->{bounces_in},
+	percentage => $bounces_in_per,
+    };
+
+    my $viruscount_in_per = $count_in ? sprintf("%0.2f", ($totals->{viruscount_in}*100)/$count_in) : undef;
+    push @$data, {
+	text => 'Virus Mails',
+	value => $totals->{viruscount_in},
+	percentage => $viruscount_in_per,
     };
 
     push @$data, {
 	text => 'Mail Traffic',
-	value => sprintf ("%.3f MByte", $totals->{traffic_in}/(1024*1024)),
+	value => sprintf ("%.3f MByte", $totals->{bytes_in}/(1024*1024)),
     };
 
     return $data;
@@ -159,13 +189,16 @@ my $get_outgoing_table_data = sub {
     push @$data, {
 	text => 'Outgoing Mails',
 	value => $totals->{count_out},
-	percentage => $totals->{count_out_per},
     };
+
+    my $count_out = $totals->{count_out};
+
+    my $bounces_out_per = $count_out ? sprintf("%0.2f", ($totals->{bounces_out}*100)/$count_out) : undef;
 
     push @$data, {
 	text => 'Bounces',
 	value => $totals->{bounces_out},
-	percentage => $totals->{bounces_out_per},
+	percentage => $bounces_out_per,
     };
 
     push @$data, {
@@ -289,19 +322,19 @@ __PACKAGE__->register_method ({
 	    }
 	}
 
-
-	my $stat = PMG::Statistic->new ($start, $end);
 	my $rdb = PMG::RuleDB->new();
 
 	# update statistics
 	PMG::Statistic::update_stats($rdb->{dbh}, $cinfo);
 
-	my $totals = $stat->total_mail_stat($rdb);
+	my $totals = PMG::API2::Statistics->mail(
+	    { starttime => $start, endtime => $end });
 
 	$vars->{incoming} = $get_incoming_table_data->($totals);
 
 	$vars->{outgoing} = $get_outgoing_table_data->($totals);
 
+	my $stat = PMG::Statistic->new ($start, $end);
 	my $virusinfo = $stat->total_virus_stat ($rdb);
 	if (my $data = $get_virus_table_data->($virusinfo)) {
 	    $vars->{virusstat} = $data;
