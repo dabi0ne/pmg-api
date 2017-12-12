@@ -1,3 +1,9 @@
+pmg-api (5.0-37) unstable; urgency=medium
+
+  * pmgreport: use PMG::API2::Statistics to include postscreen stats
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 12 Dec 2017 09:19:05 +0100
+
 pmg-api (5.0-36) unstable; urgency=medium
 
   * replace novnc with xtermjs
