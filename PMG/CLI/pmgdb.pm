@@ -9,6 +9,7 @@ use PVE::Tools qw(extract_param);
 use PVE::INotify;
 use PVE::CLIHandler;
 
+use PMG::Utils;
 use PMG::RESTEnvironment;
 use PMG::DBTools;
 use PMG::RuleDB;
@@ -142,6 +143,8 @@ __PACKAGE__->register_method ({
     returns => { type => 'null'},
     code => sub {
 	my ($param) = @_;
+
+	PMG::Utils::cond_add_default_locale();
 
 	my $list = PMG::DBTools::database_list();
 

@@ -1142,4 +1142,40 @@ sub get_hwaddress {
     return $hwaddress;
 }
 
+my $default_locale = "en_US.UTF-8 UTF-8";
+
+sub cond_add_default_locale {
+
+    my $filename = "/etc/locale.gen";
+
+    open(my $infh, "<", $filename) || return;
+
+    while (defined(my $line = <$infh>)) {
+	if ($line =~ m/^\Q${default_locale}\E/) {
+	    # already configured
+	    return;
+	}
+    }
+
+    seek($infh, 0, 0) // return; # seek failed
+
+    open(my $outfh, ">", "$filename.tmp") || return;
+
+    my $done;
+    while (defined(my $line = <$infh>)) {
+	if ($line =~ m/^#\s*\Q${default_locale}\E.*/) {
+	    print $outfh "${default_locale}\n" if !$done;
+	    $done = 1;
+	} else {
+	    print $outfh $line;
+	}
+    }
+
+    print STDERR "generation pmg default locale\n";
+
+    rename("$filename.tmp", $filename) || return; # rename failed
+
+    system("dpkg-reconfigure locales -f noninteractive");
+}
+
 1;
