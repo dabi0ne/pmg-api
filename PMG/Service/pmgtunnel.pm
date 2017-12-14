@@ -48,7 +48,7 @@ sub finish_children {
 	    my $ip = $workers->{$cpid}->{ip};
 	    my $cid = $workers->{$cpid}->{cid};
 	    syslog('err', "tunnel finished $cpid $ip");
-	    unlink $socketfile->{$cid};
+	    unlink $socketfile->($cid);
 	    $delayed_exec->{$cid} = time + ($startcount->{$cid} > 5 ? 60 : 10);
 	    delete $workers->{$cpid};
 	}
