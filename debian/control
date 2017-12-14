@@ -69,6 +69,7 @@ Depends: apt,
          shared-mime-info,
          spf-tools-perl,
          sudo,
+	 rsync,
          tnef,
          ${misc:Depends},
          ${perl:Depends}
