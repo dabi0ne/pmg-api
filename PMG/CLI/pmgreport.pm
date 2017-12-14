@@ -135,13 +135,6 @@ my $get_incoming_table_data = sub {
 	percentage => $junk_in_per,
     };
 
-    my $glcount_per = $count_in ? sprintf("%0.2f", ($totals->{glcount}*100)/$count_in) : undef;
-    push @$data, {
-	text => 'Greylisted Mails',
-	value => $totals->{glcount},
-	percentage => $glcount_per,
-    };
-
     my $spamcount_in_per = $count_in ? sprintf("%0.2f", ($totals->{spamcount_in}*100)/$count_in) : undef;
 
     push @$data, {
