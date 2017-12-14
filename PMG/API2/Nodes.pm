@@ -242,6 +242,7 @@ __PACKAGE__->register_method ({
     name => 'termproxy',
     path => 'termproxy',
     method => 'POST',
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     description => "Creates a Terminal proxy.",
     parameters => {
@@ -332,6 +333,7 @@ __PACKAGE__->register_method({
     name => 'vncwebsocket',
     path => 'vncwebsocket',
     method => 'GET',
+    permissions => { check => [ 'admin' ] },
     description => "Opens a weksocket for VNC traffic.",
     parameters => {
     	additionalProperties => 0,
@@ -638,6 +640,7 @@ __PACKAGE__->register_method({
     name => 'node_cmd',
     path => 'status',
     method => 'POST',
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     description => "Reboot or shutdown a node.",
     proxyto => 'node',
