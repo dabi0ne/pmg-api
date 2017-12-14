@@ -150,7 +150,7 @@ LIBSOURCES =				\
 	PMG/API2/Action.pm		\
 	PMG/API2.pm
 
-SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS}
+SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS} pmg-sources.list
 
 all: ${SOURCES}
 
@@ -183,6 +183,7 @@ install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuff
 	install -d -m 0755 ${DOCDIR}
 	# TODO: is there a better location ?
 	install -m 0644 favicon.ico ${DOCDIR}
+	install -D -m 0644 pmg-sources.list ${DESTDIR}/etc/apt/sources.list.d/pmg-enterprise.list
 	for i in ${LIBSOURCES}; do install -D -m 0644 $$i ${PERL5DIR}/$$i; done
 	for i in ${SERVICES}; do install -D -m 0644 PMG/Service/$$i.pm ${PERL5DIR}/PMG/Service/$$i.pm; done
 	for i in ${SERVICES}; do install -m 0755 bin/$$i ${DESTDIR}/usr/bin; done
