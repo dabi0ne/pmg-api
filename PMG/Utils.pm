@@ -570,14 +570,10 @@ sub service_cmd {
     my ($service, $cmd) = @_;
 
     die "unknown service command '$cmd'\n"
-	if $cmd !~ m/^(start|stop|restart|reload)$/;
+	if $cmd !~ m/^(start|stop|restart|reload|reload-or-restart)$/;
 
     if ($service eq 'pmgdaemon' || $service eq 'pmgproxy') {
-	if ($cmd eq 'restart') {
-	    # OK
-	} else {
-	    die "invalid service cmd '$service $cmd': ERROR";
-	}
+	die "invalid service cmd '$service $cmd': ERROR" if $cmd eq 'stop';
     }
 
     $service = $service_aliases->{$service} // $service;

@@ -43,7 +43,7 @@ if ($demo) {
     return;
 }
 
-PMG::Utils::service_cmd('pmgpolicy', 'restart');
+PMG::Utils::service_cmd('pmgpolicy', 'reload-or-restart');
 
 my $ldap_cfg = PVE::INotify::read_file("pmg-ldap.conf");
 PMG::LDAPSet::ldap_resync($ldap_cfg);
