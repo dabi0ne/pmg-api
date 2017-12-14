@@ -1,3 +1,11 @@
+pmg-api (5.0-39) unstable; urgency=medium
+
+  * install /etc/apt/apt.conf.d/75pmgconf to avoid atomatic kernel removes
+
+  * install /etc/apt/sources.list.d/pmg-enterprise.list
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 14 Dec 2017 11:14:53 +0100
+
 pmg-api (5.0-38) unstable; urgency=medium
 
   * add API for node reboot/shutdown
