@@ -1,3 +1,24 @@
+pmg-api (5.0-38) unstable; urgency=medium
+
+  * add API for node reboot/shutdown
+
+  * bin/pmg-hourly: use reload-or-restart to reload pmgpolicy service
+
+  * PMG/DBTools.pm: do not use IF NOT EXISTS bcause it writes debug
+    messages to console
+
+  * PMG/DBTools.pm - use user root to sync database
+
+  * pmgtunnel.pm - fix call to socketfile()
+
+  * debian/control - depend on 'rsync'
+
+  * PMG/CLI/pmgreport.pm - remove greylisted mails from daily report
+
+  * PMG/CLI/pmgdb.pm: generate default locale
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 14 Dec 2017 10:06:42 +0100
+
 pmg-api (5.0-37) unstable; urgency=medium
 
   * pmgreport: use PMG::API2::Statistics to include postscreen stats
