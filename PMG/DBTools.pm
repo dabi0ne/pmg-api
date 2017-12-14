@@ -1092,12 +1092,11 @@ sub init_nodedb {
 
 	open (my $fh, ">", $fn) || die "open '$fn' failed - $!\n";
 
-	postgres_admin_cmd(
-	    ['/usr/bin/ssh', '-o', 'BatchMode=yes',
-	     '-o', "HostKeyAlias=${master_name}",
-	     $master_ip, 'pg_dump'],
-	    { output => '>&' . fileno($fh) },
-	    $dbname, '-F', 'c');
+	my $cmd = ['/usr/bin/ssh', '-o', 'BatchMode=yes',
+		   '-o', "HostKeyAlias=${master_name}", $master_ip,
+		   'pg_dump', $dbname, '-F', 'c' ];
+
+	PVE::Tools::run_command($cmd, output => '>&' . fileno($fh));
 
 	close($fh);
 
