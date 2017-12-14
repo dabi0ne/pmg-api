@@ -634,6 +634,36 @@ __PACKAGE__->register_method({
 	return $res;
    }});
 
+__PACKAGE__->register_method({
+    name => 'node_cmd',
+    path => 'status',
+    method => 'POST',
+    protected => 1,
+    description => "Reboot or shutdown a node.",
+    proxyto => 'node',
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	    command => {
+		description => "Specify the command.",
+		type => 'string',
+		enum => [qw(reboot shutdown)],
+	    },
+	},
+    },
+    returns => { type => "null" },
+    code => sub {
+	my ($param) = @_;
+
+	if ($param->{command} eq 'reboot') {
+	    system ("(sleep 2;/sbin/reboot)&");
+	} elsif ($param->{command} eq 'shutdown') {
+	    system ("(sleep 2;/sbin/poweroff)&");
+	}
+
+	return undef;
+    }});
 
 package PMG::API2::Nodes;
 
