@@ -1,0 +1,2 @@
+pmg-api: package-installs-apt-sources etc/apt/sources.list.d/
+pmg-api: package-installs-apt-sources etc/apt/sources.list.d/pmg-enterprise.list
