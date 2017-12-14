@@ -474,9 +474,10 @@ sub upgradedb {
     cond_create_std_actions($ruledb);
 
     # upgrade tables here if necessary
-
-    $dbh->do("ALTER TABLE LocalStat ADD COLUMN IF NOT EXISTS " .
-	     "PregreetCount INTEGER DEFAULT 0 NOT NULL");
+    eval {
+	$dbh->do("ALTER TABLE LocalStat ADD COLUMN " .
+		 "PregreetCount INTEGER DEFAULT 0 NOT NULL");
+    };
 
     # update obsolete content type names
     eval {
