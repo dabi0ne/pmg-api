@@ -1,3 +1,15 @@
+pmg-api (5.0-40) unstable; urgency=medium
+
+  * PMG/Cluster.pm - rewrite ssh keys after cluster sync
+
+  * bump default maxspamsize to 1M
+
+  * depend on apt-transport-https
+
+  * depend on fetchmail
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 18 Dec 2017 10:28:25 +0100
+
 pmg-api (5.0-39) unstable; urgency=medium
 
   * install /etc/apt/apt.conf.d/75pmgconf to avoid atomatic kernel removes
