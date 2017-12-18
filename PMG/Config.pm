@@ -1324,10 +1324,6 @@ sub rewrite_config_postfix {
     my ($self, $rulecache) = @_;
 
     # make sure we have required files (else postfix start fails)
-    postmap_pmg_domains();
-    postmap_pmg_transport();
-    postmap_tls_policy();
-
     IO::File->new($transport_map_filename, 'a', 0644);
 
     my $changes = 0;
@@ -1344,6 +1340,12 @@ sub rewrite_config_postfix {
 
     $changes = 1 if $self->rewrite_config_file(
 	'master.cf.in', '/etc/postfix/master.cf');
+
+    # make sure we have required files (else postfix start fails)
+    # Note: postmap need a valid /etc/postfix/main.cf configuration
+    postmap_pmg_domains();
+    postmap_pmg_transport();
+    postmap_tls_policy();
 
     rewrite_postfix_whitelist($rulecache) if $rulecache;
 
