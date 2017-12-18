@@ -1,3 +1,9 @@
+pmg-api (5.0-41) unstable; urgency=medium
+
+  * PMG/Fetchmail.pm - autostart fetchmail service
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 18 Dec 2017 11:33:22 +0100
+
 pmg-api (5.0-40) unstable; urgency=medium
 
   * PMG/Cluster.pm - rewrite ssh keys after cluster sync
