@@ -7,6 +7,7 @@ use Data::Dumper;
 use PVE::Tools;
 use PVE::INotify;
 
+use PMG::Utils;
 use PMG::Config;
 use PMG::ClusterConfig;
 
@@ -239,6 +240,7 @@ sub update_fetchmail_default {
     if (($role eq '-') || ($role eq 'master')) {
 	if (!!$enable != !!$is_enabled) {
 	    PVE::INotify::write_file('fetchmail_default', $enable);
+	    PMG::Utils::service_cmd('fetchmail', 'restart');
 	}
 	if (! -e $config_link_filename) {
 	    symlink ($config_filename, $config_link_filename);

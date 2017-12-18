@@ -574,6 +574,10 @@ sub service_cmd {
 
     if ($service eq 'pmgdaemon' || $service eq 'pmgproxy') {
 	die "invalid service cmd '$service $cmd': ERROR" if $cmd eq 'stop';
+    } elsif ($service eq 'fetchmail') {
+	# use restart instead of start - else it does not start 'exited' unit
+	# after setting START_DAEMON=yes in /etc/default/fetchmail
+	$cmd = 'restart' if $cmd eq 'start';
     }
 
     $service = $service_aliases->{$service} // $service;
