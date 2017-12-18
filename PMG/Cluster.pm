@@ -196,15 +196,22 @@ my $ssh_rsa_id = "/root/.ssh/id_rsa.pub";
 sub update_ssh_keys {
     my ($cinfo) = @_;
 
+    my $old = '';
     my $data = '';
+
     foreach my $node (values %{$cinfo->{ids}}) {
 	$data .= "$node->{ip} ssh-rsa $node->{hostrsapubkey}\n";
 	$data .= "$node->{name} ssh-rsa $node->{hostrsapubkey}\n";
     }
 
-    PVE::Tools::file_set_contents($sshglobalknownhosts, $data);
+    $old = PVE::Tools::file_get_contents($sshglobalknownhosts, 1024*1024)
+	if -f $sshglobalknownhosts;
+
+    PVE::Tools::file_set_contents($sshglobalknownhosts, $data)
+	if $old ne $data;
 
     $data = '';
+    $old = '';
 
     # always add ourself
     if (-f $ssh_rsa_id) {
@@ -233,7 +240,11 @@ sub update_ssh_keys {
 	$newdata .= "$line\n";
     }
 
-    PVE::Tools::file_set_contents($rootsshauthkeys, $newdata, 0600);
+    $old = PVE::Tools::file_get_contents($rootsshauthkeys, 1024*1024)
+	if -f $rootsshauthkeys;
+
+    PVE::Tools::file_set_contents($rootsshauthkeys, $newdata, 0600)
+	if $old ne $newdata;
 }
 
 my $cfgdir = '/etc/pmg';
@@ -364,6 +375,8 @@ sub sync_config_from_master {
 	if $role eq 'master';
 
     $cond_commit_synced_file->('cluster.conf');
+
+    update_ssh_keys($cinfo); # rewrite ssh keys
 
     PMG::Fetchmail::update_fetchmail_default(0); # disable on slave
 
