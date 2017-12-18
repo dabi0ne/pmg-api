@@ -71,6 +71,7 @@ Depends: apt,
          spf-tools-perl,
          sudo,
 	 rsync,
+	 fetchmail,
          tnef,
          ${misc:Depends},
          ${perl:Depends}
