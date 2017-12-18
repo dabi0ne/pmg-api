@@ -1046,9 +1046,11 @@ sub get_template_vars {
 
     my $resolv = PVE::INotify::read_file('resolvconf');
     $vars->{dns}->{hostname} = $nodename;
-    $vars->{dns}->{domain} = $resolv->{search};
 
-    my $wlbr = "$nodename.$resolv->{search}";
+    my $domain = $resolv->{search} // 'localdomain';
+    $vars->{dns}->{domain} = $domain;
+
+    my $wlbr = "$nodename.$domain";
     foreach my $r (PVE::Tools::split_list($vars->{pmg}->{spam}->{wl_bounce_relays})) {
 	$wlbr .= " $r"
     }
