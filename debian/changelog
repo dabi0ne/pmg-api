@@ -1,3 +1,9 @@
+pmg-api (5.0-43) unstable; urgency=medium
+
+  * run postmap after generation postfix main.cf
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 18 Dec 2017 12:46:53 +0100
+
 pmg-api (5.0-42) unstable; urgency=medium
 
   * PMG/Config.pm: avoid warnings if there is no search domain in resolv.conf
