@@ -150,7 +150,7 @@ LIBSOURCES =				\
 	PMG/API2/Action.pm		\
 	PMG/API2.pm
 
-SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS} pmg-sources.list pmg-apt.conf
+SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS} pmg-sources.list pmg-apt.conf pmg-initramfs.conf
 
 all: ${SOURCES}
 
@@ -200,6 +200,7 @@ install: ${SOURCES} $(addsuffix .service-bash-completion, ${SERVICES}) $(addsuff
 	for i in ${CRONSCRIPTS}; do install -D -m 0755 bin/$$i ${DESTDIR}/usr/lib/pmg/bin/$$i; done
 	install -d -m 0755 ${DESTDIR}/lib/systemd/system
 	for i in ${TIMER_UNITS}; do install -m 0644 $$i ${DESTDIR}/lib/systemd/system/; done
+	install -D -m 0644 pmg-initramfs.conf ${DESTDIR}/etc/initramfs-tools/conf.d/pmg-initramfs.conf
 
 .PHONY: upload
 upload: ${DEB}
