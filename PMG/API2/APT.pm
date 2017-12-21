@@ -95,11 +95,11 @@ my $get_changelog_url =sub {
 	    $changelog_url = "http://packages.debian.org/changelogs/$base/" .
 		"${srcpkg}_${pkgver}/changelog";
 	} elsif ($origin eq 'Proxmox') {
-	    if ($component eq 'pve-enterprise') {
-		$changelog_url = "https://enterprise.proxmox.com/debian/$base/" .
+	    if ($component eq 'pmg-enterprise') {
+		$changelog_url = "https://enterprise.proxmox.com/debian/pmg/$base/" .
 		    "${pkgname}_${pkgver}.changelog";
 	    } else {
-		$changelog_url = "http://download.proxmox.com/debian/$base/" .
+		$changelog_url = "http://download.proxmox.com/debian/pmg/$base/" .
 		    "${pkgname}_${pkgver}.changelog";
 	    }
 	}
