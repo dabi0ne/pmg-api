@@ -1,3 +1,15 @@
+pmg-api (5.0-44) unstable; urgency=medium
+
+  * PMG/API2/APT.pm - fix changelog urls
+
+  * disable suspend-to-disk, as it delays boot on systems with root on ZFS
+
+  * pmg-daily: add check for available updates
+
+  * periodically update subscription status
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 21 Dec 2017 08:43:48 +0100
+
 pmg-api (5.0-43) unstable; urgency=medium
 
   * run postmap after generation postfix main.cf
