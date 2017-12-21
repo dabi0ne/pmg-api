@@ -16,6 +16,7 @@ use PMG::Utils;
 use PMG::Config;
 use PMG::ClusterConfig;
 use PMG::DBTools;
+use PMG::API2::Subscription;
 
 $SIG{'__WARN__'} = sub {
     my $err = $@;
@@ -29,6 +30,13 @@ $SIG{'__WARN__'} = sub {
 PVE::RESTEnvironment->setup_default_cli_env();
 
 initlog('pmg-daily', 'mail');
+
+my $nodename = PVE::INotify::nodename();
+
+eval { PMG::API2::Subscription->update({ node => $nodename }); };
+if (my $err = $@) {
+    syslog ('err', "update subscription info failed: $err");
+}
 
 my $cfg = PMG::Config->new();
 
