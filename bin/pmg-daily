@@ -17,6 +17,7 @@ use PMG::Config;
 use PMG::ClusterConfig;
 use PMG::DBTools;
 use PMG::API2::Subscription;
+use PMG::API2::APT;
 
 $SIG{'__WARN__'} = sub {
     my $err = $@;
@@ -53,7 +54,15 @@ if (my $statlifetime = $cfg->get ('admin', 'statlifetime')) {
     }
 }
 
-# fixme: check for available updates
+# check for available updates
+# We assume that users with subscriptions want informations
+# about new packages.
+my $info = PVE::INotify::read_file('subscription');
+my $notify = ($info && $info->{status} eq 'Active') ? 1 : 0;
+eval { PMG::API2::APT->update_database({ node => $nodename, notify => $notify, quiet => 1 }); };
+if (my $err = $@) {
+    syslog ('err', "update apt database failed: $err");
+}
 
 # rotate razor log file
 rename('/root/.razor/razor-agent.log', '/root/.razor/razor-agent.log.0');
