@@ -222,7 +222,7 @@ my $virusinfo_stat_ctablecmd = <<__EOD;
 
 __EOD
 
-# mail storage stable
+# mail storage table
 # QTypes
 # V - Virus quarantine
 # S - Spam quarantine
