@@ -822,7 +822,7 @@ __PACKAGE__->register_method ({
 
 	if ($role eq 'quser') {
 	    my $quar_username = $ref->{pmail} . '@quarantine';
-	    raise_perm_exc("mail does not belong to user '$authuser' ($quar_username, $pmail)")
+	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail}, $pmail)")
 		if $authuser ne $quar_username;
 	}
 
@@ -891,6 +891,7 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
+	    pmail => $pmail_param_type,
 	    id => {
 		description => 'Unique ID',
 		type => 'string',
@@ -917,13 +918,15 @@ __PACKAGE__->register_method ({
 	$cid = int($cid);
 	$rid = int($rid);
 
+	my $pmail = $verify_optional_pmail->($authuser, $role, $param->{pmail});
+
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid);
+	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $pmail);
 
 	if ($role eq 'quser') {
 	    my $quar_username = $ref->{pmail} . '@quarantine';
-	    raise_perm_exc("mail does not belong to user '$authuser'")
+	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail}, $pmail)")
 		if $authuser ne $quar_username;
 	}
 
