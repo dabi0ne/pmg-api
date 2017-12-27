@@ -1,3 +1,12 @@
+pmg-api (5.0-45) unstable; urgency=medium
+
+  * PMG/API2/Quarantine.pm - require parameter pmail for quarantine actions
+
+  * delete_quarantined_mail,deliver_quarantined_mail: add parameter $receiver,
+    correctly update database after mail delivery
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 27 Dec 2017 10:28:05 +0100
+
 pmg-api (5.0-44) unstable; urgency=medium
 
   * PMG/API2/APT.pm - fix changelog urls
