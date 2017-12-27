@@ -83,7 +83,7 @@ sub add_to_blackwhite {
 }
 
 sub deliver_quarantined_mail {
-    my ($dbh, $ref, $targets) = @_;
+    my ($dbh, $ref, $target) = @_;
 
     my $filename = $ref->{file};
     my $spooldir = $PMG::MailQueue::spooldir;
@@ -105,7 +105,7 @@ sub deliver_quarantined_mail {
 	    die sprintf("smtp from error - got: %s %s\n", $smtp->code, $smtp->message);
 	}
 
-	if (!$smtp->to (@$targets)) {
+	if (!$smtp->to($target)) {
 	    die sprintf("smtp to error - got: %s %s\n", $smtp->code, $smtp->message);
 	}
 
@@ -145,7 +145,7 @@ sub deliver_quarantined_mail {
 	my $sth = $dbh->prepare(
 	    "UPDATE CMSReceivers SET Status='D', MTime = ? " .
 	    "WHERE CMailStore_CID = ? AND CMailStore_RID = ? AND PMail = ?");
-	$sth->execute(time(), $ref->{cid}, $ref->{rid}, $ref->{pmail});
+	$sth->execute(time(), $ref->{cid}, $ref->{rid}, $target);
 	$sth->finish;
     };
     my $err = $@;
