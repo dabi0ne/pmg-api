@@ -938,9 +938,9 @@ __PACKAGE__->register_method ({
 	} elsif ($action eq 'blacklist') {
 	    PMG::Quarantine::add_to_blackwhite($dbh, $username, 'BL', [ $sender ]);
 	} elsif ($action eq 'deliver') {
-	    PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $ref->{pmail});
+	    PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $pmail);
 	} elsif ($action eq 'delete') {
-	    PMG::Quarantine::delete_quarantined_mail($dbh, $ref);
+	    PMG::Quarantine::delete_quarantined_mail($dbh, $ref, $pmail);
 	} else {
 	    die "internal error"; # should not be reached
 	}

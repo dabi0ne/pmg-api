@@ -164,7 +164,7 @@ sub deliver_quarantined_mail {
 }
 
 sub delete_quarantined_mail {
-    my ($dbh, $ref) = @_;
+    my ($dbh, $ref, $target) = @_;
 
     my $filename = $ref->{file};
     my $spooldir = $PMG::MailQueue::spooldir;
@@ -176,7 +176,7 @@ sub delete_quarantined_mail {
 	my $sth = $dbh->prepare(
 	    "UPDATE CMSReceivers SET Status='D', MTime = ? WHERE " .
 	    "CMailStore_CID = ? AND CMailStore_RID = ? AND PMail = ?");
-	$sth->execute (time(), $ref->{cid}, $ref->{rid}, $ref->{pmail});
+	$sth->execute (time(), $ref->{cid}, $ref->{rid}, $target);
 	$sth->finish;
     };
     if (my $err = $@) {
