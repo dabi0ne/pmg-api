@@ -89,7 +89,7 @@ sub deliver_quarantined_mail {
     my $spooldir = $PMG::MailQueue::spooldir;
     my $path = "$spooldir/$filename";
 
-    my $id = 'C' . $ref->{cid} . 'R' . $ref->{rid};
+    my $id = 'C' . $ref->{cid} . 'R' . $ref->{rid} . 'T' . $ref->{ticketid};;
 
     my $sender = 'postmaster'; # notify postmaster if something fails
 
@@ -144,8 +144,8 @@ sub deliver_quarantined_mail {
 
 	my $sth = $dbh->prepare(
 	    "UPDATE CMSReceivers SET Status='D', MTime = ? " .
-	    "WHERE CMailStore_CID = ? AND CMailStore_RID = ? AND (PMail = ? OR Receiver = ?)");
-	$sth->execute(time(), $ref->{cid}, $ref->{rid}, $receiver, $receiver);
+	    "WHERE CMailStore_CID = ? AND CMailStore_RID = ? AND TicketID = ?");
+	$sth->execute(time(), $ref->{cid}, $ref->{rid}, $ref->{ticketid});
 	$sth->finish;
     };
     my $err = $@;
@@ -164,19 +164,19 @@ sub deliver_quarantined_mail {
 }
 
 sub delete_quarantined_mail {
-    my ($dbh, $ref, $receiver) = @_;
+    my ($dbh, $ref) = @_;
 
     my $filename = $ref->{file};
     my $spooldir = $PMG::MailQueue::spooldir;
     my $path = "$spooldir/$filename";
 
-    my $id = 'C' . $ref->{cid} . 'R' . $ref->{rid};
+    my $id = 'C' . $ref->{cid} . 'R' . $ref->{rid} . 'T' . $ref->{ticketid};;
 
     eval {
 	my $sth = $dbh->prepare(
 	    "UPDATE CMSReceivers SET Status='D', MTime = ? WHERE " .
-	    "CMailStore_CID = ? AND CMailStore_RID = ? AND (PMail = ? OR Receiver = ?)");
-	$sth->execute (time(), $ref->{cid}, $ref->{rid}, $receiver, $receiver);
+	    "CMailStore_CID = ? AND CMailStore_RID = ? AND TicketID = ?");
+	$sth->execute (time(), $ref->{cid}, $ref->{rid}, $ref->{ticketid});
 	$sth->finish;
     };
     if (my $err = $@) {

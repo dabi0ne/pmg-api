@@ -560,7 +560,7 @@ sub sync_quarantine_db {
 		    "AND CMailStore_RID <= ?");
 		$sth->execute($rcid, $lastid, $maxid);
 
-		$attrs = [qw(cmailstore_cid cmailstore_rid pmail receiver status mtime)];
+		$attrs = [qw(cmailstore_cid cmailstore_rid pmail receiver ticketid status mtime)];
 		PMG::DBTools::copy_selected_data($ldb, $sth, 'CMSReceivers', $attrs);
 
 		PMG::DBTools::write_maxint_clusterinfo($ldb, $rcid, 'lastid_CMailStore', $maxid);
@@ -595,10 +595,10 @@ sub sync_quarantine_db {
 
 	my $update_sth = $ldb->prepare(
 	    "UPDATE CMSReceivers SET status = ? WHERE " .
-	    "CMailstore_CID = ? AND CMailstore_RID = ? AND PMail = ?;");
+	    "CMailstore_CID = ? AND CMailstore_RID = ? AND TicketID = ?");
 	while (my $ref = $sth->fetchrow_hashref()) {
 	    $update_sth->execute($ref->{status}, $ref->{cmailstore_cid},
-				 $ref->{cmailstore_rid}, $ref->{pmail});
+				 $ref->{cmailstore_rid}, $ref->{ticketid});
 	}
 
 	PMG::DBTools::write_maxint_clusterinfo($ldb, $rcid, 'lastmt_CMSReceivers', $ctime);

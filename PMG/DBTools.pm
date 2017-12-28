@@ -1223,20 +1223,19 @@ sub cluster_sync_status {
 }
 
 sub load_mail_data {
-    my ($dbh, $cid, $rid, $pmail) = @_;
+    my ($dbh, $cid, $rid, $ticketid) = @_;
 
     my $sth = $dbh->prepare(
 	"SELECT * FROM CMailStore, CMSReceivers WHERE " .
-	($pmail ? 'pmail = ' . $dbh->quote($pmail) . " AND " : '') .
-	"CID = $cid and RID = $rid AND " .
+	"CID = ? AND RID = ? AND TicketID = ? AND " .
 	"CID = CMailStore_CID AND RID = CMailStore_RID");
-    $sth->execute ();
+    $sth->execute($cid, $rid, $ticketid);
 
     my $res = $sth->fetchrow_hashref();
 
     $sth->finish();
 
-    die "no such mail (C${cid}R${rid})\n" if !defined($res);
+    die "no such mail (C${cid}R${rid}T${ticketid})\n" if !defined($res);
 
     return $res;
 }

@@ -39,15 +39,17 @@ my $extract_pmail = sub {
 };
 
 my $verify_optional_pmail = sub {
-    my ($authuser, $role, $pmail) = @_;
+    my ($authuser, $role, $pmail_param) = @_;
 
+    my $pmail;
     if ($role eq 'quser') {
-	raise_param_exc({ pmail => "parameter not allwed with role '$role'"})
-	    if defined($pmail) && ($pmail ne $authuser);
 	$pmail = $extract_pmail->($authuser, $role);
+	raise_param_exc({ pmail => "parameter not allwed with role '$role'"})
+	    if defined($pmail_param) && ($pmail ne $pmail_param);
     } else {
 	raise_param_exc({ pmail => "parameter required with role '$role'"})
-	    if !defined($pmail);
+	    if !defined($pmail_param);
+	$pmail = $pmail_param;
     }
     return $pmail;
 };
@@ -133,7 +135,7 @@ my $parse_header_info = sub {
 
     $res->{envelope_sender} = $ref->{sender};
     $res->{receiver} = $ref->{receiver} // $ref->{pmail};
-    $res->{id} = 'C' . $ref->{cid} . 'R' . $ref->{rid};
+    $res->{id} = 'C' . $ref->{cid} . 'R' . $ref->{rid} . 'T' . $ref->{ticketid};
     $res->{time} = $ref->{time};
     $res->{bytes} = $ref->{bytes};
 
@@ -737,8 +739,8 @@ __PACKAGE__->register_method ({
 	    id => {
 		description => 'Unique ID',
 		type => 'string',
-		pattern => 'C\d+R\d+',
-		maxLength => 40,
+		pattern => 'C\d+R\d+T\d+',
+		maxLength => 60,
 	    },
 	    raw => {
 		description => "Display 'raw' eml data. This is only used with the 'htmlmail' formatter.",
@@ -810,24 +812,22 @@ __PACKAGE__->register_method ({
 	my $role = $rpcenv->get_role();
 	my $format = $rpcenv->get_format();
 
-	my ($cid, $rid) = $param->{id} =~ m/^C(\d+)R(\d+)$/;
+	my ($cid, $rid, $tid) = $param->{id} =~ m/^C(\d+)R(\d+)T(\d+)$/;
 	$cid = int($cid);
 	$rid = int($rid);
-
-	my $pmail = $role eq 'quser' ? $extract_pmail->($authuser, $role) : undef;
+	$tid = int($tid);
 
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $pmail);
+	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $tid);
 
 	if ($role eq 'quser') {
 	    my $quar_username = $ref->{pmail} . '@quarantine';
-	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail}, $pmail)")
+	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail})")
 		if $authuser ne $quar_username;
 	}
 
 	my $res = $parse_header_info->($ref);
-
 
 	my $filename = $ref->{file};
 	my $spooldir = $PMG::MailQueue::spooldir;
@@ -891,12 +891,11 @@ __PACKAGE__->register_method ({
     parameters => {
 	additionalProperties => 0,
 	properties => {
-	    pmail => $pmail_param_type,
 	    id => {
 		description => 'Unique ID',
 		type => 'string',
-		pattern => 'C\d+R\d+',
-		maxLength => 40,
+		pattern => 'C\d+R\d+T\d+',
+		maxLength => 60,
 	    },
 	    action => {
 		description => 'Action - specify what you want to do with the mail.',
@@ -914,32 +913,31 @@ __PACKAGE__->register_method ({
 	my $role = $rpcenv->get_role();
 	my $action = $param->{action};
 
-	my ($cid, $rid) = $param->{id} =~ m/^C(\d+)R(\d+)$/;
+	my ($cid, $rid, $tid) = $param->{id} =~ m/^C(\d+)R(\d+)T(\d+)$/;
 	$cid = int($cid);
 	$rid = int($rid);
-
-	my $pmail = $verify_optional_pmail->($authuser, $role, $param->{pmail});
+	$tid = int($tid);
 
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $pmail);
+	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $tid);
 
 	if ($role eq 'quser') {
 	    my $quar_username = $ref->{pmail} . '@quarantine';
-	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail}, $pmail)")
+	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail})")
 		if $authuser ne $quar_username;
 	}
 
 	my $sender = $get_real_sender->($ref);
 
 	if ($action eq 'whitelist') {
-	    PMG::Quarantine::add_to_blackwhite($dbh, $pmail, 'WL', [ $sender ]);
+	    PMG::Quarantine::add_to_blackwhite($dbh, $ref->{pmail}, 'WL', [ $sender ]);
 	} elsif ($action eq 'blacklist') {
-	    PMG::Quarantine::add_to_blackwhite($dbh, $pmail, 'BL', [ $sender ]);
+	    PMG::Quarantine::add_to_blackwhite($dbh, $ref->{pmail}, 'BL', [ $sender ]);
 	} elsif ($action eq 'deliver') {
-	    PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $ref->{receiver} // $pmail);
+	    PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $ref->{receiver} // $ref->{pmail});
 	} elsif ($action eq 'delete') {
-	    PMG::Quarantine::delete_quarantined_mail($dbh, $ref, $ref->{receiver} // $pmail);
+	    PMG::Quarantine::delete_quarantined_mail($dbh, $ref);
 	} else {
 	    die "internal error"; # should not be reached
 	}

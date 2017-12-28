@@ -66,7 +66,7 @@ sub get_item_data {
 
     my $item = {};
 
-    $item->{id} = sprintf("C%dR%d", $ref->{cid}, $ref->{rid});
+    $item->{id} = sprintf("C%dR%dT%d", $ref->{cid}, $ref->{rid}, $ref->{ticketid});
 
     $item->{subject} = PMG::Utils::rfc1522_to_html(
 	PVE::Tools::trim($head->get('subject')) || 'No Subject');
