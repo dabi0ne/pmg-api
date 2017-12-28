@@ -253,6 +253,7 @@ my $cmailstore_ctablecmd =  <<__EOD;
      CMailStore_RID INTEGER NOT NULL,
      PMail VARCHAR(255) NOT NULL,
      Receiver VARCHAR(255),
+     TicketID INTEGER NOT NULL,
      Status "char" NOT NULL,
      MTime INTEGER NOT NULL);
 
@@ -327,6 +328,17 @@ sub cond_create_dbtable {
 	$dbh->rollback;
        	die $err;
     }
+}
+
+sub database_column_exists {
+    my ($dbh, $table, $column) = @_;
+
+    my $sth = $dbh->prepare(
+	"SELECT column_name FROM information_schema.columns " .
+	"WHERE table_name = ? and column_name = ?");
+    $sth->execute(lc($table), lc($column));
+    my $res = $sth->fetchrow_hashref();
+    return defined($res);
 }
 
 sub create_ruledb {
@@ -478,6 +490,25 @@ sub upgradedb {
 	$dbh->do("ALTER TABLE LocalStat ADD COLUMN " .
 		 "PregreetCount INTEGER DEFAULT 0 NOT NULL");
     };
+
+    # add missing TicketID to CMSReceivers
+    if (!database_column_exists($dbh, 'CMSReceivers', 'TicketID')) {
+	eval {
+	    $dbh->begin_work;
+	    $dbh->do("CREATE SEQUENCE cmsreceivers_ticketid_seq");
+	    $dbh->do("ALTER TABLE CMSReceivers ADD COLUMN " .
+		     "TicketID INTEGER NOT NULL " .
+		     "DEFAULT nextval('cmsreceivers_ticketid_seq')");
+	    $dbh->do("ALTER TABLE CMSReceivers ALTER COLUMN " .
+		     "TicketID DROP DEFAULT");
+	    $dbh->do("DROP SEQUENCE cmsreceivers_ticketid_seq");
+	    $dbh->commit;
+	};
+	if (my $err = $@) {
+	    $dbh->rollback;
+	    die $err;
+	}
+    }
 
     # update obsolete content type names
     eval {
