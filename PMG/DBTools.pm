@@ -486,10 +486,10 @@ sub upgradedb {
     cond_create_std_actions($ruledb);
 
     # upgrade tables here if necessary
-    eval {
+    if (!database_column_exists($dbh, 'LocalStat', 'PregreetCount')) {
 	$dbh->do("ALTER TABLE LocalStat ADD COLUMN " .
 		 "PregreetCount INTEGER DEFAULT 0 NOT NULL");
-    };
+    }
 
     # add missing TicketID to CMSReceivers
     if (!database_column_exists($dbh, 'CMSReceivers', 'TicketID')) {
