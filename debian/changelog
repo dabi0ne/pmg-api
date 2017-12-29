@@ -1,3 +1,11 @@
+pmg-api (5.0-47) unstable; urgency=medium
+
+  * truncate large mails before passing them to spamassassin
+
+  * reduce default maxspamsize back to 256
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 29 Dec 2017 12:19:09 +0100
+
 pmg-api (5.0-46) unstable; urgency=medium
 
   * PMG/DBTools.pm: add missing TicketID column to CMSReceivers
