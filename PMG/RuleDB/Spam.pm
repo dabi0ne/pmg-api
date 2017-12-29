@@ -362,9 +362,7 @@ sub analyze_spam {
     my $spamtest = $queue->{sa};
 
     # only run SA in testmode or when clamav_heuristic did not confirm spam (score < 5)
-    # do not run SA if mail is too large
-    if (($queue->{bytes} <= $maxspamsize) && 
-	($msginfo->{testmode} || ($sa_score < 5))) {
+    if ($msginfo->{testmode} || ($sa_score < 5)) {
 
 	# save and disable alarm (SA forgets to clear alarm in some cases) 
 	my $previous_alarm = alarm (0);
@@ -372,15 +370,33 @@ sub analyze_spam {
 	my $pid = $$;
 
 	eval {
-	    $queue->{fh}->seek (0, 0);
+	    $queue->{fh}->seek(0, 0);
 
-	    *SATMP = \*{$queue->{fh}};
-	    my $mail = $spamtest->parse(\*SATMP);
+	    # Truncate message to $maxspamsize
+	    # Note: similar code to read content is used inside
+	    # Mail::SpamAssassin::Message->new()
+	    my $nread;
+	    my $raw_str = '';
+	    while ($nread = sysread($queue->{fh}, $raw_str, 16384, length($raw_str))) {
+		last if length($raw_str) >= $maxspamsize;
+	    }
+	    defined($nread) || die "error reading message: $!\n";
+
+	    my $suppl_attrib = {};
+	    if (length($raw_str) >= $maxspamsize &&
+		length($raw_str) < $queue->{bytes}) {
+		$suppl_attrib->{body_size} = $queue->{bytes};
+	    }
+
+	    my @message = split(/^/m, $raw_str, -1);
+	    undef $raw_str; # free memory early
+
+	    my $mail = $spamtest->parse(\@message, 0, $suppl_attrib);
 
 	    # hack: pass envelope sender to spamassassin
 	    $mail->header('X-Proxmox-Envelope-From', $queue->{from});
 
-	    my $status = $spamtest->check ($mail);
+	    my $status = $spamtest->check($mail);
 
 	    #my $fromhash = { $queue->{from} => 1 }; 
 	    #foreach my $f ($status->all_from_addrs()) {
