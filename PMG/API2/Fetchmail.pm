@@ -85,7 +85,7 @@ my $fetchmail_properties = {
     }),
 };
 
-my $fetchmail_create_properties = clone($fetchmail_properties);
+our $fetchmail_create_properties = clone($fetchmail_properties);
 delete $fetchmail_create_properties->{id};
 foreach my $k (qw(server protocol user pass target)) {
     delete $fetchmail_create_properties->{$k}->{optional};
