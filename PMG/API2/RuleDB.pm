@@ -61,6 +61,7 @@ __PACKAGE__->register_method ({
     path => '',
     method => 'POST',
     description => "Reset PMG rule database back to factory defaults.",
+    permissions => { check => [ 'admin' ] },
     protected => 1,
     parameters => {
 	additionalProperties => 0,
