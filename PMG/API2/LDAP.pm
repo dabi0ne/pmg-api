@@ -201,6 +201,9 @@ __PACKAGE__->register_method ({
 	my $data = $cfg->{ids}->{$profile};
 	die "LDAP profile '$profile' does not exist\n" if !$data;
 
+	# we do not want to get the password over the api
+	delete $data->{bindpw};
+
 	$data->{digest} = $cfg->{digest};
 
 	return $data;
