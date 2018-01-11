@@ -10,6 +10,7 @@ use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
 
+use PMG::RESTEnvironment;
 use PMG::UserConfig;
 
 use base qw(PVE::RESTHandler);
@@ -32,7 +33,7 @@ __PACKAGE__->register_method ({
     description => "List users.",
     proxyto => 'master',
     protected => 1,
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {},
@@ -55,9 +56,14 @@ __PACKAGE__->register_method ({
 
 	my $cfg = PMG::UserConfig->new();
 
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
 	my $res = [];
 
 	foreach my $userid (sort keys %$cfg) {
+	    next if $role eq 'qmanager' && $authuser ne $userid;
 	    push @$res, $extract_userdata->($cfg->{$userid});
 	}
 
