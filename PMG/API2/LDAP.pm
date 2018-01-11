@@ -24,7 +24,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "List configured LDAP profiles.",
     proxyto => 'master',
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
     	additionalProperties => 0,
 	properties => {},
@@ -180,7 +180,7 @@ __PACKAGE__->register_method ({
     method => 'GET',
     description => "Get LDAP profile configuration.",
     proxyto => 'master',
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'audit' ] },
     parameters => {
 	additionalProperties => 0,
 	properties => {
@@ -345,7 +345,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/users',
     method => 'GET',
     description => "List LDAP users.",
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'audit' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -395,7 +395,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/users/{email}',
     method => 'GET',
     description => "Get all email addresses for the specified user.",
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'audit' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -453,7 +453,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/groups',
     method => 'GET',
     description => "List LDAP groups.",
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'audit' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
@@ -502,7 +502,7 @@ __PACKAGE__->register_method ({
     path => '{profile}/groups/{gid}',
     method => 'GET',
     description => "List LDAP group members.",
-    permissions => { check => [ 'admin' ] },
+    permissions => { check => [ 'admin', 'audit' ] },
     protected => 1,
     proxyto => 'master',
     parameters => {
