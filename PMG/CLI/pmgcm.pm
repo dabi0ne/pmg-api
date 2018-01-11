@@ -109,6 +109,52 @@ __PACKAGE__->register_method({
     }});
 
 __PACKAGE__->register_method({
+    name => 'delete',
+    path => 'delete',
+    method => 'GET',
+    description => "Remove a node from the cluster.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    cid => {
+		description => "Cluster Node ID.",
+		type => 'integer',
+		minimum => 1,
+	    },
+	},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+	    my $cinfo = PMG::ClusterConfig->new();
+
+	    die "no cluster defined\n" if !scalar(keys %{$cinfo->{ids}});
+
+	    my $master = $cinfo->{master} || die "unable to lookup master node\n";
+
+	    die "operation not permitted (not master)\n"
+		if $cinfo->{local}->{cid} != $master->{cid};
+
+	    my $cid = $param->{cid};
+
+	    die "unable to delete master node\n"
+		if $cinfo->{local}->{cid} == $cid;
+
+	    die "no such node (cid == $cid does not exists)\n" if !$cinfo->{ids}->{$cid};
+
+	    delete $cinfo->{ids}->{$cid};
+
+	    $cinfo->write();
+	};
+
+	PMG::ClusterConfig::lock_config($code, "delete cluster node failed");
+
+	return undef;
+    }});
+
+__PACKAGE__->register_method({
     name => 'join',
     path => 'join',
     method => 'GET',
@@ -215,6 +261,7 @@ __PACKAGE__->register_method({
 our $cmddef = {
     status => [ 'PMG::API2::Cluster', 'status', [], {}, $format_nodelist],
     create => [ 'PMG::API2::Cluster', 'create', [], {}, $upid_exit],
+    delete => [ __PACKAGE__, 'delete', ['cid']],
     join => [ __PACKAGE__, 'join', ['master_ip']],
     join_cmd => [ __PACKAGE__, 'join_cmd', []],
     sync => [ __PACKAGE__, 'sync', []],
