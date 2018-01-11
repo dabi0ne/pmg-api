@@ -9,6 +9,7 @@ use PVE::Tools qw(extract_param);
 use PVE::JSONSchema qw(get_standard_option);
 use PVE::RESTHandler;
 use PVE::INotify;
+use PVE::Exception qw(raise_perm_exc);
 
 use PMG::RESTEnvironment;
 use PMG::UserConfig;
@@ -118,6 +119,7 @@ __PACKAGE__->register_method ({
     path => '{userid}',
     method => 'GET',
     description => "Read User data.",
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
     proxyto => 'master',
     protected => 1,
     parameters => {
@@ -134,6 +136,13 @@ __PACKAGE__->register_method ({
 	my ($param) = @_;
 
 	my $cfg = PMG::UserConfig->new();
+
+	my $rpcenv = PMG::RESTEnvironment->get();
+	my $authuser = $rpcenv->get_user();
+	my $role = $rpcenv->get_role();
+
+	raise_perm_exc()
+	    if $role eq 'qmanager' && $authuser ne $param->{userid};
 
 	my $data = $cfg->lookup_user_data($param->{userid});
 
