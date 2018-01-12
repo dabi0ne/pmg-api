@@ -1,3 +1,19 @@
+pmg-api (5.0-48) unstable; urgency=medium
+
+  * fix #1617: remove regex for matchfield. modfield
+
+  * do not return bindpw over the api
+
+  * let all users read their own user data
+
+  * make ldap info visible for audit users
+
+  * implement pmgcm delete
+
+  * allow admins to reset the rule database
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 12 Jan 2018 11:36:26 +0100
+
 pmg-api (5.0-47) unstable; urgency=medium
 
   * truncate large mails before passing them to spamassassin
