@@ -147,7 +147,6 @@ sub properties {
 	value => {
 	    description => "The Value",
 	    type => 'string',
-	    pattern => '[0-9a-zA-Z\/\\\[\]\+\-\.\*\_]+',
 	    maxLength => 1024,
 	},
     };
