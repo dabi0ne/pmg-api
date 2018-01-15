@@ -82,7 +82,7 @@ my $create_or_verify_ticket = sub {
     if (($ticketuser = PMG::Ticket::verify_ticket($pw_or_ticket, 1)) &&
 	($ticketuser eq 'root@pam' || $ticketuser eq $username)) {
 	# valid ticket. Note: root@pam can create tickets for other users
-    } elsif (PMG::Ticket::verify_vnc_ticket($pw_or_ticket, $username, $path, 1)) {
+    } elsif ($path && PMG::Ticket::verify_vnc_ticket($pw_or_ticket, $username, $path, 1)) {
 	# valid vnc ticket for $path
     } else {
 	$username = PMG::AccessControl::authenticate_user($username, $pw_or_ticket, $otp);
