@@ -1,3 +1,9 @@
+pmg-api (5.0-49) unstable; urgency=medium
+
+  * AccessControl.pm: avoid warning about uninitialized value
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 16 Jan 2018 13:53:31 +0100
+
 pmg-api (5.0-48) unstable; urgency=medium
 
   * fix #1617: remove regex for matchfield. modfield
