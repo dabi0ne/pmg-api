@@ -411,14 +411,14 @@ sub properties {
 	    type => 'integer',
 	    minimum => 1,
 	    maximum => 65535,
-	    default => 25,
+	    default => 26,
 	},
 	ext_port => {
 	    description => "SMTP port number for incoming mail (untrusted). This must be a different number than 'int_port'.",
 	    type => 'integer',
 	    minimum => 1,
 	    maximum => 65535,
-	    default => 26,
+	    default => 25,
 	},
 	relay => {
 	    description => "The default mail delivery transport (incoming mails).",
