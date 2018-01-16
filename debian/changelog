@@ -1,3 +1,10 @@
+pmg-api (5.0-50) unstable; urgency=medium
+
+  * PMG/Config.pm: change default email port numbers - We now use port 25
+    for incoming mails. Please verify your setup after updating!
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 16 Jan 2018 14:33:45 +0100
+
 pmg-api (5.0-49) unstable; urgency=medium
 
   * AccessControl.pm: avoid warning about uninitialized value
