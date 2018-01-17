@@ -258,6 +258,47 @@ __PACKAGE__->register_method({
 	return undef;
     }});
 
+__PACKAGE__->register_method({
+    name => 'promote',
+    path => 'promote',
+    method => 'POST',
+    description => "Promote current node to become the new master.",
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => { type => 'null' },
+    code => sub {
+	my ($param) = @_;
+
+	my $code = sub {
+	    my $cinfo = PMG::ClusterConfig->new();
+
+	    die "no cluster defined\n" if !scalar(keys %{$cinfo->{ids}});
+
+	    my $master = $cinfo->{master} || die "unable to lookup master node\n";
+
+	    die "this node is already master\n"
+		if $cinfo->{local}->{cid} == $master->{cid};
+
+	    my $maxcid = $master->{maxcid};
+	    $master->{type} = 'node';
+
+	    my $newmaster = $cinfo->{local};
+
+	    $newmaster->{maxcid} = $maxcid;
+	    $newmaster->{type} = 'master';
+
+	    $cinfo->{master} = $newmaster;
+
+	    $cinfo->write();
+	};
+
+	PMG::ClusterConfig::lock_config($code, "promote new master failed");
+
+	return undef;
+    }});
+
 our $cmddef = {
     status => [ 'PMG::API2::Cluster', 'status', [], {}, $format_nodelist],
     create => [ 'PMG::API2::Cluster', 'create', [], {}, $upid_exit],
@@ -265,6 +306,7 @@ our $cmddef = {
     join => [ __PACKAGE__, 'join', ['master_ip']],
     join_cmd => [ __PACKAGE__, 'join_cmd', []],
     sync => [ __PACKAGE__, 'sync', []],
+    promote => [ __PACKAGE__, 'promote', []],
 };
 
 1;
