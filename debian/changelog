@@ -1,3 +1,9 @@
+pmg-api (5.0-51) unstable; urgency=medium
+
+  * pmgcm.pm: implement promote
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 17 Jan 2018 13:09:57 +0100
+
 pmg-api (5.0-50) unstable; urgency=medium
 
   * PMG/Config.pm: change default email port numbers - We now use port 25
