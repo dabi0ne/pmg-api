@@ -1,3 +1,13 @@
+pmg-api (5.0-52) unstable; urgency=medium
+
+  * PMG/RuleDB/Object.pm: fix permissions for role admin
+
+  * PMG/API2/MyNetworks.pm: fix links attribute
+
+  * PMG/API2/Transport.pm: fix links attribute
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Jan 2018 10:17:27 +0100
+
 pmg-api (5.0-51) unstable; urgency=medium
 
   * pmgcm.pm: implement promote
