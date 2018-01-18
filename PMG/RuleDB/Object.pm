@@ -174,6 +174,7 @@ sub register_api {
 	description => "Add '$otype_text' object.",
 	proxyto => 'master',
 	protected => 1,
+	permissions => { check => [ 'admin' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $create_properties,
@@ -212,6 +213,7 @@ sub register_api {
 	method => 'GET',
 	description => "Read '$otype_text' object settings.",
 	proxyto => 'master',
+	permissions => { check => [ 'admin', 'audit' ] },
 	parameters => {
 	    additionalProperties => 0,
 	    properties => $read_properties,
@@ -241,6 +243,7 @@ sub register_api {
 	method => 'PUT',
 	description => "Update '$otype_text' object.",
 	proxyto => 'master',
+	permissions => { check => [ 'admin' ] },
 	protected => 1,
 	parameters => {
 	    additionalProperties => 0,
