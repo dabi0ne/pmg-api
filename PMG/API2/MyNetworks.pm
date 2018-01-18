@@ -34,7 +34,7 @@ __PACKAGE__->register_method ({
 		cidr => { type => 'string'},
 	    },
 	},
-	links => [ { rel => 'child', href => "{cide}" } ],
+	links => [ { rel => 'child', href => "{cidr}" } ],
     },
     code => sub {
 	my ($param) = @_;
