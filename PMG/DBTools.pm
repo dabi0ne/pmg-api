@@ -782,7 +782,7 @@ sub init_ruledb {
     }
 
     # Quarantine/Mark Spam (Level 5)
-    $rule = PMG::RuleDB::Rule->new ('Quarantine/Mark Spam (Level 5)', 79, 0, 0);
+    $rule = PMG::RuleDB::Rule->new ('Quarantine/Mark Spam (Level 5)', 81, 0, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $spam5);
@@ -790,7 +790,7 @@ sub init_ruledb {
     $ruledb->rule_add_action ($rule, $quarantine);
 
     ## Block Spam Level 10
-    $rule = PMG::RuleDB::Rule->new ('Block Spam (Level 10)', 78, 0, 0);
+    $rule = PMG::RuleDB::Rule->new ('Block Spam (Level 10)', 82, 0, 0);
     $ruledb->save_rule ($rule);
 
     $ruledb->rule_add_what_group ($rule, $spam10);
