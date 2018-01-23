@@ -718,6 +718,29 @@ sub mux_eof {
     $mux->shutdown($fh, 1);
 }
 
+
+my $last_reload_test = 0;
+my $last_confid_version;
+my (undef, $pmgconffilename) = PVE::INotify::ccache_info('pmg.conf');
+sub test_config_version {
+
+    my $ctime = time();
+
+    if (($ctime - $last_reload_test) < 5) { return 0; }
+
+    $last_reload_test = $ctime;
+
+    my $version = PVE::INotify::poll_changes($pmgconffilename);
+
+    if (!defined($last_confid_version) ||
+	$last_confid_version != $version) {
+	$last_confid_version = $version;
+	return 1;
+    }
+
+    return 0;
+}
+
 sub mux_input {
     my ($self, $mux, $fh, $dataref) = @_;
     my $prop = $self->{server};
@@ -725,6 +748,7 @@ sub mux_input {
     my $attribute = {};
 
     eval {
+	$self->{reload_config} = 1 if test_config_version();
 	$self->load_config() if $self->{reload_config};
 
 	while ($$dataref =~ s/^([^\r\n]*)\r?\n//) {
