@@ -1,3 +1,11 @@
+pmg-api (5.0-53) unstable; urgency=medium
+
+  * pmgpolicy: try to detect config changes
+
+  * fix bug #1625 - change default rule priorities
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 23 Jan 2018 10:42:12 +0100
+
 pmg-api (5.0-52) unstable; urgency=medium
 
   * PMG/RuleDB/Object.pm: fix permissions for role admin
