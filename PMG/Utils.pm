@@ -471,7 +471,7 @@ __EOD__
 }
 
 sub find_local_network_for_ip {
-    my ($ip) = @_;
+    my ($ip, $noerr) = @_;
 
     my $testip = Net::IP->new($ip);
 
@@ -498,6 +498,8 @@ sub find_local_network_for_ip {
 	    return $cidr;
 	}
     }
+
+    return undef if $noerr;
 
     die "unable to detect local network for ip '$ip'\n";
 }
