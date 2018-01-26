@@ -1,3 +1,9 @@
+pmg-api (5.0-55) unstable; urgency=medium
+
+  * fix ipv6 address quoting for postfix mynetworks
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 26 Jan 2018 07:30:45 +0100
+
 pmg-api (5.0-54) unstable; urgency=medium
 
   * PMG/Config.pm: allow single address setups (all 1 netmask)
