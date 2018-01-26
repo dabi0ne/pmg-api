@@ -1013,17 +1013,27 @@ sub get_template_vars {
     my $mynetworks = [ '127.0.0.0/8', '[::1]/128' ];
 
     if (my $int_net_cidr = PMG::Utils::find_local_network_for_ip($int_ip, 1)) {
-	push @$mynetworks, $int_net_cidr;
+	if ($int_net_cidr =~ m/^($IPV6RE)\/(\d+)$/) {
+	    push @$mynetworks, "[$1]/$2";
+	} else {
+	    push @$mynetworks, $int_net_cidr;
+	}
     } else {
 	if ($int_ip =~ m/^$IPV6RE$/) {
-	    push @$mynetworks, "$int_ip/128";
+	    push @$mynetworks, "[$int_ip]/128";
 	} else {
 	    push @$mynetworks, "$int_ip/32";
 	}
     }
 
     my $netlist = PVE::INotify::read_file('mynetworks');
-    push @$mynetworks, keys %$netlist;
+    foreach my $cidr (keys %$netlist) {
+	if ($cidr =~ m/^($IPV6RE)\/(\d+)$/) {
+	    push @$mynetworks, "[$1]/$2";
+	} else {
+	    push @$mynetworks, $cidr;
+	}
+    }
 
     push @$mynetworks, @$transportnets;
 
