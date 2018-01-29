@@ -1,3 +1,9 @@
+pmg-api (5.0-56) unstable; urgency=medium
+
+  * fix bug #1636: correctly track file modification time
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 29 Jan 2018 11:09:33 +0100
+
 pmg-api (5.0-55) unstable; urgency=medium
 
   * fix ipv6 address quoting for postfix mynetworks
