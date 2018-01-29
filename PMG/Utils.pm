@@ -618,11 +618,13 @@ sub run_postmap {
     # make sure the file exists (else postmap fails)
     IO::File->new($filename, 'a', 0644);
 
-    my $age_src = -M $filename // 0;
-    my $age_dst = -M "$filename.db" // 10000000000;
+    my $mtime_src = (CORE::stat($filename))[9] //
+	die "unbale to read mtime of $filename\n";
+
+    my $mtime_dst = (CORE::stat("$filename.db"))[9] // 0;
 
     # if not changed, do nothing
-    return if $age_src > $age_dst;
+    return if $mtime_src <= $mtime_dst;
 
     eval {
 	PVE::Tools::run_command(

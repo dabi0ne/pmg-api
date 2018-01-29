@@ -268,6 +268,9 @@ my $cond_commit_synced_file = sub {
 	return 0 if $new eq $old;
     }
 
+    # set mtime (touch) to avoid time drift problems
+    utime(undef, undef, $srcfn);
+
     rename($srcfn, $dstfn) ||
 	die "cond_rename_file '$filename' failed - $!\n";
 
