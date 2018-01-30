@@ -291,9 +291,13 @@ my $rsync_command = sub {
 };
 
 sub sync_quarantine_files {
-    my ($host_ip, $host_name, $flistname) = @_;
+    my ($host_ip, $host_name, $flistname, $rcid) = @_;
 
     my $spooldir = $PMG::MailQueue::spooldir;
+
+    mkdir "$spooldir/cluster/";
+    my $syncdir = "$spooldir/cluster/$rcid";
+    mkdir $syncdir;
 
     my $cmd = $rsync_command->(
 	$host_name, '--timeout', '10', "${host_ip}:$spooldir", $spooldir,
@@ -542,7 +546,10 @@ sub sync_quarantine_db {
 	    my $callback = sub {
 		my $ref = shift;
 		$maxid = $ref->{rid};
-		print $flistfh "$ref->{file}\n";
+		my $filename = $ref->{file};
+		 # skip files generated before cluster was created
+		return if $filename !~ m!^cluster/!;
+		print $flistfh "$filename\n";
 	    };
 
 	    my $attrs = [qw(cid rid time qtype bytes spamlevel info sender header file)];
@@ -551,7 +558,7 @@ sub sync_quarantine_db {
 	    close($flistfh);
 
 	    my $starttime = [ gettimeofday() ];
-	    sync_quarantine_files($ni->{ip}, $ni->{name}, $flistname);
+	    sync_quarantine_files($ni->{ip}, $ni->{name}, $flistname, $rcid);
 	    $$rsynctime_ref += tv_interval($starttime);
 
 	    if ($maxid) {
