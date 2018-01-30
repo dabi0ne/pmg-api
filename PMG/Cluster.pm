@@ -676,9 +676,9 @@ sub sync_statistic_db {
 
 		$attrs = [qw(cstatistic_cid cstatistic_rid blocked receiver)];
 		PMG::DBTools::copy_selected_data($ldb, $sth, 'CReceivers', $attrs);
-
-		PMG::DBTools::write_maxint_clusterinfo ($ldb, $rcid, 'lastid_CStatistic', $maxid);
 	    }
+
+	    PMG::DBTools::write_maxint_clusterinfo ($ldb, $rcid, 'lastid_CStatistic', $maxid);
 
 	    $ldb->commit;
 	};
