@@ -146,7 +146,7 @@ __EOD
 
 my $local_stat_ctablecmd =  <<__EOD;
     CREATE TABLE LocalStat
-    (Time INTEGER NOT NULL UNIQUE,
+    (Time INTEGER NOT NULL,
      RBLCount INTEGER DEFAULT 0 NOT NULL,
      PregreetCount INTEGER DEFAULT 0 NOT NULL,
      CID INTEGER NOT NULL,
@@ -490,6 +490,10 @@ sub upgradedb {
 	$dbh->do("ALTER TABLE LocalStat ADD COLUMN " .
 		 "PregreetCount INTEGER DEFAULT 0 NOT NULL");
     }
+
+    eval { $dbh->do("ALTER TABLE LocalStat DROP CONSTRAINT localstat_time_key"); };
+    # ignore errors here
+
 
     # add missing TicketID to CMSReceivers
     if (!database_column_exists($dbh, 'CMSReceivers', 'TicketID')) {
