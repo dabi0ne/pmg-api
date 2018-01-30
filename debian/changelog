@@ -1,3 +1,13 @@
+pmg-api (5.0-57) unstable; urgency=medium
+
+  * PMG::Cluster::sync_statistic_db - correctyl update
+    clusterinfo lastid_CStatistic
+
+  * PMG::Cluster::sync_quarantine_db - skip files generated before
+    cluster was created
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 30 Jan 2018 08:02:10 +0100
+
 pmg-api (5.0-56) unstable; urgency=medium
 
   * fix bug #1636: correctly track file modification time
