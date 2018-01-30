@@ -1,3 +1,9 @@
+pmg-api (5.0-58) unstable; urgency=medium
+
+  * remove unique constraint from LocalStat(Time)
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 30 Jan 2018 09:05:22 +0100
+
 pmg-api (5.0-57) unstable; urgency=medium
 
   * PMG::Cluster::sync_statistic_db - correctyl update
