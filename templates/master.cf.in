@@ -91,7 +91,7 @@ smtpd       pass  - -       -       -       [% pmg.mail.max_smtpd_in %]      smt
     -o content_filter=scan:127.0.0.1:10024
     -o receive_override_options=no_address_mappings
     -o smtpd_discard_ehlo_keywords=silent-discard,dsn
-    -o mynetworks=127.0.0.0/8,[% ipconfig.int_ip %]
+    -o mynetworks=127.0.0.0/8,[% postfix.int_ip %]
 
 127.0.0.1:10025 inet  n       -       n       -       -      smtpd
     	-o content_filter= 

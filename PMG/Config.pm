@@ -1076,6 +1076,12 @@ sub get_template_vars {
 	$self->get('mail', 'spf');
     $vars->{postfix}->{usepolicy} = $usepolicy;
 
+    if ($int_ip =~ m/^$IPV6RE$/) {
+        $vars->{postfix}->{int_ip} = "[$int_ip]";
+    } else {
+        $vars->{postfix}->{int_ip} = $int_ip;
+    }
+
     my $resolv = PVE::INotify::read_file('resolvconf');
     $vars->{dns}->{hostname} = $nodename;
 
