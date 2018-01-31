@@ -1,3 +1,13 @@
+pmg-api (5.0-59) unstable; urgency=medium
+
+  * introduce new template var postfix.int_ip
+
+  * fix bug #1643: add port and protocol to spamquarantine config
+
+  * pmg-daily.timer: randomize start time using AccuracySec=5hours
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 31 Jan 2018 14:20:39 +0100
+
 pmg-api (5.0-58) unstable; urgency=medium
 
   * remove unique constraint from LocalStat(Time)
