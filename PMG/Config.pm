@@ -228,8 +228,21 @@ sub properties {
 	    default => 1,
 	},
 	hostname => {
-	    description => "Quarantine Host. Usefule if you run a Cluster and want users to connect to a specific host.",
+	    description => "Quarantine Host. Useful if you run a Cluster and want users to connect to a specific host.",
 	    type => 'string', format => 'address',
+	},
+	port => {
+	    description => "Quarantine Port. Useful if you have a reverse proxy or port forwarding for the webinterface. Only used for the generated Spam report.",
+	    type => 'integer',
+	    minimum => 1,
+	    maximum => 65535,
+	    default => 8006,
+	},
+	protocol => {
+	    description => "Quarantine Webinterface Protocol. Useful if you have a reverse proxy for the webinterface. Only used for the generated Spam report.",
+	    type => 'string',
+	    enum => [qw(http https)],
+	    default => 'https',
 	},
 	mailfrom => {
 	    description => "Text for 'From' header in daily spam report mails.",
@@ -247,6 +260,8 @@ sub options {
 	reportstyle => { optional => 1 },
 	viewimages => { optional => 1 },
 	allowhrefs => { optional => 1 },
+	port => { optional => 1 },
+	protocol => { optional => 1 },
     };
 }
 
