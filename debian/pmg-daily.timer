@@ -3,6 +3,7 @@ Description=Daily Proxmox Mail Gateway activities
 
 [Timer]
 OnCalendar=daily
+AccuracySec=5hours
 Persistent=true     
 
 [Install]
