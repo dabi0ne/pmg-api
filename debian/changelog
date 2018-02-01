@@ -1,3 +1,11 @@
+pmg-api (5.0-61) unstable; urgency=medium
+
+  * fix bug #1646: domains - allow to use wildcard domains
+
+  * fix bug # 1639: create /var/lib/pmg/backup
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 01 Feb 2018 11:12:32 +0100
+
 pmg-api (5.0-60) unstable; urgency=medium
 
   * pmg-daily.timer: use RandomizedDelaySec
