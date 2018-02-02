@@ -78,7 +78,7 @@ sub set_user_password {
 
 	push @$cmd, '-p', $epw, $ruid;
 
-	run_command($cmd, errmsg => "change password for '$ruid' failed");
+	PVE::Tools::run_command($cmd, errmsg => "change password for '$ruid' failed");
 
     } elsif ($realm eq 'pmg') {
 	PMG::UserConfig->set_user_password($username, $password);
