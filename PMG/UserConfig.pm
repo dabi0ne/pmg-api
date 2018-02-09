@@ -129,7 +129,7 @@ $update_schema->{properties}->{delete} = {
     optional => 1,
 };
 
-my $verity_entry = sub {
+my $verify_entry = sub {
     my ($entry) = @_;
 
     my $errors = {};
@@ -203,7 +203,7 @@ sub read_user_conf {
 		    $d->{$k} = $+{$k} if $+{$k};
 		}
 		eval {
-		    $verity_entry->($d);
+		    $verify_entry->($d);
 		    $cfg->{$d->{userid}} = $d;
 		    die "role 'root' is reserved\n"
 			if $d->{role} eq 'root' && $d->{userid} ne 'root@pmg';
@@ -241,7 +241,7 @@ sub write_user_conf {
 	$d->{userid} = $userid;
 
 	die "invalid userid '$userid'\n" if $userid eq 'root@pmg';
-	$verity_entry->($d);
+	$verify_entry->($d);
 	$cfg->{$d->{userid}} = $d;
 
 	if ($d->{userid} ne 'root@pam') {
