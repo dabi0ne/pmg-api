@@ -133,6 +133,15 @@ my $verity_entry = sub {
     my ($entry) = @_;
 
     my $errors = {};
+    my $userid = $entry->{userid};
+    if (defined(my $username = $entry->{username})) {
+	if ($userid !~ /^\Q$username\E\@/) {
+	    $errors->{'username'} = 'invalid username for userid';
+	}
+    } else {
+	# make sure the username's length is checked
+	$entry->{username} = ($userid =~ s/\@.*$//r);
+    }
     PVE::JSONSchema::check_prop($entry, $schema, '', $errors);
     if (scalar(%$errors)) {
 	raise "verify entry failed\n", errors => $errors;
