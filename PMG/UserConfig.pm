@@ -241,19 +241,13 @@ sub write_user_conf {
 	$d->{userid} = $userid;
 
 	die "invalid userid '$userid'\n" if $userid eq 'root@pmg';
+	$verity_entry->($d);
+	$cfg->{$d->{userid}} = $d;
 
-	eval {
-	    $verity_entry->($d);
-	    $cfg->{$d->{userid}} = $d;
-
-	    if ($d->{userid} ne 'root@pam') {
-		die "role 'root' is reserved\n" if $d->{role} eq 'root';
-		die "unable to add users for realm '$d->{realm}'\n"
-		    if $d->{realm} && $d->{realm} ne 'pmg';
-	    }
-	};
-	if (my $err = $@) {
-	    die $err;
+	if ($d->{userid} ne 'root@pam') {
+	    die "role 'root' is reserved\n" if $d->{role} eq 'root';
+	    die "unable to add users for realm '$d->{realm}'\n"
+		if $d->{realm} && $d->{realm} ne 'pmg';
 	}
 
 	my $line;
