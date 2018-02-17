@@ -650,6 +650,27 @@ sub pmg_verify_transport_domain {
 }
 
 PVE::JSONSchema::register_format(
+    'transport-domain-or-email', \&pmg_verify_transport_domain_or_email);
+
+sub pmg_verify_transport_domain_or_email {
+    my ($name, $noerr) = @_;
+
+    my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
+
+    # email address
+    if ($name =~ m/^(?:[^\s\/\@]+\@)(${namere}\.)*${namere}$/) {
+	return $name;
+    }
+
+    # like dns-name, but can contain leading dot
+    if ($name !~ /^\.?(${namere}\.)*${namere}$/) {
+	   return undef if $noerr;
+	   die "value does not look like a valid transport domain or email address\n";
+    }
+    return $name;
+}
+
+PVE::JSONSchema::register_format(
     'dnsbl-entry', \&pmg_verify_dnsbl_entry);
 
 sub pmg_verify_dnsbl_entry {
@@ -934,7 +955,7 @@ sub read_transport_map {
 	if ($line =~ m/^(\S+)\s+smtp:(\S+):(\d+)\s*$/) {
 	    my ($domain, $host, $port) = ($1, $2, $3);
 
-	    eval { pmg_verify_transport_domain($domain); };
+	    eval { pmg_verify_transport_domain_or_email($domain); };
 	    if (my $err = $@) {
 		$parse_error->($err);
 		next;
