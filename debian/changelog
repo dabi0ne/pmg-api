@@ -1,3 +1,11 @@
+pmg-api (5.0-62) unstable; urgency=medium
+
+  * fix bug #1673: Allow email addresses in transport maps
+
+  * UserConfig: verify: check username vs userid
+
+ -- Proxmox Support Team <support@proxmox.com>  Sat, 17 Feb 2018 10:07:40 +0100
+
 pmg-api (5.0-61) unstable; urgency=medium
 
   * fix bug #1646: domains - allow to use wildcard domains
