@@ -8,7 +8,7 @@ data_directory = /var/lib/postfix
 # appending .domain is the MUA's job.
 append_dot_mydomain = yes
 
-smtpd_banner = $myhostname [% pmg.mail.banner %] 
+smtpd_banner = $myhostname [% pmg.mail.banner %]
 biff = no
 
 [% IF pmg.mail.dwarning %]
@@ -57,8 +57,8 @@ smtpd_helo_restrictions =
 [% END %]
 
 postscreen_access_list =
-	permit_mynetworks,
-	cidr:/etc/postfix/postscreen_access
+        permit_mynetworks,
+        cidr:/etc/postfix/postscreen_access
 
 [% IF postfix.dnsbl_sites %]
 postscreen_dnsbl_sites = [% postfix.dnsbl_sites %]
@@ -67,20 +67,20 @@ postscreen_dnsbl_sites = [% postfix.dnsbl_sites %]
 postscreen_dnsbl_action = enforce
 postscreen_greet_action = enforce
 
-smtpd_sender_restrictions = 
+smtpd_sender_restrictions =
         permit_mynetworks
-	reject_non_fqdn_sender 
-	check_client_access     cidr:/etc/postfix/clientaccess
-	check_sender_access     regexp:/etc/postfix/senderaccess
-	check_recipient_access  regexp:/etc/postfix/rcptaccess
+        reject_non_fqdn_sender
+        check_client_access     cidr:/etc/postfix/clientaccess
+        check_sender_access     regexp:/etc/postfix/senderaccess
+        check_recipient_access  regexp:/etc/postfix/rcptaccess
 [%- IF pmg.mail.rejectunknown %] reject_unknown_client_hostname[% END %]
 [%- IF pmg.mail.rejectunknownsender %] reject_unknown_sender_domain[% END %]
 
-smtpd_recipient_restrictions = 
-	permit_mynetworks
-	reject_unauth_destination
-	reject_non_fqdn_recipient
-	check_recipient_access  regexp:/etc/postfix/rcptaccess
+smtpd_recipient_restrictions =
+        permit_mynetworks
+        reject_unauth_destination
+        reject_non_fqdn_recipient
+        check_recipient_access  regexp:/etc/postfix/rcptaccess
 [%- IF postfix.usepolicy %] check_sender_access  regexp:/etc/postfix/senderaccess[% END %]
 [%- IF postfix.usepolicy %] check_client_access  cidr:/etc/postfix/clientaccess[% END %]
 [%- IF postfix.usepolicy %] check_policy_service inet:127.0.0.1:10022[% END %]

@@ -2,7 +2,7 @@
 # Postfix master process configuration file.  Each logical line
 # describes how a Postfix daemon program should be run.
 #
-# A logical line starts with non-whitespace, non-comment text. 
+# A logical line starts with non-whitespace, non-comment text.
 # Empty lines and whitespace-only lines are ignored, as are comment
 # lines whose first non-whitespace character is a `#'.
 # A line that starts with whitespace continues a logical line.
@@ -73,63 +73,63 @@
 # ==========================================================================
 
 scan      unix  -       -       n       -       [% pmg.mail.max_filters %]      lmtp
-        -o lmtp_send_xforward_command=yes
-	-o lmtp_connection_cache_on_demand=no
-	-o disable_dns_lookups=yes
+  -o lmtp_send_xforward_command=yes
+  -o lmtp_connection_cache_on_demand=no
+  -o disable_dns_lookups=yes
 
 [% pmg.mail.int_port %]       inet  n -       -       -       [% pmg.mail.max_smtpd_out %]      smtpd
-    -o content_filter=scan:127.0.0.1:10023
-    -o smtpd_recipient_restrictions=permit_mynetworks,reject_unauth_destination
-    -o smtpd_helo_restrictions=
-    -o smtpd_client_restrictions=
-    -o smtpd_sender_restrictions=
-    -o smtpd_tls_security_level=none
+  -o content_filter=scan:127.0.0.1:10023
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject_unauth_destination
+  -o smtpd_helo_restrictions=
+  -o smtpd_client_restrictions=
+  -o smtpd_sender_restrictions=
+  -o smtpd_tls_security_level=none
 
 [% pmg.mail.ext_port %]       inet  n -       -       -       1 postscreen
 
 smtpd       pass  - -       -       -       [% pmg.mail.max_smtpd_in %]      smtpd
-    -o content_filter=scan:127.0.0.1:10024
-    -o receive_override_options=no_address_mappings
-    -o smtpd_discard_ehlo_keywords=silent-discard,dsn
-    -o mynetworks=127.0.0.0/8,[% postfix.int_ip %]
+  -o content_filter=scan:127.0.0.1:10024
+  -o receive_override_options=no_address_mappings
+  -o smtpd_discard_ehlo_keywords=silent-discard,dsn
+  -o mynetworks=127.0.0.0/8,[% postfix.int_ip %]
 
 127.0.0.1:10025 inet  n       -       n       -       -      smtpd
-    	-o content_filter= 
-        -o local_recipient_maps=
-        -o relay_recipient_maps=
-        -o receive_override_options=no_unknown_recipient_checks,no_header_body_checks
-        -o smtpd_helo_restrictions=
-        -o smtpd_client_restrictions=
-        -o smtpd_restriction_classes=
-        -o smtpd_sender_restrictions=
-        -o smtpd_recipient_restrictions=permit_mynetworks,reject
-        -o mynetworks=127.0.0.0/8
-       	-o smtpd_error_sleep_time=0
-    	-o smtpd_client_connection_count_limit=0
-    	-o smtpd_client_connection_rate_limit=0
-	-o smtpd_tls_security_level=none
-        -o smtpd_authorized_xforward_hosts=127.0.0.0/8
-	-o message_size_limit=[% (pmg.mail.maxsize*2) %]
-	
-pickup	  fifo	n	-	-	60	1	pickup
-cleanup	  unix	n	-	-	-	0	cleanup
-	-o message_size_limit=[% (pmg.mail.maxsize*2) %]
+  -o content_filter=
+  -o local_recipient_maps=
+  -o relay_recipient_maps=
+  -o receive_override_options=no_unknown_recipient_checks,no_header_body_checks
+  -o smtpd_helo_restrictions=
+  -o smtpd_client_restrictions=
+  -o smtpd_restriction_classes=
+  -o smtpd_sender_restrictions=
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
+  -o mynetworks=127.0.0.0/8
+  -o smtpd_error_sleep_time=0
+  -o smtpd_client_connection_count_limit=0
+  -o smtpd_client_connection_rate_limit=0
+  -o smtpd_tls_security_level=none
+  -o smtpd_authorized_xforward_hosts=127.0.0.0/8
+  -o message_size_limit=[% (pmg.mail.maxsize*2) %]
 
-qmgr	  fifo	n	-	-	300	1	qmgr
-rewrite	  unix	-	-	-	-	-	trivial-rewrite
-bounce	  unix	-	-	-	-	0	bounce
-defer	  unix	-	-	-	-	0	bounce
-flush	  unix	n	-	-	1000?	0	flush
-proxymap  unix	-	-	n	-	-	proxymap
-smtp	  unix	-	-	-	-	-	smtp
-relay	  unix	-	-	-	-	-	smtp
-showq     unix	n	-	-	-	-	showq
-error     unix	-	-	-	-	-	error
-local	  unix	-	n	n	-	-	local
-virtual	  unix	-	n	n	-	-	virtual
-lmtp	  unix	-	-	n	-	-	lmtp
+pickup    fifo  n       -       -       60      1       pickup
+cleanup   unix  n       -       -       -       0       cleanup
+  -o message_size_limit=[% (pmg.mail.maxsize*2) %]
+
+qmgr      fifo  n       -       -       300     1       qmgr
+rewrite   unix  -       -       -       -       -       trivial-rewrite
+bounce    unix  -       -       -       -       0       bounce
+defer     unix  -       -       -       -       0       bounce
+flush     unix  n       -       -       1000?   0       flush
+proxymap  unix  -       -       n       -       -       proxymap
+smtp      unix  -       -       -       -       -       smtp
+relay     unix  -       -       -       -       -       smtp
+showq     unix  n       -       -       -       -       showq
+error     unix  -       -       -       -       -       error
+local     unix  -       n       n       -       -       local
+virtual   unix  -       n       n       -       -       virtual
+lmtp      unix  -       -       n       -       -       lmtp
 verify    unix  -       -       -       -       1       verify
-trace	  unix	-	-	n	-	0	bounce
+trace     unix  -       -       n       -       0       bounce
 tlsmgr    unix  -       -       -       1000?   1       tlsmgr
 anvil     unix  -       -       -       -       1       anvil
 scache    unix  -       -       -       -       1       scache
