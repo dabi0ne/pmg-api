@@ -1,3 +1,9 @@
+pmg-api (5.0-63) unstable; urgency=medium
+
+  * add support for avast virus scanner
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 21 Feb 2018 10:16:07 +0100
+
 pmg-api (5.0-62) unstable; urgency=medium
 
   * fix bug #1673: Allow email addresses in transport maps
