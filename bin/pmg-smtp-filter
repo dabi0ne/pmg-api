@@ -172,9 +172,10 @@ sub get_prox_vars {
     $vars->{__spaminfo} = $spaminfo;
 
     if ($opt_testmode) {
-	if ($queue->{vinfo_clam}) {
+	if ($queue->{vinfo_clam} || $queue->{vinfo_avast}) {
 	    $vars->{'VIRUS_INFO'} = "Virus Info:";
 	    $vars->{'VIRUS_INFO'} .= " clam: $queue->{vinfo_clam}" if $queue->{vinfo_clam};
+	    $vars->{'VIRUS_INFO'} .= " avast: $queue->{vinfo_avast}" if $queue->{vinfo_avast};
 	} else {
 	    $vars->{'VIRUS_INFO'} = '';
 	}

@@ -327,10 +327,86 @@ sub analyze_virus_clam {
     return $vinfo ? "$vinfo (clamav)" : undef;
 }
 
+sub analyze_virus_avast {
+    my ($queue, $dname, $pmg_cfg) = @_;
+
+    my $timeout = 60*5;
+    my $vinfo;
+
+    my ($csec, $usec) = gettimeofday();
+
+    my $previous_alarm;
+
+    eval {
+
+	$previous_alarm = alarm($timeout);
+
+	$SIG{ALRM} = sub {
+	    die "$queue->{logid}: Maximum time ($timeout sec) exceeded. " .
+		"virus analyze (avast) failed: ERROR";
+	};
+
+	open(my $cmd, '-|', '/bin/scan', $dname) ||
+	    die "$queue->{logid}: can't exec avast scan: $! : ERROR";
+
+	my $response = '';
+	while (defined(my $line = <$cmd>)) {
+	    if ($line =~ m/^$dname\s+(.*\S)\s*$/) {
+		# we just use the first detected virus name
+		$vinfo = $1 if !$vinfo;
+	    }
+
+	    $response .= $line;
+	}
+
+	close($cmd);
+
+	alarm(0); # avoid race conditions
+
+	if ($vinfo) {
+	    syslog('info', "$queue->{logid}: virus detected: $vinfo (avast)");
+	}
+    };
+    my $err = $@;
+
+    alarm($previous_alarm);
+
+    my ($csec_end, $usec_end) = gettimeofday();
+    $queue->{ptime_clam} =
+	int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
+
+    if ($err) {
+	syslog ('err', $err);
+	$vinfo = undef;
+	$queue->{errors} = 1;
+    }
+
+    return undef if !$vinfo;
+
+    $queue->{vinfo_avast} = $vinfo;
+
+    return "$vinfo (avast)";
+}
+
 sub analyze_virus {
     my ($queue, $filename, $pmg_cfg, $testmode) = @_;
 
     # TODO: support other virus scanners?
+
+    if ($testmode) {
+	my $vinfo_clam = analyze_virus_clam($queue, $filename, $pmg_cfg);
+	my $vinfo_avast = analyze_virus_avast($queue, $filename, $pmg_cfg);
+
+	return $vinfo_avast || $vinfo_clam;
+    }
+
+    my $enable_avast  = $pmg_cfg->get('admin', 'avast');
+
+    if ($enable_avast) {
+	if (my $vinfo = analyze_virus_avast($queue, $filename, $pmg_cfg)) {
+	    return $vinfo;
+	}
+    }
 
     # always scan with clamav
     return analyze_virus_clam($queue, $filename, $pmg_cfg);

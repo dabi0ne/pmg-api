@@ -92,12 +92,18 @@ sub properties {
 	    type => 'string',
 	    pattern => "http://.*",
 	},
+	avast => {
+	    description => "Use Avast Virus Scanner (/bin/scan). You need to buy and install 'Avast Core Security' before you can enable this feature.",
+	    type => 'boolean',
+	    default => 0,
+	},
     };
 }
 
 sub options {
     return {
 	advfilter => { optional => 1 },
+	avast => { optional => 1 },
 	statlifetime => { optional => 1 },
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },
