@@ -33,6 +33,8 @@ sub who_match {
 
     $addr =~ m/^.+@(.+)$/;
 
+    return undef if !defined($1);
+
     return (lc ($1) eq lc ($self->address));
 }
 
