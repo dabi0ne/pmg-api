@@ -1,3 +1,11 @@
+pmg-api (5.0-64) unstable; urgency=medium
+
+  * fix #1679: do not delete old quarantine mails on cluster creation/join
+
+  * Domain object: avoid warning about uninitialized value
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 02 Mar 2018 06:13:32 +0100
+
 pmg-api (5.0-63) unstable; urgency=medium
 
   * add support for avast virus scanner
