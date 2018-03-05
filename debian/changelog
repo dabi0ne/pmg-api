@@ -1,3 +1,9 @@
+pmg-api (5.0-65) unstable; urgency=medium
+
+  * pmgpolicy: avoid warning about uninitialized value
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 05 Mar 2018 06:42:31 +0100
+
 pmg-api (5.0-64) unstable; urgency=medium
 
   * fix #1679: do not delete old quarantine mails on cluster creation/join
