@@ -545,7 +545,9 @@ sub greylist_value {
 	return 'dunno';
     }
 
-    my ($net, $host) = $ip =~ m/(\d+\.\d+\.\d+)\.(\d+)/;
+    my ($net, $host) = $ip =~ m/(\d+\.\d+\.\d+)\.(\d+)/; # IPv4 for now
+    return 'dunno' if !defined($net);
+
     my $spf_header;
 
     if ((!$opt_testmode && $self->{use_spf}) ||
