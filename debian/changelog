@@ -1,3 +1,9 @@
+pmg-api (5.0-66) unstable; urgency=medium
+
+  * Fix password change of unix root user
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 12 Mar 2018 14:19:21 +0100
+
 pmg-api (5.0-65) unstable; urgency=medium
 
   * pmgpolicy: avoid warning about uninitialized value
