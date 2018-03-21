@@ -97,6 +97,11 @@ sub properties {
 	    type => 'boolean',
 	    default => 0,
 	},
+	clamav => {
+	    description => "Use ClamAV Virus Scanner. This is the default virus scanner and is enabled by default.",
+	    type => 'boolean',
+	    default => 1,
+	},
     };
 }
 
@@ -104,6 +109,7 @@ sub options {
     return {
 	advfilter => { optional => 1 },
 	avast => { optional => 1 },
+	clamav => { optional => 1 },
 	statlifetime => { optional => 1 },
 	dailyreport => { optional => 1 },
 	demo => { optional => 1 },

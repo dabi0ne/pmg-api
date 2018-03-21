@@ -408,8 +408,15 @@ sub analyze_virus {
 	}
     }
 
-    # always scan with clamav
-    return analyze_virus_clam($queue, $filename, $pmg_cfg);
+    my $enable_clamav = $pmg_cfg->get('admin', 'clamav');
+
+    if ($enable_clamav) {
+	if (my $vinfo = analyze_virus_clam($queue, $filename, $pmg_cfg)) {
+	    return $vinfo;
+	}
+    }
+
+    return undef;
 }
 
 sub magic_mime_type_for_file {
