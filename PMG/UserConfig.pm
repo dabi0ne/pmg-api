@@ -81,7 +81,7 @@ my $schema = {
 	role => {
 	    description => "User role. Role 'root' is reseved for the Unix Superuser.",
 	    type => 'string',
-	    enum => ['root', 'admin', 'qmanager', 'audit'],
+	    enum => ['root', 'admin', 'helpdesk', 'qmanager', 'audit'],
 	},
 	firstname => {
 	    description => "First name.",
