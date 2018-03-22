@@ -1,3 +1,9 @@
+pmg-api (5.0-67) unstable; urgency=medium
+
+  * implement new 'helpdesk' role
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 22 Mar 2018 11:44:28 +0100
+
 pmg-api (5.0-66) unstable; urgency=medium
 
   * Fix password change of unix root user
