@@ -892,10 +892,10 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    id => {
-		description => 'Unique ID',
+		description => 'Unique IDs, seperate with ;',
 		type => 'string',
-		pattern => 'C\d+R\d+T\d+',
-		maxLength => 60,
+		pattern => 'C\d+R\d+T\d+(;C\d+R\d+T\d+)*',
+		maxLength => 600,
 	    },
 	    action => {
 		description => 'Action - specify what you want to do with the mail.',
@@ -912,34 +912,37 @@ __PACKAGE__->register_method ({
 	my $authuser = $rpcenv->get_user();
 	my $role = $rpcenv->get_role();
 	my $action = $param->{action};
+	my @idlist = split(';', $param->{id});
 
-	my ($cid, $rid, $tid) = $param->{id} =~ m/^C(\d+)R(\d+)T(\d+)$/;
-	$cid = int($cid);
-	$rid = int($rid);
-	$tid = int($tid);
+	for my $id (@idlist) {
+	    my ($cid, $rid, $tid) = $id =~ m/^C(\d+)R(\d+)T(\d+)$/;
+	    $cid = int($cid);
+	    $rid = int($rid);
+	    $tid = int($tid);
 
-	my $dbh = PMG::DBTools::open_ruledb();
+	    my $dbh = PMG::DBTools::open_ruledb();
 
-	my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $tid);
+	    my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $tid);
 
-	if ($role eq 'quser') {
-	    my $quar_username = $ref->{pmail} . '@quarantine';
-	    raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail})")
+	    if ($role eq 'quser') {
+		my $quar_username = $ref->{pmail} . '@quarantine';
+		raise_perm_exc("mail does not belong to user '$authuser' ($ref->{pmail})")
 		if $authuser ne $quar_username;
-	}
+	    }
 
-	my $sender = $get_real_sender->($ref);
+	    my $sender = $get_real_sender->($ref);
 
-	if ($action eq 'whitelist') {
-	    PMG::Quarantine::add_to_blackwhite($dbh, $ref->{pmail}, 'WL', [ $sender ]);
-	} elsif ($action eq 'blacklist') {
-	    PMG::Quarantine::add_to_blackwhite($dbh, $ref->{pmail}, 'BL', [ $sender ]);
-	} elsif ($action eq 'deliver') {
-	    PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $ref->{receiver} // $ref->{pmail});
-	} elsif ($action eq 'delete') {
-	    PMG::Quarantine::delete_quarantined_mail($dbh, $ref);
-	} else {
-	    die "internal error"; # should not be reached
+	    if ($action eq 'whitelist') {
+		PMG::Quarantine::add_to_blackwhite($dbh, $ref->{pmail}, 'WL', [ $sender ]);
+	    } elsif ($action eq 'blacklist') {
+		PMG::Quarantine::add_to_blackwhite($dbh, $ref->{pmail}, 'BL', [ $sender ]);
+	    } elsif ($action eq 'deliver') {
+		PMG::Quarantine::deliver_quarantined_mail($dbh, $ref, $ref->{receiver} // $ref->{pmail});
+	    } elsif ($action eq 'delete') {
+		PMG::Quarantine::delete_quarantined_mail($dbh, $ref);
+	    } else {
+		die "internal error"; # should not be reached
+	    }
 	}
 
 	return undef;
