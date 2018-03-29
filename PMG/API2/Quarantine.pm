@@ -914,13 +914,13 @@ __PACKAGE__->register_method ({
 	my $action = $param->{action};
 	my @idlist = split(';', $param->{id});
 
+	my $dbh = PMG::DBTools::open_ruledb();
+
 	for my $id (@idlist) {
 	    my ($cid, $rid, $tid) = $id =~ m/^C(\d+)R(\d+)T(\d+)$/;
 	    $cid = int($cid);
 	    $rid = int($rid);
 	    $tid = int($tid);
-
-	    my $dbh = PMG::DBTools::open_ruledb();
 
 	    my $ref = PMG::DBTools::load_mail_data($dbh, $cid, $rid, $tid);
 
