@@ -1,3 +1,9 @@
+pmg-api (5.0-68) unstable; urgency=medium
+
+  * quarantine actions: allow multiple ids for one action
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 29 Mar 2018 14:18:54 +0200
+
 pmg-api (5.0-67) unstable; urgency=medium
 
   * implement new 'helpdesk' role
