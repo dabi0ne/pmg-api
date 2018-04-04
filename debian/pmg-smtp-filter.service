@@ -13,6 +13,8 @@ TimeoutStopSec=40
 ExecReload=/bin/kill -HUP $MAINPID
 PIDFile=/var/run/pmg-smtp-filter.pid
 Type=forking
+Restart=on-abort
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
