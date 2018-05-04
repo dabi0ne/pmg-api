@@ -1,3 +1,9 @@
+pmg-api (5.0-70) unstable; urgency=medium
+
+  * fix bug 1707: use correct units for deferred mail queue (minutes)
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 04 May 2018 12:47:11 +0200
+
 pmg-api (5.0-69) unstable; urgency=medium
 
   * pmg-smtp-filter.service: set Restart=on-abort
