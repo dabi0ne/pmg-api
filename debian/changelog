@@ -1,3 +1,9 @@
+pmg-api (5.0-71) unstable; urgency=medium
+
+  * sync_userprefs_db: fix #1797 - fix merge function
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 11 Jun 2018 09:08:52 +0200
+
 pmg-api (5.0-70) unstable; urgency=medium
 
   * fix bug 1707: use correct units for deferred mail queue (minutes)
