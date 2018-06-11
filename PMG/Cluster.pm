@@ -797,7 +797,7 @@ sub sync_userprefs_db {
 
     my $merge_sth = $dbh->prepare(
 	"INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
-	'VALUES (?, ?, ?, 0) ' .
+	'VALUES (?, ?, ?, ?) ' .
 	'ON CONFLICT (PMail, Name) DO UPDATE SET ' .
 	# Note: MTime = 0 ==> this is just a copy from somewhere else, not modified
 	'MTime = CASE WHEN excluded.MTime >= UserPrefs.MTime THEN 0 ELSE UserPrefs.MTime END, ' .
@@ -806,7 +806,7 @@ sub sync_userprefs_db {
     my $mergefunc = sub {
 	my ($ref) = @_;
 
-	$merge_sth->execute($ref->{pmail}, $ref->{name}, $ref->{data});
+	$merge_sth->execute($ref->{pmail}, $ref->{name}, $ref->{data}, $ref->{mtime});
     };
 
     return $sync_generic_mtime_db->($dbh, $rdb, $ni, 'UserPrefs', $selectfunc, $mergefunc);
