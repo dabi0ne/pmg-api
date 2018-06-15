@@ -1,3 +1,9 @@
+pmg-api (5.0-72) unstable; urgency=medium
+
+  * PMG/RuleDB/Notify.pm: allow to use wide UTF-8 characters
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 15 Jun 2018 10:18:48 +0200
+
 pmg-api (5.0-71) unstable; urgency=medium
 
   * sync_userprefs_db: fix #1797 - fix merge function
