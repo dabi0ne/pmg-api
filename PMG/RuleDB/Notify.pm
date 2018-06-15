@@ -6,6 +6,7 @@ use DBI;
 use MIME::Body;
 use MIME::Head;
 use MIME::Entity;
+use Encode qw(decode encode);
 
 use PVE::SafeSyslog;
 
@@ -80,7 +81,7 @@ sub load_attr {
 
     defined($value) || die "undefined object attribute: ERROR";
     
-    my ($subject, $body, $attach);
+    my ($raw_subject, $raw_body, $attach);
 
     my $sth = $ruledb->{dbh}->prepare(
 	"SELECT * FROM Attribut WHERE Object_ID = ?");
@@ -88,18 +89,23 @@ sub load_attr {
     $sth->execute($id);
 
     while (my $ref = $sth->fetchrow_hashref()) {
-	$subject =  $ref->{value} if $ref->{name} eq 'subject';
-	$body = $ref->{value} if $ref->{name} eq 'body';
+	$raw_subject = $ref->{value} if $ref->{name} eq 'subject';
+	$raw_body = $ref->{value} if $ref->{name} eq 'body';
 	$attach = $ref->{value} if $ref->{name} eq 'attach';
     }
 	
     $sth->finish();
-   
-    my $obj = $class->new($value, $subject, $body, $attach, $ogroup);
+
+    # Note: db stores binary (ascii) data, so we need to convert to UTF-8 manually
+    my $obj = $class->new($value,
+			  decode('UTF-8', $raw_subject),
+			  decode('UTF-8', $raw_body),
+			  $attach, $ogroup);
     $obj->{id} = $id;
 
+    # Note: Digest::SHA does not work with wide UTF8 characters
     $obj->{digest} = Digest::SHA::sha1_hex(
-	$id, $obj->{to}, $obj->{subject}, $obj->{body}, $obj->{attach}, $ogroup);
+	$id, $obj->{to}, $raw_subject, $raw_body, $obj->{attach}, $ogroup);
 
     return $obj;
 }
@@ -114,6 +120,8 @@ sub save {
 
     $self->{attach} //= 'N';
 
+    # Note: db stores binary (ascii) data, so we need to convert from UTF-8 manually
+
     if (defined ($self->{id})) {
 	# update
 	
@@ -127,12 +135,12 @@ sub save {
 	    $ruledb->{dbh}->do(
 		"UPDATE Attribut SET Value = ? " .
 		"WHERE Name = ? and Object_ID = ?", 
-		undef, $self->{subject}, 'subject',  $self->{id});
+		undef, encode('UTF-8', $self->{subject}), 'subject',  $self->{id});
 
 	    $ruledb->{dbh}->do(
 		"UPDATE Attribut SET Value = ? " .
 		"WHERE Name = ? and Object_ID = ?", 
-		undef, $self->{body}, 'body',  $self->{id});
+		undef, encode('UTF-8', $self->{body}), 'body',  $self->{id});
 
 	    $ruledb->{dbh}->do(
 		"UPDATE Attribut SET Value = ? " .
@@ -168,11 +176,11 @@ sub save {
 	    $ruledb->{dbh}->do("INSERT INTO Attribut " . 
 			       "(Object_ID, Name, Value) " .
 			       "VALUES (?, ?, ?)", undef,
-			       $self->{id}, 'subject', $self->{subject});
+			       $self->{id}, 'subject',  encode('UTF-8', $self->{subject}));
 	    $ruledb->{dbh}->do("INSERT INTO Attribut " . 
 			       "(Object_ID, Name, Value) " .
 			       "VALUES (?, ?, ?)", undef,
-			       $self->{id}, 'body', $self->{body});
+			       $self->{id}, 'body',  encode('UTF-8', $self->{body}));
 	    $ruledb->{dbh}->do("INSERT INTO Attribut " . 
 			       "(Object_ID, Name, Value) " .
 			       "VALUES (?, ?, ?)", undef,
