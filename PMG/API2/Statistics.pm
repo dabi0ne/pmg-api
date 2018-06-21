@@ -1198,18 +1198,19 @@ __PACKAGE__->register_method ({
 	my $res = [];
 
 	my $count_in = $totalstat->{count_in};
-	my $rest = $totalstat->{spamcount_in};
 
 	my $levelcount = {};
+	my $spamcount = 0;
 	foreach my $ref (@$spamstat) {
-	    my $level = $ref->{spamlevel} // 0;
-	    next if $level >= 10 || $level < 1;
-	    $rest -= $ref->{count} if $level >= 3;
-	    $levelcount->{$level} = $ref->{count};
+	    if (my $level = $ref->{spamlevel}) {
+		next if $level < 1; # just to be sure
+		$spamcount += $ref->{count};
+		$level = 10 if $level > 10;
+		$levelcount->{$level} += $ref->{count};
+	    }
 	}
 
-	$levelcount->{0} = $totalstat->{count_in} - $totalstat->{spamcount_in};
-	$levelcount->{10} = $rest if $rest;
+	$levelcount->{0} = $count_in - $spamcount;
 
 	for (my $i = 0; $i <= 10; $i++) {
 	    my $count = $levelcount->{$i} // 0;
