@@ -1,3 +1,11 @@
+pmg-api (5.0-73) unstable; urgency=medium
+
+  * Add postfix dnsbl threshold
+
+  * fix spamscore Statistics - correctly compute ratio
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 21 Jun 2018 10:25:09 +0200
+
 pmg-api (5.0-72) unstable; urgency=medium
 
   * PMG/RuleDB/Notify.pm: allow to use wide UTF-8 characters
