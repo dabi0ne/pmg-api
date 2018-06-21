@@ -585,6 +585,12 @@ sub properties {
 	    description => "Optional list of DNS white/blacklist domains (see postscreen_dnsbl_sites parameter).",
 	    type => 'string', format => 'dnsbl-entry-list',
 	},
+	dnsbl_threshold => {
+	    description => "The inclusive lower bound for blocking a remote SMTP client, based on its combined DNSBL score (see postscreen_dnsbl_threshold parameter).",
+	    type => 'integer',
+	    minimum => 0,
+	    default => 1
+	},
     };
 }
 
@@ -617,6 +623,7 @@ sub options {
 	message_rate_limit => { optional => 1 },
 	verifyreceivers => { optional => 1 },
 	dnsbl_sites => { optional => 1 },
+	dnsbl_threshold => { optional => 1 },
     };
 }
 
@@ -1103,6 +1110,8 @@ sub get_template_vars {
     if (scalar(@dnsbl_sites)) {
 	$vars->{postfix}->{dnsbl_sites} = join(',', @dnsbl_sites);
     }
+
+    $vars->{postfix}->{dnsbl_threshold} = $self->get('mail', 'dnsbl_threshold');
 
     my $usepolicy = 0;
     $usepolicy = 1 if $self->get('mail', 'greylist') ||

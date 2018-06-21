@@ -62,6 +62,7 @@ postscreen_access_list =
 
 [% IF postfix.dnsbl_sites %]
 postscreen_dnsbl_sites = [% postfix.dnsbl_sites %]
+postscreen_dnsbl_threshold = [% postfix.dnsbl_threshold %]
 [% END %]
 
 postscreen_dnsbl_action = enforce
