@@ -8,7 +8,7 @@ use HTML::Parser;
 use HTML::Entities;
 use MIME::Body;
 use IO::File;
-use Encode;
+use Encode qw(decode encode);
 
 use PMG::Utils;
 use PMG::ModGroup;
@@ -67,7 +67,7 @@ sub load_attr {
 
     defined($value) || die "undefined object attribute: ERROR";
   
-    my $obj = $class->new($value, $ogroup);
+    my $obj = $class->new(decode('UTF-8', $value), $ogroup);
 
     $obj->{id} = $id;
 
@@ -87,7 +87,7 @@ sub save {
 	
 	$ruledb->{dbh}->do(
 	    "UPDATE Object SET Value = ? WHERE ID = ?", 
-	    undef, $self->{value}, $self->{id});
+	    undef, encode('UTF-8', $self->{value}), $self->{id});
 
     } else {
 	# insert
@@ -96,7 +96,7 @@ sub save {
 	    "INSERT INTO Object (Objectgroup_ID, ObjectType, Value) " .
 	    "VALUES (?, ?, ?);");
 
-	$sth->execute($self->ogroup, $self->otype, $self->{value});
+	$sth->execute($self->ogroup, $self->otype, encode('UTF-8', $self->{value}));
     
 	$self->{id} = PMG::Utils::lastid($ruledb->{dbh}, 'object_id_seq'); 
     }
