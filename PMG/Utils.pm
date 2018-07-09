@@ -23,6 +23,9 @@ use Socket;
 use RRDs;
 use Filesys::Df;
 use Encode;
+use utf8;
+no utf8;
+
 use HTML::Entities;
 
 use PVE::ProcFSTools;
@@ -208,16 +211,42 @@ sub reinject_mail {
 	    }
 	}
 
-	if (!$smtp->mail($sender)) {
+	my $has_utf8_targets = 0;
+	foreach my $target (@$targets) {
+	    if (utf8::is_utf8($target)) {
+		$has_utf8_targets = 1;
+		last;
+	    }
+	}
+
+	my $mail_opts = " BODY=8BITMIME";
+	my $sender_addr;
+	if (utf8::is_utf8($sender)) {
+	    $sender_addr = encode('UTF-8', $smtp->_addr($sender));
+	    $mail_opts .= " SMTPUTF8";
+	} else {
+	    $sender_addr = $smtp->_addr($sender);
+	    $mail_opts .= " SMTPUTF8" if $has_utf8_targets;
+	}
+
+	if (!$smtp->_MAIL("FROM:" . $sender_addr . $mail_opts)) {
 	    syslog('err', "smtp error - got: %s %s", $smtp->code, scalar ($smtp->message));
 	    die "smtp from: ERROR";
 	}
 
-	my $dsnopts = $nodsn ? {Notify => ['NEVER']} : {};
+	my $rcpt_opts = $nodsn ? " NOTIFY=NEVER" : "";
 
-	if (!$smtp->to (@$targets, $dsnopts)) {
-	    syslog ('err', "smtp error - got: %s %s", $smtp->code, scalar($smtp->message));
-	    die "smtp to: ERROR";
+	foreach my $target (@$targets) {
+	    my $rcpt_addr;
+	    if (utf8::is_utf8($target)) {
+		$rcpt_addr = encode('UTF-8', $smtp->_addr($target));
+	    } else {
+		$rcpt_addr = $smtp->_addr($target);
+	    }
+	    if (!$smtp->_RCPT("TO:" . $rcpt_addr . $rcpt_opts)) {
+		syslog ('err', "smtp error - got: %s %s", $smtp->code, scalar($smtp->message));
+		die "smtp to: ERROR";
+	    }
 	}
 
 	# Output the head:

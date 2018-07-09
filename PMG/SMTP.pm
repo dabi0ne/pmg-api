@@ -3,6 +3,7 @@ package PMG::SMTP;
 use strict;
 use warnings;
 use IO::Socket;
+use Encode;
 
 use PVE::SafeSyslog;
 
@@ -72,6 +73,7 @@ sub loop {
 	    $self->reply ("250-PIPELINING");
 	    $self->reply ("250-ENHANCEDSTATUSCODES");
 	    $self->reply ("250-8BITMIME");
+	    $self->reply ("250-SMTPUTF8");
 	    $self->reply ("250-XFORWARD NAME ADDR PROTO HELO");
 	    $self->reply ("250 OK.");
 	    $self->{lmtp} = 1 if ($cmd eq 'lhlo');
@@ -95,9 +97,11 @@ sub loop {
 	    $self->reply ("250 2.5.0 OK");
 	    next;
 	} elsif ($cmd eq 'mail') {
-	    if ($args =~ m/^from:\s*<([^\s\>]*)>[^>]*$/i) {
+	    if ($args =~ m/^from:\s*<([^\s\>]*)>([^>]*)$/i) {
 		delete $self->{to};
-		$self->{from} = $1;
+		my ($from, $opts) = ($1, $2);
+		$from = decode('UTF-8', $from) if $opts =~ m/\sSMTPUTF8/;
+		$self->{from} = $from;
 		$self->reply ('250 2.5.0 OK');
 		next;
 	    } else {
@@ -105,7 +109,9 @@ sub loop {
 		next;
 	    }
 	} elsif ($cmd eq 'rcpt') {
-	    if ($args =~ m/^to:\s*<([^\s\>]+)>[^>]*$/i) {
+	    if ($args =~ m/^to:\s*<([^\s\>]+)>([^>]*)$/i) {
+		my ($to, $opts) = ($1, $2);
+		$to = decode('UTF-8', $to) if $opts =~ m/\sSMTPUTF8/;
 		push @{$self->{to}} , $1;
 		$self->reply ('250 2.5.0 OK');
 		next;
