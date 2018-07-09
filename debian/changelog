@@ -1,3 +1,9 @@
+pmg-api (5.0-74) unstable; urgency=medium
+
+  * add support for SMTPUTF8 extensions
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 09 Jul 2018 12:50:40 +0200
+
 pmg-api (5.0-73) unstable; urgency=medium
 
   * Add postfix dnsbl threshold
