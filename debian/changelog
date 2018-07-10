@@ -1,3 +1,11 @@
+pmg-api (5.0-75) unstable; urgency=medium
+
+  * log email addresses as utf8 (postfix also do that).
+
+  * SMTP.pm: SMTPUTF8 is always passed with "mail" command
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 10 Jul 2018 09:59:45 +0200
+
 pmg-api (5.0-74) unstable; urgency=medium
 
   * add support for SMTPUTF8 extensions
