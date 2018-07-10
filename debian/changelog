@@ -1,3 +1,11 @@
+pmg-api (5.0-76) unstable; urgency=medium
+
+  * d/control: update pve-common version dependency
+
+  * as we use the new param_mapping functionallity from PVE::CLIHandler
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 10 Jul 2018 10:54:44 +0200
+
 pmg-api (5.0-75) unstable; urgency=medium
 
   * log email addresses as utf8 (postfix also do that).
