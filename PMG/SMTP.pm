@@ -33,6 +33,7 @@ sub reset {
     $self->{from} = undef;
     $self->{to} = [];
     $self->{queue} = undef;
+    delete $self->{smtputf8};
     delete $self->{xforward};
     delete $self->{status};
 }
@@ -100,7 +101,10 @@ sub loop {
 	    if ($args =~ m/^from:\s*<([^\s\>]*)>([^>]*)$/i) {
 		delete $self->{to};
 		my ($from, $opts) = ($1, $2);
-		$from = decode('UTF-8', $from) if $opts =~ m/\sSMTPUTF8/;
+		if ($opts =~ m/\sSMTPUTF8/) {
+		    $self->{smtputf8} = 1;
+		    $from = decode('UTF-8', $from);
+		}
 		$self->{from} = $from;
 		$self->reply ('250 2.5.0 OK');
 		next;
@@ -109,10 +113,9 @@ sub loop {
 		next;
 	    }
 	} elsif ($cmd eq 'rcpt') {
-	    if ($args =~ m/^to:\s*<([^\s\>]+)>([^>]*)$/i) {
-		my ($to, $opts) = ($1, $2);
-		$to = decode('UTF-8', $to) if $opts =~ m/\sSMTPUTF8/;
-		push @{$self->{to}} , $1;
+	    if ($args =~ m/^to:\s*<([^\s\>]+)>[^>]*$/i) {
+		my $to = $self->{smtputf8} ? decode('UTF-8', $1) : $1;
+		push @{$self->{to}} , $to;
 		$self->reply ('250 2.5.0 OK');
 		next;
 	    } else {
