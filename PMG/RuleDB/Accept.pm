@@ -3,6 +3,7 @@ package PMG::RuleDB::Accept;
 use strict;
 use warnings;
 use DBI;
+use Encode;
 
 use PVE::SafeSyslog;
 use Digest::SHA;
@@ -110,12 +111,12 @@ sub execute {
 		$msginfo->{xforward}, $msginfo->{fqdn});
 	    if ($qid) {
 		foreach (@$tg) {
-		    syslog('info', "%s: accept mail to <%s> (%s)", $queue->{logid}, $_, $qid);
+		    syslog('info', "%s: accept mail to <%s> (%s)", $queue->{logid}, encode('UTF-8', $_), $qid);
 		}
 		$queue->set_status ($tg, 'delivered', $qid);
 	    } else {
 		foreach (@$tg) {
-		    syslog('err', "%s: reinject mail to <%s> failed", $queue->{logid}, $_);
+		    syslog('err', "%s: reinject mail to <%s> failed", $queue->{logid}, encode('UTF-8', $_));
 		}
 		if ($code) {
 		    my $resp = substr($code, 0, 1);

@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use DBI;
 use Digest::SHA;
+use Encode;
 
 use PVE::SafeSyslog;
 
@@ -95,7 +96,7 @@ sub execute {
     }
 
     foreach my $to (@$targets) {
-	syslog('info', "%s: block mail to <%s>", $queue->{logid}, $to);
+	syslog('info', "%s: block mail to <%s>", $queue->{logid}, encode('UTF-8', $to));
     }
 
     $queue->set_status($targets, 'blocked');
