@@ -163,9 +163,10 @@ my $extract_start_end = sub {
 	$month += 1;
 	$year = $param->{year} if defined($param->{year});
 	if (defined($param->{day})) {
+	    my $day = $param->{day};
 	    $month = $param->{month} if defined($param->{month});
-	    $start = timelocal(0, 0, 0, 1, $month - 1, $year);
-	    $end = timelocal(0, 0, 0, 1, $month, $year);
+	    $start = timelocal(0, 0, 0, $day, $month - 1, $year);
+	    $end = timelocal(59, 59, 23, $day, $month - 1, $year);
 	} elsif (defined($param->{month})) {
 	    my $month = $param->{month};
 	    if ($month < 12) {
