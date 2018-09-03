@@ -1,3 +1,11 @@
+pmg-api (5.0-77) unstable; urgency=medium
+
+  * fix bux #1776: set http_proxy for sa-update
+
+  * statistics: actually calculate day when it is given
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 03 Sep 2018 13:01:41 +0200
+
 pmg-api (5.0-76) unstable; urgency=medium
 
   * d/control: update pve-common version dependency
