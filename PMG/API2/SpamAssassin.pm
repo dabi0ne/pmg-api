@@ -12,6 +12,7 @@ use PMG::RESTEnvironment;
 use PVE::JSONSchema qw(get_standard_option);
 
 use PMG::Utils;
+use PMG::Config;
 
 use Mail::SpamAssassin;
 
@@ -148,6 +149,12 @@ __PACKAGE__->register_method({
 
 	my $realcmd = sub {
 	    my $upid = shift;
+
+	    # setup proxy env (assume sa-update use http)
+	    my $pmg_cfg = PMG::Config->new();
+	    if (my $http_proxy = $pmg_cfg->get('admin', 'http_proxy')) {
+		$ENV{http_proxy} = $http_proxy;
+	    }
 
 	    my $cmd = "$SAUPDATE -v";
 
