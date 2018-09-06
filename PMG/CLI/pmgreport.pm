@@ -351,6 +351,13 @@ __PACKAGE__->register_method ({
 	    die "no receiver configured\n";
 	}
 
+	my $enable = $cfg->get('admin', 'dailyreport') // 1;
+
+	if ($param->{auto} && !$enable) {
+	    # do nothing when disabled
+	    return undef;
+	}
+
 	my $mailfrom = "Proxmox Mail Gateway <postmaster>";
 	PMG::Utils::finalize_report($tt, 'pmgreport.tt', $vars, $mailfrom, $email, $param->{debug});
 
