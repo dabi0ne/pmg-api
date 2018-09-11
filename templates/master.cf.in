@@ -83,7 +83,6 @@ scan      unix  -       -       n       -       [% pmg.mail.max_filters %]      
   -o smtpd_helo_restrictions=
   -o smtpd_client_restrictions=
   -o smtpd_sender_restrictions=
-  -o smtpd_tls_security_level=none
 
 [% pmg.mail.ext_port %]       inet  n -       -       -       1 postscreen
 
