@@ -42,7 +42,7 @@ relay_transport = smtp:[% pmg.mail.relay %]:[% pmg.mail.relayport %]
 [% END %]
 
 [% IF pmg.mail.smarthost %]
-default_transport = smtp:[% pmg.mail.smarthost %]
+default_transport = smtp:[% pmg.mail.smarthost %]:[% pmg.mail.smarthostport %]
 [% END %]
 
 mail_name = Proxmox

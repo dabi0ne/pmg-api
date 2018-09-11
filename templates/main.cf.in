@@ -42,7 +42,7 @@ relay_transport = smtp:[% pmg.mail.relay %]:[% pmg.mail.relayport %]
 [% END %]
 
 [% IF pmg.mail.smarthost %]
-default_transport = smtp:[% pmg.mail.smarthost %]
+default_transport = smtp:[% pmg.mail.smarthost %]:[% pmg.mail.smarthostport %]
 [% END %]
 
 content_filter=scan:127.0.0.1:10024

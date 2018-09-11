@@ -467,6 +467,13 @@ sub properties {
 	    description => "When set, all outgoing mails are deliverd to the specified smarthost.",
 	    type => 'string', format => 'address',
 	},
+	smarthostport => {
+	    description => "SMTP port number for smarthost.",
+	    type => 'integer',
+	    minimum => 1,
+	    maximum => 65535,
+	    default => 25,
+	},
 	banner => {
 	    description => "ESMTP banner.",
 	    type => 'string',
@@ -599,6 +606,7 @@ sub options {
 	int_port => { optional => 1 },
 	ext_port => { optional => 1 },
 	smarthost => { optional => 1 },
+	smarthostport => { optional => 1 },
 	relay => { optional => 1 },
 	relayport => { optional => 1 },
 	relaynomx => { optional => 1 },
