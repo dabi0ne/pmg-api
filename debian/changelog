@@ -1,3 +1,15 @@
+pmg-api (5.0-78) unstable; urgency=medium
+
+  * fix bug #1701: implement smarthostport setting
+
+  * fix bug #1649: Allow TLS also on internal SMTP port
+
+  * fix bug #1727: hide details if hide_received is active
+
+  * use 'dailyreport' config
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 12 Sep 2018 06:46:47 +0200
+
 pmg-api (5.0-77) unstable; urgency=medium
 
   * fix bux #1776: set http_proxy for sa-update
