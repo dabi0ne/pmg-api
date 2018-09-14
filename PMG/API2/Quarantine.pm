@@ -895,7 +895,6 @@ __PACKAGE__->register_method ({
 		description => 'Unique IDs, seperate with ;',
 		type => 'string',
 		pattern => 'C\d+R\d+T\d+(;C\d+R\d+T\d+)*',
-		maxLength => 600,
 	    },
 	    action => {
 		description => 'Action - specify what you want to do with the mail.',
