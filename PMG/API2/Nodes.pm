@@ -541,6 +541,7 @@ __PACKAGE__->register_method({
     method => 'GET',
     description => "Read server status. This is used by the cluster manager to test the node health.",
     proxyto => 'node',
+    permissions => { check => [ 'admin', 'qmanager', 'audit' ] },
     protected => 1,
     parameters => {
 	additionalProperties => 0,
