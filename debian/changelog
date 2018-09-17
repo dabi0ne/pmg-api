@@ -1,3 +1,11 @@
+pmg-api (5.0-79) unstable; urgency=medium
+
+  * fix #1876: allow node status for admin/manager/auditors
+
+  * fix #1881: increase limit for ids in spam quarantine
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 17 Sep 2018 09:30:55 +0200
+
 pmg-api (5.0-78) unstable; urgency=medium
 
   * fix bug #1701: implement smarthostport setting
