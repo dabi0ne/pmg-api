@@ -73,6 +73,7 @@ __PACKAGE__->register_method ({
     description => "Print the PMG rule database.",
     parameters => {
 	additionalProperties => 0,
+	properties => {},
     },
     returns => { type => 'null'},
     code => sub {
@@ -100,6 +101,7 @@ __PACKAGE__->register_method ({
     description => "Delete PMG rule database.",
     parameters => {
 	additionalProperties => 0,
+	properties => {},
     },
     returns => { type => 'null'},
     code => sub {
@@ -197,6 +199,7 @@ __PACKAGE__->register_method ({
     description => "Update the PMG statistic database.",
     parameters => {
 	additionalProperties => 0,
+	properties => {},
     },
     returns => { type => 'null'},
     code => sub {
