@@ -22,6 +22,7 @@ use PMG::API2::MyNetworks;
 use PMG::API2::SMTPWhitelist;
 use PMG::API2::MimeTypes;
 use PMG::API2::Fetchmail;
+use PMG::API2::DestinationTLSPolicy;
 
 use base qw(PVE::RESTHandler);
 
@@ -76,6 +77,11 @@ __PACKAGE__->register_method ({
 });
 
 __PACKAGE__->register_method ({
+    subclass => "PMG::API2::DestinationTLSPolicy",
+    path => 'tlspolicy',
+});
+
+__PACKAGE__->register_method ({
     name => 'index', 
     path => '',
     method => 'GET',
@@ -111,6 +117,7 @@ __PACKAGE__->register_method ({
 	push @$res, { section => 'transport' };
 	push @$res, { section => 'whitelist' };
 	push @$res, { section => 'regextest' };
+	push @$res, { section => 'tlspolicy' };
 
 	return $res;
     }});

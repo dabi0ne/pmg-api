@@ -123,6 +123,7 @@ LIBSOURCES =				\
 	PMG/API2/Services.pm		\
 	PMG/API2/Tasks.pm		\
 	PMG/API2/LDAP.pm		\
+	PMG/API2/DestinationTLSPolicy.pm\
 	PMG/API2/Domains.pm		\
 	PMG/API2/Fetchmail.pm		\
 	PMG/API2/Users.pm		\
