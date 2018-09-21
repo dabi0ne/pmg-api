@@ -944,7 +944,80 @@ PVE::INotify::register_file('mynetworks', $mynetworks_filename,
 			    \&write_pmg_mynetworks,
 			    undef, always_call_parser => 1);
 
+PVE::JSONSchema::register_format(
+    'tls-policy', \&pmg_verify_tls_policy);
+
+sub pmg_verify_tls_policy {
+    my ($policy, $noerr) = @_;
+
+    # TODO: extend to parse attributes of the policy
+    my $valid_policy = qr/none|may|encrypt|dane|dane-only|fingerprint|verify|secure/;
+
+    if ($policy !~ /$valid_policy/) {
+	   return undef if $noerr;
+	   die "value '$policy' does not look like a valid tls policy\n";
+    }
+    return $policy;
+}
+
+sub read_tls_policy {
+    my ($filename, $fh) = @_;
+
+    return {} if !defined($fh);
+
+    my $tls_policy = {};
+
+    while (defined(my $line = <$fh>)) {
+	chomp $line;
+	next if $line =~ m/^\s*$/;
+	next if $line =~ m/^#(.*)\s*$/;
+
+	my $parse_error = sub {
+	    my ($err) = @_;
+	    warn "parse error in '$filename': $line - $err";
+	};
+
+	if ($line =~ m/^(\S+)\s+(.+)\s*$/) {
+	    my ($domain, $policy) = ($1, $2);
+
+	    eval {
+		pmg_verify_transport_domain($domain);
+		pmg_verify_tls_policy($policy);
+	    };
+	    if (my $err = $@) {
+		$parse_error->($err);
+		next;
+	    }
+
+	    $tls_policy->{$domain} = {
+		    domain => $domain,
+		    policy => $policy,
+	    };
+	} else {
+	    $parse_error->('wrong format');
+	}
+    }
+
+    return $tls_policy;
+}
+
+sub write_tls_policy {
+    my ($filename, $fh, $tls_policy) = @_;
+
+    return if !$tls_policy;
+
+    foreach my $domain (sort keys %$tls_policy) {
+	my $entry = $tls_policy->{$domain};
+	PVE::Tools::safe_print(
+	    $filename, $fh, "$entry->{domain} $entry->{policy}\n");
+    }
+}
+
 my $tls_policy_map_filename = "/etc/pmg/tls_policy";
+PVE::INotify::register_file('tls_policy', $tls_policy_map_filename,
+			    \&read_tls_policy,
+			    \&write_tls_policy,
+			    undef, always_call_parser => 1);
 
 sub postmap_tls_policy {
     PMG::Utils::run_postmap($tls_policy_map_filename);
