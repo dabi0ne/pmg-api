@@ -953,7 +953,7 @@ sub pmg_verify_tls_policy {
     # TODO: extend to parse attributes of the policy
     my $valid_policy = qr/none|may|encrypt|dane|dane-only|fingerprint|verify|secure/;
 
-    if ($policy !~ /$valid_policy/) {
+    if ($policy !~ /^${valid_policy}$/) {
 	   return undef if $noerr;
 	   die "value '$policy' does not look like a valid tls policy\n";
     }
