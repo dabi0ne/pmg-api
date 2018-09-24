@@ -974,7 +974,7 @@ sub read_tls_policy {
 
 	my $parse_error = sub {
 	    my ($err) = @_;
-	    warn "parse error in '$filename': $line - $err";
+	    die "parse error in '$filename': $line - $err";
 	};
 
 	if ($line =~ m/^(\S+)\s+(.+)\s*$/) {
