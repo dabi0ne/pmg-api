@@ -947,17 +947,25 @@ PVE::INotify::register_file('mynetworks', $mynetworks_filename,
 PVE::JSONSchema::register_format(
     'tls-policy', \&pmg_verify_tls_policy);
 
+# TODO: extend to parse attributes of the policy
+my $VALID_TLS_POLICY_RE = qr/none|may|encrypt|dane|dane-only|fingerprint|verify|secure/;
 sub pmg_verify_tls_policy {
     my ($policy, $noerr) = @_;
 
-    # TODO: extend to parse attributes of the policy
-    my $valid_policy = qr/none|may|encrypt|dane|dane-only|fingerprint|verify|secure/;
-
-    if ($policy !~ /^${valid_policy}$/) {
+    if ($policy !~ /^$VALID_TLS_POLICY_RE\b/) {
 	   return undef if $noerr;
 	   die "value '$policy' does not look like a valid tls policy\n";
     }
     return $policy;
+}
+
+sub pmg_verify_tls_policy_strict {
+    my ($policy) = @_;
+
+    return $policy
+	if ($policy =~ /^$VALID_TLS_POLICY_RE$/);
+
+    return undef;
 }
 
 sub read_tls_policy {
