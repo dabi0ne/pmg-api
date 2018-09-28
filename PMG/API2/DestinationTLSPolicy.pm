@@ -63,7 +63,7 @@ __PACKAGE__->register_method ({
 	    },
 	    policy => {
 		description => "TLS policy",
-		type => 'string', format => 'tls-policy',
+		type => 'string', format => 'tls-policy-strict',
 	    },
 	},
     },
@@ -71,10 +71,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 	my $domain = $param->{domain};
-	my $policy = PMG::Config::pmg_verify_tls_policy_strict($param->{policy});
-
-	raise_param_exc({ policy => "$param->{policy} is not a valid TLSPolicy" })
-	    if ! defined($policy);
+	my $policy = $param->{policy};
 
 	my $code = sub {
 	    my $tls_policy = PVE::INotify::read_file('tls_policy');
@@ -148,7 +145,7 @@ __PACKAGE__->register_method ({
 	    },
 	    policy => {
 		description => "TLS policy",
-		type => 'string', format => 'tls-policy',
+		type => 'string', format => 'tls-policy-strict',
 	    },
 	},
     },
@@ -156,10 +153,7 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 	my $domain = $param->{domain};
-	my $policy = PMG::Config::pmg_verify_tls_policy_strict($param->{policy});
-
-	raise_param_exc({ policy => "$param->{policy} is not a valid TLSPolicy" })
-	    if ! defined($policy);
+	my $policy = $param->{policy};
 
 	my $code = sub {
 

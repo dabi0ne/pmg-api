@@ -959,13 +959,17 @@ sub pmg_verify_tls_policy {
     return $policy;
 }
 
+PVE::JSONSchema::register_format(
+    'tls-policy-strict', \&pmg_verify_tls_policy_strict);
+
 sub pmg_verify_tls_policy_strict {
-    my ($policy) = @_;
+    my ($policy, $noerr) = @_;
 
-    return $policy
-	if ($policy =~ /^$VALID_TLS_POLICY_RE$/);
-
-    return undef;
+    if ($policy !~ /^$VALID_TLS_POLICY_RE$/) {
+	return undef if $noerr;
+	die "value '$policy' does not look like a valid tls policy\n";
+    }
+    return $policy;
 }
 
 sub read_tls_policy {
