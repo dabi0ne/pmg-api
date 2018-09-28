@@ -1,3 +1,9 @@
+pmg-api (5.1-1) unstable; urgency=medium
+
+  * add API for TLS policy - PMG::API2::DestinationTLSPolicy
+
+ -- Proxmox Support Team <support@proxmox.com>  Fri, 28 Sep 2018 06:50:24 +0200
+
 pmg-api (5.0-79) unstable; urgency=medium
 
   * fix #1876: allow node status for admin/manager/auditors
