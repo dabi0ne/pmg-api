@@ -589,9 +589,7 @@ sub sync_quarantine_db {
 
 	$mscount += $count;
 
-	last if $mscount >= $maxmails;
-
-    } while ($count >= $maxcount);
+    } while (($count >= $maxcount) && ($mscount < $maxmails));
 
     PMG::DBTools::create_clusterinfo_default($ldb, $rcid, 'lastmt_CMSReceivers', 0, undef);
 
@@ -689,9 +687,7 @@ sub sync_statistic_db {
 
 	$mscount += $count;
 
-	last if $mscount >= $maxmails;
-
-    } while ($count >= $maxcount);
+    } while (($count >= $maxcount) && ($mscount < $maxmails));
 
     return $mscount;
 }
