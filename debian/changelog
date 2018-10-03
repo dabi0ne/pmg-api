@@ -1,3 +1,9 @@
+pmg-api (5.1-2) unstable; urgency=medium
+
+  * do not use 'last' inside do/while
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 03 Oct 2018 12:14:08 +0200
+
 pmg-api (5.1-1) unstable; urgency=medium
 
   * add API for TLS policy - PMG::API2::DestinationTLSPolicy
