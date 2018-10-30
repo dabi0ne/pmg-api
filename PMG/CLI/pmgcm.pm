@@ -181,7 +181,7 @@ __PACKAGE__->register_method({
 	my $code = sub {
 	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "cluster alreayd defined\n" if scalar(keys %{$cinfo->{ids}});
+	    die "cluster already defined\n" if scalar(keys %{$cinfo->{ids}});
 
 	    my $term = new Term::ReadLine ('pmgcm');
 	    my $attribs = $term->Attribs;

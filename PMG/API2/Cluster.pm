@@ -346,7 +346,7 @@ __PACKAGE__->register_method({
 	my $realcmd = sub {
 	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "cluster alreayd defined\n" if scalar(keys %{$cinfo->{ids}});
+	    die "cluster already defined\n" if scalar(keys %{$cinfo->{ids}});
 
 	    my $info = PMG::Cluster::read_local_cluster_info();
 
@@ -425,7 +425,7 @@ __PACKAGE__->register_method({
 	my $realcmd = sub {
 	    my $cinfo = PMG::ClusterConfig->new();
 
-	    die "cluster alreayd defined\n" if scalar(keys %{$cinfo->{ids}});
+	    die "cluster already defined\n" if scalar(keys %{$cinfo->{ids}});
 
 	    my $setup = {
 		username => 'root@pam',
