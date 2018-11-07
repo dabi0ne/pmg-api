@@ -341,6 +341,19 @@ sub database_column_exists {
     return defined($res);
 }
 
+my $createdb = sub {
+    my ($dbname) = @_;
+    postgres_admin_cmd(
+	'createdb',
+	undef,
+	'-E', 'sql_ascii',
+	'-T', 'template0',
+	'--lc-collate=C',
+	'--lc-ctype=C',
+	$dbname,
+    );
+};
+
 sub create_ruledb {
     my ($dbname) = @_;
 
@@ -355,8 +368,7 @@ sub create_ruledb {
     # use sql_ascii to avoid any character set conversions, and be compatible with
     # older postgres versions (update from 8.1 must be possible)
 
-    postgres_admin_cmd('createdb', undef, '-E', 'sql_ascii', '-T', 'template0',
-		       '--lc-collate=C', '--lc-ctype=C', $dbname);
+    $createdb->($dbname);
 
     my $dbh = open_ruledb($dbname);
 
@@ -1146,7 +1158,7 @@ sub init_nodedb {
 
 	print STDERR "create new local database\n";
 
-	postgres_admin_cmd('createdb', undef, $dbname);
+	$createdb->($dbname);
 
 	print STDERR "insert received data into local database\n";
 
