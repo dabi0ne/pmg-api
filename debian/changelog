@@ -1,3 +1,9 @@
+pmg-api (5.1-3) unstable; urgency=medium
+
+  * fix #1978: always give encoding/collate explicitly when creating db
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 08 Nov 2018 09:53:39 +0100
+
 pmg-api (5.1-2) unstable; urgency=medium
 
   * do not use 'last' inside do/while
