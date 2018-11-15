@@ -781,15 +781,15 @@ sub postscreen_stat_graph {
     $sth->execute ();
 
     while (my $ref = $sth->fetchrow_hashref()) {
-	@$res[$ref->{index}] = $ref;
+	$res->[$ref->{index}] = $ref;
     }
 
     my $c = int (($to - $from) / $span);
 
-    for (my $i = 0; $i < $c; $i++) {
-	@$res[$i] //= { index => $i, rbl_rejects => 0, pregreet_rejects => 0};
+    for my $i (0..$c) {
+	$res->[$i] //= { index => $i, rbl_rejects => 0, pregreet_rejects => 0};
 
-	my $d = @$res[$i];
+	my $d = $res->[$i];
 	$d->{time} = $from + $i*$span - $timezone;
     }
     $sth->finish();
