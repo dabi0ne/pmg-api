@@ -780,13 +780,14 @@ sub postscreen_stat_graph {
     my $sth = $rdb->{dbh}->prepare($cmd);
     $sth->execute ();
 
+    my $max_entry = int(($to - $from) / $span);
     while (my $ref = $sth->fetchrow_hashref()) {
-	$res->[$ref->{index}] = $ref;
+	my $i = $ref->{index};
+	$res->[$i] = $ref;
+	$max_entry = $i if $i > $max_entry;
     }
 
-    my $c = int (($to - $from) / $span);
-
-    for my $i (0..$c) {
+    for my $i (0..$max_entry) {
 	$res->[$i] //= { index => $i, rbl_rejects => 0, pregreet_rejects => 0};
 
 	my $d = $res->[$i];
