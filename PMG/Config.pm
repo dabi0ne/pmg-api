@@ -15,7 +15,7 @@ my $defaultData = {
     propertyList => {
 	type => { description => "Section type." },
 	section => {
-	    description => "Secion ID.",
+	    description => "Section ID.",
 	    type => 'string', format => 'pve-configid',
 	},
     },
@@ -157,7 +157,7 @@ sub properties {
 	    type => 'string',
 	},
 	clamav_heuristic_score => {
-	    description => "Score for ClamaAV heuristics (Google Safe Browsing database, PhishingScanURLs, ...).",
+	    description => "Score for ClamAV heuristics (Google Safe Browsing database, PhishingScanURLs, ...).",
 	    type => 'integer',
 	    minimum => 0,
 	    maximum => 1000,
@@ -319,7 +319,7 @@ sub properties {
 	    default => 'database.clamav.net',
 	},
 	archiveblockencrypted => {
-	    description => "Wether to block encrypted archives. Mark encrypted archives as viruses.",
+	    description => "Whether to block encrypted archives. Mark encrypted archives as viruses.",
 	    type => 'boolean',
 	    default => 0,
 	},
