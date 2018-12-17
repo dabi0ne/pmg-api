@@ -300,7 +300,7 @@ sub sync_quarantine_files {
     mkdir $syncdir;
 
     my $cmd = $rsync_command->(
-	$host_name, '--timeout', '10', "${host_ip}:$spooldir", $spooldir,
+	$host_name, '--timeout', '10', "[${host_ip}]:$spooldir", $spooldir,
 	'--files-from', $flistname);
 
     PVE::Tools::run_command($cmd);
@@ -316,7 +316,7 @@ sub sync_spooldir {
     mkdir $syncdir;
 
     my $cmd = $rsync_command->(
-	$host_name, '-aq', '--timeout', '10', "${host_ip}:$syncdir/", $syncdir);
+	$host_name, '-aq', '--timeout', '10', "[${host_ip}]:$syncdir/", $syncdir);
 
     foreach my $incl (('spam/', 'spam/*', 'spam/*/*', 'virus/', 'virus/*', 'virus/*/*')) {
 	push @$cmd, '--include', $incl;
@@ -336,7 +336,7 @@ sub sync_master_quar {
     mkdir $syncdir;
 
     my $cmd = $rsync_command->(
-	$host_name, '-aq', '--timeout', '10', "${host_ip}:$syncdir", $syncdir);
+	$host_name, '-aq', '--timeout', '10', "[${host_ip}]:$syncdir", $syncdir);
 
     PVE::Tools::run_command($cmd);
 }
@@ -352,7 +352,7 @@ sub sync_config_from_master {
 
     my $cmd = $rsync_command->(
 	$master_name, '-aq',
-	"${master_ip}:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
+	"[${master_ip}]:$cfgdir/* ${sa_conf_dir}/${sa_custom_cf}",
 	"$syncdir/",
 	'--exclude', 'master/',
 	'--exclude', '*~',
