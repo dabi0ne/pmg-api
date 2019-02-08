@@ -329,8 +329,9 @@ sub analyze_spam {
 
     $maxspamsize = 200*1024 if !$maxspamsize;
 
-    my ($sa_score, $sa_max, $sa_scores, $sa_sumary, $list, $autolearn, $bayes);
+    my ($sa_score, $sa_max, $sa_scores, $sa_sumary, $list, $autolearn, $bayes, $loglist);
     $list = '';
+    $loglist = '';
     $bayes = 'undefined';
     $autolearn = 'no';
     $sa_score = 0;
@@ -354,6 +355,7 @@ sub analyze_spam {
 	my $rule = 'ClamAVHeuristics';
 	$sa_score += $score;
 	$list .= $list ? ",$rule" : $rule;
+	$loglist .= $loglist ? ",$rule($score)" : "$rule($score)";
 	push @$sa_scores, { score => $score, rule => $rule, desc => $descr };
     }
 
@@ -416,6 +418,7 @@ sub analyze_spam {
 	    foreach my $rule (split (/,/, $salist)) {
 		$list .= $list ? ",$rule" : $rule;
 		my $score = $status->{conf}->{scores}->{$rule};
+		$loglist .= $loglist ? ",$rule($score)" : "$rule($score)";
 		my $desc = $status->{conf}->get_description_for_rule($rule);
 		push @$sa_scores, { score => $score, rule => $rule, desc => $desc };
 	    }
@@ -450,7 +453,7 @@ sub analyze_spam {
 
     syslog ('info', "%s: SA score=%s/%s time=%0.3f bayes=%s autolearn=%s hits=%s", 
 	    $queue->{logid}, $sa_score, $sa_max, $queue->{ptime_spam}/1000.0, 
-	    $bayes, $autolearn, $list);
+	    $bayes, $autolearn, $loglist);
 
     $queue->{sa_score} = $sa_score;
     $queue->{sa_max} = $sa_max;
