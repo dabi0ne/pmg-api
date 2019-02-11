@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use PMG::Report;
+
+($> == 0 ) || die "please run as root\n";
+
+print PMG::Report::generate();
+
+__END__
+
+=head1 NAME
+
+pmg-system-report - Proxmox MailGateway system report tool
+
+=head1 SYNOPSIS
+
+pvereport
+
+=head1 DESCRIPTION
+
+Display various information related to a Proxmox MailGateway system
