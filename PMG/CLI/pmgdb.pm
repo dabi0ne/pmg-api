@@ -39,7 +39,15 @@ sub print_objects {
 sub print_rule {
     my ($ruledb, $rule) = @_;
 
-    print "Found RULE $rule->{id}: $rule->{name}\n";
+    my $direction = {
+	0 => 'in',
+	1 => 'out',
+	2 => 'in+out',
+    };
+    my $active = $rule->{active} ? 'active' : 'inactive';
+    my $dir = $direction->{$rule->{direction}};
+
+    print "Found RULE $rule->{id} (prio: $rule->{priority}, $dir, $active): $rule->{name}\n";
 
     my ($from, $to, $when, $what, $action) =
 	$ruledb->load_groups($rule);
