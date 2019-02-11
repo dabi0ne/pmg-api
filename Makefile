@@ -19,7 +19,7 @@ REPOID=`./repoid.pl .git`
 
 SERVICES = pmgdaemon pmgproxy pmgtunnel pmgmirror
 CLITOOLS = pmgdb pmgconfig pmgperf pmgcm pmgqm pmgreport pmgversion pmgupgrade pmgsubscription pmgbackup
-CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy pmgbanner
+CLISCRIPTS = pmg-smtp-filter pmgsh pmgpolicy pmgbanner pmg-system-report
 CRONSCRIPTS = pmg-hourly pmg-daily
 
 CLI_CLASSES = $(addprefix PMG/CLI/, $(addsuffix .pm, ${CLITOOLS}))
@@ -28,7 +28,7 @@ SERVICE_UNITS = $(addprefix debian/, $(addsuffix .service, ${SERVICES}))
 TIMER_UNITS = $(addprefix debian/, $(addsuffix .timer, ${CRONSCRIPTS} pmgspamreport pmgreport))
 
 CLI_BINARIES = $(addprefix bin/, ${CLITOOLS} ${CLISCRIPTS} ${CRONSCRIPTS})
-CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1
+CLI_MANS = $(addsuffix .1, ${CLITOOLS}) pmgsh.1 pmg-system-report.1
 
 
 SERVICE_MANS = $(addsuffix .8, ${SERVICES}) pmg-smtp-filter.8 pmgpolicy.8
@@ -83,6 +83,7 @@ LIBSOURCES =				\
 	PMG/LDAPCache.pm		\
 	PMG/DBTools.pm			\
 	PMG/Quarantine.pm		\
+	PMG/Report.pm			\
 	PMG/RuleDB/Group.pm		\
 	PMG/RuleDB/Rule.pm		\
 	PMG/RuleDB/Object.pm		\
@@ -224,3 +225,8 @@ clean:
 .PHONY: dinstall
 dinstall: ${DEB}
 	dpkg -i ${DEB}
+
+%.1: bin/%
+	rm -f $@
+	podselect $< |pod2man -n $(notdir $*) -s 1 -r ${PKGVER} -c "Proxmox Documentation" >$@.tmp
+	mv $@.tmp $@
