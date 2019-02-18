@@ -48,6 +48,7 @@ sub add_dirs {
 my $gui_base_dir = "/usr/share/javascript/pmg-gui";
 my $fontawesome_dir = "/usr/share/fonts-font-awesome";
 my $xtermjs_dir = '/usr/share/pve-xtermjs';
+my $framework7_dir = '/usr/share/javascript/framework7';
 
 sub init {
     my ($self) = @_;
@@ -69,6 +70,9 @@ sub init {
     add_dirs($dirs, '/pve2/js/' => "$gui_base_dir/js/");
     add_dirs($dirs, '/fontawesome/css/' => "$fontawesome_dir/css/");
     add_dirs($dirs, '/fontawesome/fonts/' => "$fontawesome_dir/fonts/");
+    add_dirs($dirs, '/framework7/fonts/' => "$framework7_dir/fonts/");
+    add_dirs($dirs, '/framework7/css/' => "$framework7_dir/css/");
+    add_dirs($dirs, '/framework7/js/' => "$framework7_dir/js/");
     add_dirs($dirs, '/xtermjs/' => "$xtermjs_dir/");
     add_dirs($dirs, '/pmg-docs/' => '/usr/share/pmg-docs/');
 
@@ -141,12 +145,35 @@ sub get_template_toolkit {
     return $template_toolkit;
 }
 
+sub is_phone {
+    my ($ua) = @_;
+
+    return 0 if !$ua;
+
+    if ($ua =~ m/(
+	iPhone|
+	iPod|
+	Windows\ Phone|
+	Android|
+	BlackBerry
+	)/xi) {
+	return 1;
+    }
+
+    return 0;
+}
+
 sub get_index {
     my ($nodename, $server, $r, $args) = @_;
 
     my $lang = 'en';
     my $username;
     my $token = 'null';
+    my $quarantine = ($r->uri->path() =~ m/quarantine$/);
+    my $mobile = is_phone($r->header('User-Agent'));
+    if (defined($args->{mobile})) {
+	$mobile = $args->{mobile} ? 1 : 0;
+    }
 
     if (my $cookie = $r->header('Cookie')) {
 	if (my $newlang = ($cookie =~ /(?:^|\s)PMGLangCookie=([^;]*)/)[0]) {
@@ -194,6 +221,8 @@ sub get_index {
     my $template_name;
     if (defined($args->{console}) && $args->{xtermjs}) {
 	$template_name = "index.html.tpl"; # fixme: use better name
+    } elsif ($mobile && $quarantine) {
+	$template_name = "pmg-mobile-index.html.tt";
     } else {
 	$template_name = "pmg-index.html.tt";
     }
