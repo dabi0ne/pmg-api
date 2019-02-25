@@ -743,7 +743,7 @@ __PACKAGE__->register_method ({
 		maxLength => 60,
 	    },
 	    raw => {
-		description => "Display 'raw' eml data. This is only used with the 'htmlmail' formatter.",
+		description => "Display 'raw' eml data. Deactivates size limit.",
 		type => 'boolean',
 		optional => 1,
 		default => 0,
@@ -812,6 +812,8 @@ __PACKAGE__->register_method ({
 	my $role = $rpcenv->get_role();
 	my $format = $rpcenv->get_format();
 
+	my $raw = $param->{raw} // 0;
+
 	my ($cid, $rid, $tid) = $param->{id} =~ m/^C(\d+)R(\d+)T(\d+)$/;
 	$cid = int($cid);
 	$rid = int($rid);
@@ -840,7 +842,7 @@ __PACKAGE__->register_method ({
 	    my $viewimages = $cfg->get('spamquar', 'viewimages');
 	    my $allowhref = $cfg->get('spamquar', 'allowhrefs');
 
-	    $res->{content} = PMG::HTMLMail::email_to_html($path, $param->{raw}, $viewimages, $allowhref);
+	    $res->{content} = PMG::HTMLMail::email_to_html($path, $raw, $viewimages, $allowhref);
 
 	    # to make result verification happy
 	    $res->{file} = '';
@@ -850,7 +852,10 @@ __PACKAGE__->register_method ({
 	} else {
 	    # include additional details
 
-	    my ($header, $content) = PMG::HTMLMail::read_raw_email($path, 4096);
+	    # we want to get the whole email in raw mode
+	    my $maxbytes = (!$raw)? 4096 : undef;
+
+	    my ($header, $content) = PMG::HTMLMail::read_raw_email($path, $maxbytes);
 
 	    $res->{file} = $ref->{file};
 	    $res->{spaminfo} = decode_spaminfo($ref->{info});
