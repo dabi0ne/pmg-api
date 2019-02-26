@@ -1,3 +1,33 @@
+pmg-api (5.1-5) unstable; urgency=medium
+
+  * fix #2093 pmgproxy: read in /etc/default/pmgproxy
+
+  * add dependency on pve-http-server (>= 2.0.12)
+
+  * add pmg report api call for the gui
+
+  * add optional list parameter to quarusers api call
+
+  * close #2075: do not insert empty WL/BL
+
+  * user white/blacklist: allow multiple entries for adding/deleting
+
+  * Quarantine: reuse raw parameter for non htmlmail formatter
+
+  * load mobile ui on mobile user agent on /quarantine
+
+  * improve pmg-email-address regex
+
+  * bsys: add pmg-system-report + manpage to Makefile
+
+  * extend pmgdb dump
+
+  * close #1917: add pmg-system-report command
+
+  * add rule's score to pmg-smtp-filter logline
+
+ -- Proxmox Support Team <support@proxmox.com>  Tue, 26 Feb 2019 13:02:52 +0100
+
 pmg-api (5.1-4) unstable; urgency=medium
 
   * fix bug #2035 cluster sync issues with ipv6
