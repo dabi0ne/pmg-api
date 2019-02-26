@@ -253,7 +253,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => get_standard_option('pmg-email-address', {
+	    address => get_standard_option('pmg-whiteblacklist-entry-list', {
 		description => "The address you want to add.",
 	    }),
 	},
@@ -262,7 +262,8 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	$read_or_modify_user_bw_list->('WL', $param, [ $param->{address} ]);
+	my $addresses = [split(',', $param->{address})];
+	$read_or_modify_user_bw_list->('WL', $param, $addresses);
 
 	return undef;
     }});
@@ -278,7 +279,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => get_standard_option('pmg-email-address', {
+	    address => get_standard_option('pmg-whiteblacklist-entry-list', {
 		description => "The address you want to remove.",
 	    }),
 	},
@@ -287,7 +288,8 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	$read_or_modify_user_bw_list->('WL', $param, [ $param->{address} ], 1);
+	my $addresses = [split(',', $param->{address})];
+	$read_or_modify_user_bw_list->('WL', $param, $addresses, 1);
 
 	return undef;
     }});
@@ -332,7 +334,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => get_standard_option('pmg-email-address', {
+	    address => get_standard_option('pmg-whiteblacklist-entry-list', {
 		description => "The address you want to add.",
 	    }),
 	},
@@ -341,7 +343,8 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	$read_or_modify_user_bw_list->('BL', $param, [ $param->{address} ]);
+	my $addresses = [split(',', $param->{address})];
+	$read_or_modify_user_bw_list->('BL', $param, $addresses);
 
 	return undef;
     }});
@@ -357,7 +360,7 @@ __PACKAGE__->register_method ({
 	additionalProperties => 0,
 	properties => {
 	    pmail => $pmail_param_type,
-	    address => get_standard_option('pmg-email-address', {
+	    address => get_standard_option('pmg-whiteblacklist-entry-list', {
 		description => "The address you want to remove.",
 	    }),
 	},
@@ -366,7 +369,8 @@ __PACKAGE__->register_method ({
     code => sub {
 	my ($param) = @_;
 
-	$read_or_modify_user_bw_list->('BL', $param, [ $param->{address} ], 1);
+	my $addresses = [split(',', $param->{address})];
+	$read_or_modify_user_bw_list->('BL', $param, $addresses, 1);
 
 	return undef;
     }});

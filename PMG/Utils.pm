@@ -113,6 +113,13 @@ PVE::JSONSchema::register_standard_option('pmg-email-address', {
     minLength => 3,
 });
 
+PVE::JSONSchema::register_standard_option('pmg-whiteblacklist-entry-list', {
+    description => "White/Blacklist entry list (allow most characters). Can contain globs",
+    type => 'string',
+    pattern => '(?:[^\s\/\\\;\,]+)(?:\,[^\s\/\\\;\,]+)*',
+    minLength => 3,
+});
+
 sub lastid {
     my ($dbh, $seq) = @_;
 
