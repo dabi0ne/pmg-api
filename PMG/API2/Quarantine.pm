@@ -477,7 +477,14 @@ __PACKAGE__->register_method ({
     description => "Get a list of users with whitelist/blacklist setttings.",
     parameters => {
 	additionalProperties => 0,
-	properties => {},
+	properties => {
+	    list => {
+		type => 'string',
+		description => 'If set, limits the result to the given list.',
+		enum => ['BL', 'WL'],
+		optional => 1,
+	    },
+	},
     },
     returns => {
 	type => 'array',
@@ -501,10 +508,14 @@ __PACKAGE__->register_method ({
 
 	my $dbh = PMG::DBTools::open_ruledb();
 
-	my $sth = $dbh->prepare(
-	    "SELECT DISTINCT pmail FROM UserPrefs ORDER BY pmail");
-
-	$sth->execute();
+	my $sth;
+	if ($param->{list}) {
+	    $sth = $dbh->prepare("SELECT DISTINCT pmail FROM UserPrefs WHERE name = ? ORDER BY pmail");
+	    $sth->execute($param->{list});
+	} else {
+	    $sth = $dbh->prepare("SELECT DISTINCT pmail FROM UserPrefs ORDER BY pmail");
+	    $sth->execute();
+	}
 
 	while (my $ref = $sth->fetchrow_hashref()) {
 	    push @$res, { mail => $ref->{pmail} };
