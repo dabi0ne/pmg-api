@@ -15,6 +15,7 @@ use PVE::ProcFSTools;
 
 use PMG::pmgcfg;
 use PMG::Ticket;
+use PMG::Report;
 use PMG::API2::Subscription;
 use PMG::API2::APT;
 use PMG::API2::Tasks;
@@ -112,6 +113,7 @@ __PACKAGE__->register_method ({
 	    { name => 'tasks' },
 	    { name => 'tracker' },
 	    { name => 'time' },
+	    { name => 'report' },
 	    { name => 'status' },
 	    { name => 'subscription' },
 	    { name => 'termproxy' },
@@ -119,6 +121,27 @@ __PACKAGE__->register_method ({
 	];
 
 	return $result;
+    }});
+
+__PACKAGE__->register_method({
+    name => 'report',
+    path => 'report',
+    method => 'GET',
+    protected => 1,
+    proxyto => 'node',
+    permissions => { check => [ 'admin', 'audit' ] },
+    description => "Gather various system information about a node",
+    parameters => {
+	additionalProperties => 0,
+	properties => {
+	    node => get_standard_option('pve-node'),
+	},
+    },
+    returns => {
+	type => 'string',
+    },
+    code => sub {
+	return PMG::Report::generate();
     }});
 
 __PACKAGE__->register_method({
