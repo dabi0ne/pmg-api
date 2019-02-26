@@ -69,12 +69,18 @@ sub add_to_blackwhite {
 		if length($blist) > $maxlen;
 	}
 
-	$dbh->do(
-	    "DELETE FROM UserPrefs WHERE pmail = $qu AND (Name = 'WL' OR Name = 'BL');" .
+	my $queries = "DELETE FROM UserPrefs WHERE pmail = $qu AND (Name = 'WL' OR Name = 'BL');";
+	if (scalar(keys %{$list->{WL}})) {
+	    $queries .=
 	    "INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
-	    "VALUES ($qu, 'BL', $blist, EXTRACT (EPOCH FROM now()));" .
+	    "VALUES ($qu, 'WL', $wlist, EXTRACT (EPOCH FROM now()));";
+	}
+	if (scalar(keys %{$list->{BL}})) {
+	    $queries .=
 	    "INSERT INTO UserPrefs (PMail, Name, Data, MTime) " .
-	    "VALUES ($qu, 'WL', $wlist, EXTRACT (EPOCH FROM now()));");
+	    "VALUES ($qu, 'BL', $blist, EXTRACT (EPOCH FROM now()));";
+	}
+	$dbh->do($queries);
     }
 
     my $values =  [ keys %{$list->{$name}} ];
