@@ -17,6 +17,7 @@ use PVE::APIServer::Formatter;
 use PVE::APIServer::Formatter::Standard;
 use PVE::APIServer::Formatter::HTML;
 use PVE::APIServer::AnyEvent;
+use PVE::APIServer::Utils;
 
 use PMG::HTTPServer;
 use PMG::API2;
@@ -53,6 +54,8 @@ my $framework7_dir = '/usr/share/javascript/framework7';
 sub init {
     my ($self) = @_;
 
+    my $proxyconf = PVE::APIServer::Utils::read_proxy_config($self->{name});
+
     my $accept_lock_fn = "/var/lock/pmgproxy.lck";
 
     my $lockfh = IO::File->new(">>${accept_lock_fn}") ||
@@ -88,16 +91,16 @@ sub init {
 	debug => $self->{debug},
 	trusted_env => 0, # not trusted, anyone can connect
 	logfile => '/var/log/pmgproxy/pmgproxy.log',
+	allow_from => $proxyconf->{ALLOW_FROM},
+	deny_from => $proxyconf->{DENY_FROM},
+	policy => $proxyconf->{POLICY},
 	ssl => {
-	    # Note: older versions are considered insecure, for example
-	    # search for "Poodle"-Attac
-	    method => 'any',
-	    sslv2 => 0,
-	    sslv3 => 0,
-	    cipher_list => 'HIGH:MEDIUM:!aNULL:!MD5',
 	    cert_file => '/etc/pmg/pmg-api.pem',
 	    dh => 'skip2048',
+	    cipher_list => $proxyconf->{CIPHERS},
+	    honor_cipher_order => $proxyconf->{HONOR_CIPHER_ORDER},
 	},
+	compression => $proxyconf->{COMPRESSION},
 	# Note: there is no authentication for those pages and dirs!
 	pages => {
 	    '/' => sub { get_index($self->{nodename}, @_) },
@@ -112,6 +115,10 @@ sub init {
 	},
 	dirs => $dirs,
     };
+
+    if (defined($proxyconf->{DHPARAMS})) {
+	$self->{server_config}->{ssl}->{dh_file} = $proxyconf->{DHPARAMS};
+    }
 }
 
 sub run {
