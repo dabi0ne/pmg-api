@@ -53,13 +53,13 @@ sub properties {
 	    maxLength => 4096,
 	},
 	mode => {
-	    description => "LDAP protocol mode ('ldap' or 'ldaps').",
+	    description => "LDAP protocol mode ('ldap', 'ldaps' or 'ldap+starttls').",
 	    type => 'string',
-	    enum => ['ldap', 'ldaps'],
+	    enum => ['ldap', 'ldaps', 'ldap+starttls'],
 	    default => 'ldap',
 	},
 	verify => {
-	    description => "Verify server certificate. Only useful with ldaps.",
+	    description => "Verify server certificate. Only useful with ldaps or ldap+starttls.",
 	    type => 'boolean',
 	    default => 0,
 	    optional => 1,

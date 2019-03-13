@@ -374,6 +374,20 @@ sub ldap_connect_and_bind {
 
      my $mesg;
 
+     if ($self->{mode} eq 'ldap+starttls') {
+	 my $opts = {
+	     verify => $self->{verify} ? 'require' : 'none',
+	 };
+
+	 if ($self->{cafile}) {
+	     $opts->{cafile} = $self->{cafile};
+	 } else {
+	     $opts->{capath} = '/etc/ssl/certs/';
+	 }
+
+	 $ldap->start_tls(%$opts);
+     }
+
      if ($self->{binddn}) {
 	 $mesg = $ldap->bind($self->{binddn}, password => $self->{bindpw});
      } else {
