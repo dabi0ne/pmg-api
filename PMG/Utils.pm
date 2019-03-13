@@ -293,6 +293,83 @@ sub reinject_mail {
     return wantarray ? ($resid, $rescode, $resmess) : $resid;
 }
 
+sub analyze_custom_check {
+    my ($queue, $dname, $pmg_cfg) = @_;
+
+    my $enable_custom_check = $pmg_cfg->get('admin', 'custom_check');
+    return undef if !$enable_custom_check;
+
+    my $timeout = 60*5;
+    my $customcheck_exe = $pmg_cfg->get('admin', 'custom_check_path');
+    my $customcheck_apiver = 'v1';
+    my ($csec, $usec) = gettimeofday();
+
+    my $vinfo;
+    my $spam_score;
+
+    eval {
+
+	my $log_err = sub {
+	    my ($errmsg) = @_;
+	    $errmsg =~ s/%/%%/;
+	    syslog('err', $errmsg);
+	};
+
+	my $customcheck_output_apiver;
+	my $have_result;
+	my $parser = sub {
+	    my ($line) = @_;
+
+	    my $result_flag;
+	    if ($line =~ /^v\d$/) {
+		die "api version already defined!\n" if defined($customcheck_output_apiver);
+		$customcheck_output_apiver = $line;
+		die "api version mismatch - expected $customcheck_apiver, got $customcheck_output_apiver !\n"
+		    if ($customcheck_output_apiver ne $customcheck_apiver);
+	    } elsif ($line =~ /^SCORE: (-?[0-9]+|.[0-9]+|[0-9]+.[0-9]+)$/) {
+		$spam_score = $1;
+		$result_flag = 1;
+	    } elsif ($line =~ /^VIRUS: (.+)$/) {
+		$vinfo = $1;
+		$result_flag = 1;
+	    } elsif ($line =~ /^OK$/) {
+		$result_flag = 1;
+	    } else {
+		die "got unexpected output!\n";
+	    }
+	    die "got more than 1 result outputs\n" if ( $have_result && $result_flag);
+	    $have_result = $result_flag;
+	};
+
+	PVE::Tools::run_command([$customcheck_exe, $customcheck_apiver, $dname],
+	    errmsg => "$queue->{logid} custom check error",
+	    errfunc => $log_err, outfunc => $parser, timeout => $timeout);
+
+	die "no api version returned\n" if !defined($customcheck_output_apiver);
+	die "no result output!\n" if !$have_result;
+    };
+    my $err = $@;
+
+    if ($vinfo) {
+	syslog('info', "$queue->{logid}: virus detected: $vinfo (custom)");
+    }
+
+    my ($csec_end, $usec_end) = gettimeofday();
+    $queue->{ptime_custom} =
+	int (($csec_end-$csec)*1000 + ($usec_end - $usec)/1000);
+
+    if ($err) {
+	syslog ('err', $err);
+	$vinfo = undef;
+	$queue->{errors} = 1;
+    }
+
+    $queue->{vinfo_custom} = $vinfo;
+    $queue->{spam_custom} = $spam_score;
+
+    return ($vinfo, $spam_score);
+}
+
 sub analyze_virus_clam {
     my ($queue, $dname, $pmg_cfg) = @_;
 

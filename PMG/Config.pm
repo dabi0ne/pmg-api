@@ -102,6 +102,16 @@ sub properties {
 	    type => 'boolean',
 	    default => 1,
 	},
+	custom_check => {
+	    description => "Use Custom Check Script. The script has to take the defined arguments and can return Virus findings or a Spamscore.",
+	    type => 'boolean',
+	    default => 0,
+	},
+	custom_check_path => {
+	    description => "Absolute Path to the Custom Check Script",
+	    type => 'string', pattern => '^/([^/\0]+\/)+[^/\0]+$',
+	    default => '/usr/local/bin/pmg-custom-check',
+	},
     };
 }
 
@@ -115,6 +125,8 @@ sub options {
 	demo => { optional => 1 },
 	email => { optional => 1 },
 	http_proxy => { optional => 1 },
+	custom_check => { optional => 1 },
+	custom_check_path => { optional => 1 },
     };
 }
 
