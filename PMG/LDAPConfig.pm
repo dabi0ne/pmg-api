@@ -58,6 +58,17 @@ sub properties {
 	    enum => ['ldap', 'ldaps'],
 	    default => 'ldap',
 	},
+	verify => {
+	    description => "Verify server certificate. Only useful with ldaps.",
+	    type => 'boolean',
+	    default => 0,
+	    optional => 1,
+	},
+	cafile => {
+	    description => "Path to CA file. Only useful with option 'verify'",
+	    type => 'string',
+	    optional => 1,
+	},
 	server1 => {
 	    description => "Server address.",
 	    type => 'string', format => 'address',
@@ -128,6 +139,8 @@ sub options {
 	accountattr => { optional => 1 },
 	mailattr => { optional => 1 },
 	groupclass => { optional => 1 },
+	verify => { optional => 1 },
+	cafile => { optional => 1 },
     };
 }
 

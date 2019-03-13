@@ -75,6 +75,8 @@ sub new {
     $self->{port} = $args{port};
     $self->{groupbasedn} = $args{groupbasedn};
     $self->{filter} = $args{filter};
+    $self->{verify} = $args{verify};
+    $self->{cafile} = $args{cafile};
 
     if ($args{syncmode} == 1) {
 	# read local data only
@@ -349,7 +351,17 @@ sub ldap_connect {
     my $opts = { timeout => 10, onerror => 'die' };
 
     $opts->{port} = $self->{port} if $self->{port};
-    $opts->{schema} = $self->{mode};
+    if ($self->{mode} eq 'ldaps') {
+	$opts->{scheme} = 'ldaps';
+	$opts->{verify} = 'require' if $self->{verify};
+	if ($self->{cafile}) {
+	    $opts->{cafile} = $self->{cafile};
+	} else {
+	    $opts->{capath} = '/etc/ssl/certs/';
+	}
+    } else {
+	$opts->{scheme} = 'ldap';
+    }
 
     return Net::LDAP->new($hosts, %$opts);
 }
