@@ -172,10 +172,11 @@ sub get_prox_vars {
     $vars->{__spaminfo} = $spaminfo;
 
     if ($opt_testmode) {
-	if ($queue->{vinfo_clam} || $queue->{vinfo_avast}) {
+	if ($queue->{vinfo_clam} || $queue->{vinfo_avast} || $queue->{vinfo_custom}) {
 	    $vars->{'VIRUS_INFO'} = "Virus Info:";
 	    $vars->{'VIRUS_INFO'} .= " clam: $queue->{vinfo_clam}" if $queue->{vinfo_clam};
 	    $vars->{'VIRUS_INFO'} .= " avast: $queue->{vinfo_avast}" if $queue->{vinfo_avast};
+	    $vars->{'VIRUS_INFO'} .= " custom: $queue->{vinfo_custom}" if $queue->{vinfo_custom};
 	} else {
 	    $vars->{'VIRUS_INFO'} = '';
 	}
@@ -670,17 +671,21 @@ sub handle_smtp {
 # (SPAM analyzer is run on demand later)
 # on error: log error messages
 
-
-	# test for virus first
-	my $vinfo = PMG::Utils::analyze_virus(
+	# run custom script first
+	my ($vinfo, $custom_spaminfo) = PMG::Utils::analyze_custom_check(
 	    $queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
 
-	if ($vinfo && $vinfo =~ m/^Heuristics\.(.+)$/) {
-	    my $hit = $1;
-	    $queue->{clamav_heuristic} = $hit;
-	    $vinfo = undef;
-	}
+	# test for virus if none found
+	if (!defined($vinfo)) {
+	    $vinfo = PMG::Utils::analyze_virus(
+		$queue, $queue->{dataname}, $pmg_cfg, $opt_testmode);
 
+	    if ($vinfo && $vinfo =~ m/^Heuristics\.(.+)$/) {
+		my $hit = $1;
+		$queue->{clamav_heuristic} = $hit;
+		$vinfo = undef;
+	    }
+	}
 	$queue->{vinfo} = $vinfo;
 
 	# always add this headers to incoming mails
@@ -816,8 +821,9 @@ sub handle_smtp {
 
     my $ptspam = ($queue->{ptime_spam} || 0)/1000;
     my $ptclam = ($queue->{ptime_clam} || 0)/1000;
+    my $ptcustom = ($queue->{ptime_custom} || 0)/1000;
 
-    $self->log(3, "$queue->{logid}: processing time: ${time_total} seconds ($ptspam, $ptclam)");
+    $self->log(3, "$queue->{logid}: processing time: ${time_total} seconds ($ptspam, $ptclam, $ptcustom)");
 
     $msginfo->{test_fh}->close if $opt_testmode;
 

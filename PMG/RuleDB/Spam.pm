@@ -359,6 +359,17 @@ sub analyze_spam {
 	push @$sa_scores, { score => $score, rule => $rule, desc => $descr };
     }
 
+    if (my $hit = $queue->{spam_custom}) {
+	my $score += $queue->{spam_custom};
+	my $descr = "Custom Check Script";
+	my $rule = 'CustomCheck';
+	$sa_score += $score;
+	$list .= $list ? ",$rule" : $rule;
+	$list .= $list ? ",$rule" : $rule;
+	$loglist .= $loglist ? ",$rule($score)" : "$rule($score)";
+	push @$sa_scores, { score => $score, rule => $rule, desc => $descr };
+    }
+
     my ($csec, $usec) = gettimeofday ();
 
     my $spamtest = $queue->{sa};
