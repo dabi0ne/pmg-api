@@ -715,10 +715,15 @@ PVE::JSONSchema::register_format(
 sub pmg_verify_dnsbl_entry {
     my ($name, $noerr) = @_;
 
-    # like dns-name, but can contain trailing weight: 'domain*<WEIGHT>'
+    # like dns-name, but can contain trailing filter and weight: 'domain=<FILTER>*<WEIGHT>'
+    # see http://www.postfix.org/postconf.5.html#postscreen_dnsbl_sites
+    # we don't implement the ';' separated numbers in pattern, because this
+    # breaks at PVE::JSONSchema::split_list
     my $namere = "([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)";
 
-    if ($name !~ /^(${namere}\.)*${namere}(\*\-?\d+)?$/) {
+    my $dnsbloctet = qr/[0-9]+|\[(?:[0-9]+\.\.[0-9]+)\]/;
+    my $filterre = qr/=$dnsbloctet(:?\.$dnsbloctet){3}/;
+    if ($name !~ /^(${namere}\.)*${namere}(:?${filterre})?(?:\*\-?\d+)?$/) {
 	   return undef if $noerr;
 	   die "value '$name' does not look like a valid dnsbl entry\n";
     }
