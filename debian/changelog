@@ -1,3 +1,19 @@
+pmg-api (5.1-6) unstable; urgency=medium
+
+  * fix #2129: allow (some) filters for dnsbl-entry
+
+  * fix #1947: implement starttls for ldap
+
+  * fix #1946: add verify and cafile options for ldap
+
+  * show all errors when we get an ldap connection error
+
+  * add/integrate custom_check
+
+  * pmg-system-report: check for existing sa-awl db
+
+ -- Proxmox Support Team <support@proxmox.com>  Mon, 18 Mar 2019 07:01:03 +0100
+
 pmg-api (5.1-5) unstable; urgency=medium
 
   * fix #2093 pmgproxy: read in /etc/default/pmgproxy
