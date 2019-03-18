@@ -370,7 +370,7 @@ sub ldap_connect_and_bind {
      my ($self) = @_;
 
      my $ldap = $self->ldap_connect() ||
-	 die "Can't bind to ldap server '$self->{id}': $! $@\n";
+	 die "Can't bind to ldap server '$self->{id}': " . ($@ // "unknown error") . "\n";
 
      my $mesg;
 
