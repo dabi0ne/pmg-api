@@ -498,27 +498,38 @@ __PACKAGE__->register_method({
 	my $policy = $cache->policy;
 	my $pkgrecords = $cache->packages();
 
-	# try to use a resonable ordering (most important things first)
-	my @list = qw(proxmox-mailgateway pmg-api pmg-gui proxmox-spamassassin proxmox-widget-toolkit);
+	# order most important things first
+	my @list = qw(proxmox-mailgateway pmg-api pmg-gui);
 
-	foreach my $pkgname (keys %$cache) {
-	    if ($pkgname =~ m/pve-kernel-/) {
-		my $p = $cache->{$pkgname};
-		push @list, $pkgname if $p && $p->{CurrentState} eq 'Installed';
-	    }
-	}
+	my $aptver = $AptPkg::System::_system->versioning();
+	my $byver = sub { $aptver->compare($cache->{$b}->{CurrentVer}->{VerStr}, $cache->{$a}->{CurrentVer}->{VerStr}) };
+	push @list, sort $byver grep { /^pve-kernel-/ && $cache->{$_}->{CurrentState} eq 'Installed' } keys %$cache;
 
+	my @opt_pack = qw(
+	    libpve-apiclient-perl
+	    zfsutils-linux
+	);
 
-	my @opt_pack = ('zfsutils-linux', 'libpve-apiclient-perl');
+	my @pkgs = qw(
+	    libarchive-perl
+	    libpve-common-perl
+	    libpve-http-server-perl
+	    libxdgmime-perl
+	    lvm2
+	    pmg-docs
+	    proxmox-spamassassin
+	    proxmox-widget-toolkit
+	    pve-firmware
+	    pve-xtermjs
+	    vncterm
+	);
 
-	push @list, qw(libpve-http-server-perl lvm2 pve-firmware libpve-common-perl vncterm pmg-docs pve-xtermjs libarchive-perl libxdgmime-perl );
-
-	@list = (@list, @opt_pack);
-	my $pkglist = [];
+	push @list, (sort @pkgs, @opt_pack);
 
 	my (undef, undef, $kernel_release) = POSIX::uname();
 	my $pmgver =  PMG::pmgcfg::version_text();
 
+	my $pkglist = [];
 	foreach my $pkgname (@list) {
 	    my $p = $cache->{$pkgname};
 	    my $info = $pkgrecords->lookup($pkgname);
