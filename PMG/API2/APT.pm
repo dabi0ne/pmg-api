@@ -507,6 +507,8 @@ __PACKAGE__->register_method({
 
 	my @opt_pack = qw(
 	    libpve-apiclient-perl
+	    proxmox-mailgateway-container
+	    pve-firmware
 	    zfsutils-linux
 	);
 
@@ -519,7 +521,6 @@ __PACKAGE__->register_method({
 	    pmg-docs
 	    proxmox-spamassassin
 	    proxmox-widget-toolkit
-	    pve-firmware
 	    pve-xtermjs
 	    vncterm
 	);
@@ -547,14 +548,20 @@ __PACKAGE__->register_method({
 	    }
 	    $res->{CurrentState} = $p->{CurrentState};
 
-	    # hack: add some useful information (used by 'pmgversion -v')
-	    if ($pkgname eq 'proxmox-mailgateway') {
-		$res->{ManagerVersion} = $pmgver;
-		$res->{RunningKernel} = $kernel_release;
-	    }
-
 	    if (grep( /^$pkgname$/, @opt_pack)) {
 		next if $res->{CurrentState} eq 'NotInstalled';
+	    }
+
+	    # hack: add some useful information (used by 'pmgversion -v')
+	    if ($pkgname =~ /^proxmox-mailgateway(-container)?$/) {
+		$res->{ManagerVersion} = $pmgver;
+		$res->{RunningKernel} = $kernel_release;
+		if ($pkgname eq 'proxmox-mailgateway-container') {
+		    # another hack: replace proxmox-mailgateway with CT meta pkg
+		    shift @$pkglist;
+		    unshift @$pkglist, $res;
+		    next;
+		}
 	    }
 
 	    push @$pkglist, $res;
