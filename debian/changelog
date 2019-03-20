@@ -1,3 +1,13 @@
+pmg-api (5.1-7) unstable; urgency=medium
+
+  * pmgversion: be compatible with minimized container installation
+
+  * pmgversion: sort packages
+
+  * better error handling for ldap connect
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 20 Mar 2019 06:51:16 +0100
+
 pmg-api (5.1-6) unstable; urgency=medium
 
   * fix #2129: allow (some) filters for dnsbl-entry
