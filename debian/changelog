@@ -1,3 +1,9 @@
+pmg-api (5.2-1) unstable; urgency=medium
+
+  * prepare for new 5.2 release
+
+ -- Proxmox Support Team <support@proxmox.com>  Wed, 20 Mar 2019 06:59:17 +0100
+
 pmg-api (5.1-7) unstable; urgency=medium
 
   * pmgversion: be compatible with minimized container installation
