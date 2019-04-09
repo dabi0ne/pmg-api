@@ -92,7 +92,7 @@ __PACKAGE__->register_method ({
 	    my $cfg = PMG::Config->new();
 
 	    if ($cfg->rewrite_config_postfix()) {
-		PMG::Utils::service_cmd('postfix', 'restart');
+		PMG::Utils::service_cmd('postfix', 'reload');
 	    }
 	};
 
@@ -212,7 +212,7 @@ __PACKAGE__->register_method ({
 	    my $cfg = PMG::Config->new();
 
 	    if ($cfg->rewrite_config_postfix()) {
-		PMG::Utils::service_cmd('postfix', 'restart');
+		PMG::Utils::service_cmd('postfix', 'reload');
 	    }
 	};
 

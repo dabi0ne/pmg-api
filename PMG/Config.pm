@@ -1552,7 +1552,7 @@ sub rewrite_config {
 
     if (($self->rewrite_config_postfix($rulecache) && $restart_services) ||
 	$force_restart->{postfix}) {
-	PMG::Utils::service_cmd('postfix', 'restart');
+	PMG::Utils::service_cmd('postfix', 'reload');
     }
 
     if ($self->rewrite_dot_forward() && $restart_services) {
