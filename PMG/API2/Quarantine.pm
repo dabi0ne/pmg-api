@@ -151,11 +151,10 @@ my $parse_header_info = sub {
     return $res;
 };
 
-my $pmail_param_type = {
+my $pmail_param_type = get_standard_option('pmg-email-address', {
     description => "List entries for the user with this primary email address. Quarantine users cannot speficy this parameter, but it is required for all other roles.",
-    type => 'string', format => 'email',
     optional => 1,
-};
+});
 
 __PACKAGE__->register_method ({
     name => 'index',
