@@ -1192,7 +1192,7 @@ sub get_template_vars {
     }
 
     my $netlist = PVE::INotify::read_file('mynetworks');
-    foreach my $cidr (keys %$netlist) {
+    foreach my $cidr (sort keys %$netlist) {
 	if ($cidr =~ m/^($IPV6RE)\/(\d+)$/) {
 	    push @$mynetworks, "[$1]/$2";
 	} else {
