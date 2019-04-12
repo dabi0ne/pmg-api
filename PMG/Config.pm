@@ -1550,9 +1550,13 @@ sub rewrite_config {
 
     $force_restart = {} if ! $force_restart;
 
+    my $log_restart = sub {
+	syslog ('info', "configuration change detected for '$_[0]', restarting");
+    };
+
     if (($self->rewrite_config_postfix($rulecache) && $restart_services) ||
 	$force_restart->{postfix}) {
-	syslog ('info', 'configuration change detected - postfix');
+	$log_restart->('postfix');
 	PMG::Utils::service_cmd('postfix', 'reload');
     }
 
@@ -1567,19 +1571,19 @@ sub rewrite_config {
 
     if (($self->rewrite_config_spam() && $restart_services) ||
 	$force_restart->{spam}) {
-	syslog ('info', 'configuration change detected - pmg-smtp-filter');
+	$log_restart->('pmg-smtp-filter');
 	PMG::Utils::service_cmd('pmg-smtp-filter', 'restart');
     }
 
     if (($self->rewrite_config_clam() && $restart_services) ||
 	$force_restart->{clam}) {
-	syslog ('info', 'configuration change detected - clamav-daemon');
+	$log_restart->('clamav-daemon');
 	PMG::Utils::service_cmd('clamav-daemon', 'restart');
     }
 
     if (($self->rewrite_config_freshclam() && $restart_services) ||
 	$force_restart->{freshclam}) {
-	syslog ('info', 'configuration change detected - clamav-freshclam');
+	$log_restart->('clamav-freshclam');
 	PMG::Utils::service_cmd('clamav-freshclam', 'restart');
     }
 }
