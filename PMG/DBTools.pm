@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use POSIX ":sys_wait_h";
-use POSIX ':signal_h';
+use POSIX qw(:signal_h getuid);
 use DBI;
 use Time::Local;
 
@@ -80,12 +80,17 @@ sub postgres_admin_cmd {
     my ($cmd, $options, @params) = @_;
 
     $cmd = ref($cmd) ? $cmd : [ $cmd ];
-    my $uid = getpwnam('postgres') || die "getpwnam postgres failed\n";
 
-    local $> = $uid;
-    $! &&  die "setuid postgres ($uid) failed - $!\n";
+    my $save_uid = POSIX::getuid();
+    my $pg_uid = getpwnam('postgres') || die "getpwnam postgres failed\n";
+
+    PVE::Tools::setresuid(-1, $pg_uid, -1) ||
+	die "setresuid postgres ($pg_uid) failed - $!\n";
 
     PVE::Tools::run_command([@$cmd, '-U', 'postgres', @params], %$options);
+
+    PVE::Tools::setresuid(-1, $save_uid, -1) ||
+	die "setresuid back failed - $!\n";
 }
 
 sub delete_ruledb {
