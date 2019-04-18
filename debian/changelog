@@ -1,3 +1,18 @@
+pmg-api (5.2-2) unstable; urgency=medium
+
+  * Fix setresuid to postgres error handling
+
+  * fix #2153: allow "'" in quarantine email addresses
+
+  * log before restarting services on rewrite_config
+
+  * fix #2172: sort mynetworks template var to make postfix config rewrite
+    stable and thus restart less often
+
+  * reload postfix instead of restart on config change
+
+ -- Proxmox Support Team <support@proxmox.com>  Thu, 18 Apr 2019 13:49:37 +0200
+
 pmg-api (5.2-1) unstable; urgency=medium
 
   * prepare for new 5.2 release
