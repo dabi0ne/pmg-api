@@ -85,6 +85,8 @@ sub execute {
     my ($self, $queue, $ruledb, $mod_group, $targets, 
 	$msginfo, $vars, $marks) = @_;
 
+    my $rulename = $vars->{RULE};
+
     my $subgroups = $mod_group->subgroups($targets);
 
     foreach my $ta (@$subgroups) {
@@ -105,6 +107,7 @@ sub execute {
 	    
 	    $mail->finish();	
 	}
+	syslog('info', "%s: report mail as spam (rule: %s)", $queue->{logid}, $rulename);
 	$queue->set_status ($tg, 'delivered');
     }
 }

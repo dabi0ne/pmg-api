@@ -111,7 +111,7 @@ sub save {
 }
 
 sub delete_marked_parts {
-    my ($self, $queue, $entity, $html, $rtype, $marks) = @_;
+    my ($self, $queue, $entity, $html, $rtype, $marks, $rulename) = @_;
 
     my $nparts = [];
 
@@ -155,8 +155,8 @@ sub delete_marked_parts {
 
 	    push (@$nparts, $ent);
 
-	    syslog ('info', "%s: removed attachment $id ('%s')",
-		    $queue->{logid}, $on);
+	    syslog ('info', "%s: removed attachment $id ('%s', rule: %s)",
+		    $queue->{logid}, $on, $rulename);
 
 	} else {
 	    $self->delete_marked_parts($queue, $part, $html, $rtype, $marks);
@@ -170,6 +170,8 @@ sub delete_marked_parts {
 sub execute {
     my ($self, $queue, $ruledb, $mod_group, $targets,
 	$msginfo, $vars, $marks) = @_;
+
+    my $rulename = $vars->{RULE};
 
     if (!$self->{all} && ($#$marks == -1)) {
 	# no marks
@@ -200,7 +202,7 @@ sub execute {
 	    $entity->head->delete('x-proxmox-tmp-aid');
 	}
 
-	$self->delete_marked_parts($queue, $entity, $html, $rtype, $marks);
+	$self->delete_marked_parts($queue, $entity, $html, $rtype, $marks, $rulename);
 
 	if ($msginfo->{testmode}) {
 	    $entity->head->mime_attr('Content-type.boundary' => '------=_TEST123456') if $entity->is_multipart;

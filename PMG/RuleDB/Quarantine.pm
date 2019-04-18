@@ -89,6 +89,8 @@ sub execute {
     
     my $subgroups = $mod_group->subgroups($targets, 1);
 
+    my $rulename = $vars->{RULE};
+
     foreach my $ta (@$subgroups) {
 	my ($tg, $entity) = (@$ta[0], @$ta[1]);
 
@@ -98,7 +100,7 @@ sub execute {
 	    if (my $qid = $queue->quarantine_mail($ruledb, 'V', $entity, $tg, $msginfo, $vars, $ldap)) {
 
 		foreach (@$tg) {
-		    syslog ('info', "$queue->{logid}: moved mail for <%s> to virus quarantine - $qid", $_);
+		    syslog ('info', "$queue->{logid}: moved mail for <%s> to virus quarantine (rule: %s, %s)", $_, $rulename, $qid);
 		}
 
 		$queue->set_status ($tg, 'delivered');
@@ -108,7 +110,7 @@ sub execute {
 	    if (my $qid = $queue->quarantine_mail($ruledb, 'S', $entity, $tg, $msginfo, $vars, $ldap)) {
 
 		foreach (@$tg) {
-		    syslog ('info', "$queue->{logid}: moved mail for <%s> to spam quarantine - $qid", $_);
+		    syslog ('info', "$queue->{logid}: moved mail for <%s> to spam quarantine (rule: %s, %s)", $_, $rulename, $qid);
 		}
 
 		$queue->set_status($tg, 'delivered');

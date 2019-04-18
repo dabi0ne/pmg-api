@@ -207,6 +207,8 @@ sub execute {
 
     my $from = 'postmaster';
 
+    my $rulename = $vars->{RULE};
+
     my $body = PMG::Utils::subst_values($self->{body}, $vars);
     my $subject = PMG::Utils::subst_values($self->{subject}, $vars);
     my $to = PMG::Utils::subst_values($self->{to}, $vars);
@@ -214,7 +216,7 @@ sub execute {
     if ($to =~ m/^\s*$/) {
 	# this happens if a notification is triggered by bounce mails
 	# which notifies the sender <> - we just log and then ignore it
-	syslog('info', "%s: notify <> (ignored)", $queue->{logid});
+	syslog('info', "%s: notify <> (rule: %s, ignored)", $queue->{logid}, $rulename);
 	return;
     }
 
@@ -255,9 +257,9 @@ sub execute {
 	    $top, $from, \@targets, undef, $msginfo->{fqdn});
 	foreach (@targets) {
 	    if ($qid) {
-		syslog('info', "%s: notify <%s> (%s)", $queue->{logid}, $_, $qid);
+		syslog('info', "%s: notify <%s> (rule: %s, %s)", $queue->{logid}, $_, $rulename, $qid);
 	    } else {
-		syslog ('err', "%s: notify <%s> failed", $queue->{logid}, $_);
+		syslog ('err', "%s: notify <%s> (rule: %s) failed", $queue->{logid}, $_, $rulename);
 	    }
 	}
     }

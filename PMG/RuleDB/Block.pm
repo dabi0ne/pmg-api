@@ -89,6 +89,8 @@ sub execute {
     my ($self, $queue, $ruledb, $mod_group, $targets, 
 	$msginfo, $vars, $marks) = @_;
 
+    my $rulename = $vars->{RULE};
+
     if ($msginfo->{testmode}) {
 	my $fh = $msginfo->{test_fh};
 	print $fh "block from: $msginfo->{sender}\n";
@@ -96,7 +98,7 @@ sub execute {
     }
 
     foreach my $to (@$targets) {
-	syslog('info', "%s: block mail to <%s>", $queue->{logid}, encode('UTF-8', $to));
+	syslog('info', "%s: block mail to <%s> (rule: %s)", $queue->{logid}, encode('UTF-8', $to), $rulename);
     }
 
     $queue->set_status($targets, 'blocked');

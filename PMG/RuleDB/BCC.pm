@@ -114,12 +114,14 @@ sub execute {
 
     my $subgroups = $mod_group->subgroups($targets, 1);
 
+    my $rulename = $vars->{RULE};
+
     my $bcc_to = PMG::Utils::subst_values($self->{target}, $vars);
 
     if ($bcc_to =~ m/^\s*$/) {
 	# this happens if a notification is triggered by bounce mails
 	# which notifies the sender <> - we just log and then ignore it
-	syslog('info', "%s: bcc to <> (ignored)", $queue->{logid});
+	syslog('info', "%s: bcc to <> (rule: %s, ignored)", $queue->{logid}, $rulename);
 	return;
     }
 
@@ -148,9 +150,9 @@ sub execute {
 		$msginfo->{xforward}, $msginfo->{fqdn}, 1);
 	    foreach (@bcc_targets) {
 		if ($qid) {
-		    syslog('info', "%s: bcc to <%s> (%s)", $queue->{logid}, $_, $qid);
+		    syslog('info', "%s: bcc to <%s> (rule: %s, %s)", $queue->{logid}, $_, $rulename, $qid);
 		} else {
-		    syslog('err', "%s: bcc to <%s> failed", $queue->{logid}, $_);
+		    syslog('err', "%s: bcc to <%s> (rule: %s) failed", $queue->{logid}, $_, $rulename);
 		}
 	    }
 	}

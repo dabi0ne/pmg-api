@@ -91,6 +91,8 @@ sub execute {
 
     my $subgroups = $mod_group->subgroups($targets, 1);
 
+    my $rulename = $vars->{RULE};
+
     foreach my $ta (@$subgroups) {
 	my ($tg, $entity) = (@$ta[0], @$ta[1]);
 
@@ -111,12 +113,12 @@ sub execute {
 		$msginfo->{xforward}, $msginfo->{fqdn});
 	    if ($qid) {
 		foreach (@$tg) {
-		    syslog('info', "%s: accept mail to <%s> (%s)", $queue->{logid}, encode('UTF-8', $_), $qid);
+		    syslog('info', "%s: accept mail to <%s> (rule: %s, %s)", $queue->{logid}, encode('UTF-8', $_), $rulename, $qid);
 		}
 		$queue->set_status ($tg, 'delivered', $qid);
 	    } else {
 		foreach (@$tg) {
-		    syslog('err', "%s: reinject mail to <%s> failed", $queue->{logid}, encode('UTF-8', $_));
+		    syslog('err', "%s: reinject mail to <%s> (rule: %s) failed", $queue->{logid}, encode('UTF-8', $_), $rulename);
 		}
 		if ($code) {
 		    my $resp = substr($code, 0, 1);
