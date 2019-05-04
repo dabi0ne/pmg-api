@@ -110,6 +110,7 @@ LIBSOURCES =				\
 	PMG/RuleDB/Remove.pm		\
 	PMG/RuleDB/Attach.pm		\
 	PMG/RuleDB/BCC.pm		\
+	PMG/RuleDB/Quota.pm		\
 	PMG/RuleDB/Counter.pm		\
 	PMG/RuleDB/Notify.pm		\
 	PMG/RuleDB/Disclaimer.pm	\

@@ -44,6 +44,7 @@ use PMG::RuleDB::Notify;
 use PMG::RuleDB::Rule;
 use PMG::RuleDB::ContentTypeFilter;
 use PMG::RuleDB::ArchiveFilter;
+use PMG::RuleDB::Quota;
 
 sub new {
     my ($type, $dbh) = @_;
@@ -343,6 +344,9 @@ sub get_object {
     }
     elsif ($otype == PMG::RuleDB::ArchiveFilter::otype) {
         $obj = PMG::RuleDB::ArchiveFilter->new();
+    }
+    elsif ($otype == PMG::RuleDB::Quota::otype) {
+        $obj = PMG::RuleDB::Quota->new();
     }
     # ACTION OBJECTS
     elsif ($otype == PMG::RuleDB::ModField::otype) {

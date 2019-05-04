@@ -69,5 +69,6 @@ PMG::RuleDB::Spam->register_api(__PACKAGE__, 'spamfilter');
 PMG::RuleDB::ArchiveFilter->register_api(__PACKAGE__, 'archivefilter');
 PMG::RuleDB::MatchFilename->register_api(__PACKAGE__, 'filenamefilter');
 PMG::RuleDB::Virus->register_api(__PACKAGE__, 'virusfilter');
+PMG::RuleDB::Quota->register_api(__PACKAGE__, 'quotafilter');
 
 1;
