@@ -1053,6 +1053,7 @@ sub postmap_tls_policy {
 }
 
 my $transport_map_filename = "/etc/pmg/transport";
+my $advanced_transport_map_filename = "/etc/pmg/advanced_transport";
 
 sub postmap_pmg_transport {
     PMG::Utils::run_postmap($transport_map_filename);
@@ -1147,6 +1148,98 @@ PVE::INotify::register_file('transport', $transport_map_filename,
 			    \&read_transport_map,
 			    \&write_transport_map,
 			    undef, always_call_parser => 1);
+
+sub read_advanced_transport_map {
+    my ($filename, $fh) = @_;
+
+    return [] if !defined($fh);
+
+    my $res = {};
+
+    my $comment = '';
+
+    while (defined(my $line = <$fh>)) {
+	chomp $line;
+	next if $line =~ m/^\s*$/;
+	if ($line =~ m/^#(.*)\s*$/) {
+	    $comment = $1;
+	    next;
+	}
+
+	my $parse_error = sub {
+	    my ($err) = @_;
+	    warn "parse error in '$filename': $line - $err";
+	    $comment = '';
+	};
+
+	if ($line =~ m/^(\S+)\s+(\S+):(\S+):(\d+)\s*$/) {
+	    my ($domain, $transport, $host, $port) = ($1, $2, $3, $4);
+
+	    eval { pmg_verify_transport_domain_or_email($domain); };
+	    if (my $err = $@) {
+		$parse_error->($err);
+		next;
+	    }
+	    my $use_mx = 1;
+	    if ($host =~ m/^\[(.*)\]$/) {
+		$host = $1;
+		$use_mx = 0;
+	    }
+
+	    eval { PVE::JSONSchema::pve_verify_address($host); };
+	    if (my $err = $@) {
+		$parse_error->($err);
+		next;
+	    }
+
+	    my $data = {
+		domain => $domain,
+		transport => $transport,
+		host => $host,
+		port => $port,
+		use_mx => $use_mx,
+		comment => $comment,
+	    };
+	    $res->{$domain} = $data;
+	    $comment = '';
+	} else {
+	    $parse_error->('wrong format');
+	}
+    }
+
+    return $res;
+}
+
+sub write_advanced_transport_map {
+    my ($filename, $fh, $tmap) = @_;
+
+    return if !$tmap;
+
+    foreach my $domain (sort keys %$tmap) {
+	my $data = $tmap->{$domain};
+
+	my $comment = $data->{comment};
+	PVE::Tools::safe_print($filename, $fh, "#$comment\n")
+	    if defined($comment) && $comment !~ m/^\s*$/;
+
+	my $use_mx = $data->{use_mx};
+	$use_mx = 0 if $data->{host} =~ m/^(?:$IPV4RE|$IPV6RE)$/;
+
+	if ($use_mx) {
+	    PVE::Tools::safe_print(
+		$filename, $fh, "$data->{domain} $data->{transport}:$data->{host}:$data->{port}\n");
+	} else {
+	    PVE::Tools::safe_print(
+		$filename, $fh, "$data->{domain} $data->{transport}:[$data->{host}]:$data->{port}\n");
+	}
+    }
+}
+
+PVE::INotify::register_file('advanced_transport', $advanced_transport_map_filename,
+			    \&read_advanced_transport_map,
+			    \&write_advanced_transport_map,
+			    undef, always_call_parser => 1);
+
 
 # config file generation using templates
 

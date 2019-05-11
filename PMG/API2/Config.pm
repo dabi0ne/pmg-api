@@ -23,6 +23,7 @@ use PMG::API2::SMTPWhitelist;
 use PMG::API2::MimeTypes;
 use PMG::API2::Fetchmail;
 use PMG::API2::DestinationTLSPolicy;
+use PMG::API2::Advanced;
 
 use base qw(PVE::RESTHandler);
 
@@ -79,6 +80,11 @@ __PACKAGE__->register_method ({
 __PACKAGE__->register_method ({
     subclass => "PMG::API2::DestinationTLSPolicy",
     path => 'tlspolicy',
+});
+
+__PACKAGE__->register_method ({
+    subclass => "PMG::API2::Advanced",
+    path => 'advanced',
 });
 
 __PACKAGE__->register_method ({
