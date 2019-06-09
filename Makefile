@@ -153,6 +153,8 @@ LIBSOURCES =				\
 	PMG/API2/Action.pm		\
 	PMG/API2/Advanced.pm		\
 	PMG/API2/AdvancedTransport.pm		\
+	PMG/API2/AdvancedMasterTransport.pm		\
+	PMG/API2/AdvancedMasterTransportOption.pm		\
 	PMG/API2.pm
 
 SOURCES = ${LIBSOURCES} ${CLI_BINARIES} ${TEMPLATES_FILES} ${CONF_MANS} ${CLI_MANS} ${SERVICE_MANS} ${SERVICE_UNITS} ${TIMER_UNITS} pmg-sources.list pmg-apt.conf pmg-initramfs.conf

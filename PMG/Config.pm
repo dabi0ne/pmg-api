@@ -1172,33 +1172,21 @@ sub read_advanced_transport_map {
 	    $comment = '';
 	};
 
-	if ($line =~ m/^(\S+)\s+(\S+):(\S+):(\d+)\s*$/) {
-	    my ($domain, $transport, $host, $port) = ($1, $2, $3, $4);
+	if ($line =~ m/^(\S+)\s+([^:]+):(([^:]+)(:(\d+))?)?\s*$/) {
+	    my ($domain, $transport, $host, $port) = ($1, $2, $4, $6);
 
 	    eval { pmg_verify_transport_domain_or_email($domain); };
 	    if (my $err = $@) {
 		$parse_error->($err);
 		next;
 	    }
-	    my $use_mx = 1;
-	    if ($host =~ m/^\[(.*)\]$/) {
-		$host = $1;
-		$use_mx = 0;
-	    }
-
-	    eval { PVE::JSONSchema::pve_verify_address($host); };
-	    if (my $err = $@) {
-		$parse_error->($err);
-		next;
-	    }
 
 	    my $data = {
-		domain => $domain,
-		transport => $transport,
-		host => $host,
-		port => $port,
-		use_mx => $use_mx,
-		comment => $comment,
+			domain => $domain,
+			transport => $transport,
+			host => $host || '',
+			port => $port || '',
+			comment => $comment || '',
 	    };
 	    $res->{$domain} = $data;
 	    $comment = '';
@@ -1216,22 +1204,23 @@ sub write_advanced_transport_map {
     return if !$tmap;
 
     foreach my $domain (sort keys %$tmap) {
-	my $data = $tmap->{$domain};
-
-	my $comment = $data->{comment};
-	PVE::Tools::safe_print($filename, $fh, "#$comment\n")
-	    if defined($comment) && $comment !~ m/^\s*$/;
-
-	my $use_mx = $data->{use_mx};
-	$use_mx = 0 if $data->{host} =~ m/^(?:$IPV4RE|$IPV6RE)$/;
-
-	if ($use_mx) {
-	    PVE::Tools::safe_print(
-		$filename, $fh, "$data->{domain} $data->{transport}:$data->{host}:$data->{port}\n");
-	} else {
-	    PVE::Tools::safe_print(
-		$filename, $fh, "$data->{domain} $data->{transport}:[$data->{host}]:$data->{port}\n");
-	}
+		my $data = $tmap->{$domain};
+	
+		my $comment = $data->{comment};
+		PVE::Tools::safe_print($filename, $fh, "#$comment\n")
+		    if defined($comment) && $comment !~ m/^\s*$/;
+	
+		my $line = "$data->{domain} $data->{transport}:";
+		
+		if ($data->{host}) {
+			
+			$line = $line . $data->{host};
+			
+			if ($data->{port}) {
+				$line = $line . ":" . $data->{port};	
+			}
+		} 
+		PVE::Tools::safe_print($filename, $fh, "$line\n");
     }
 }
 
@@ -1240,6 +1229,90 @@ PVE::INotify::register_file('advanced_transport', $advanced_transport_map_filena
 			    \&write_advanced_transport_map,
 			    undef, always_call_parser => 1);
 
+my $advanced_master_transport_filename = "/etc/pmg/advanced_master_transport";
+
+sub read_advanced_master_transport {
+    my ($filename, $fh) = @_;
+
+    return [] if !defined($fh);
+
+    my $res = {};
+
+	my $current_service = "";
+
+    while (defined(my $line = <$fh>)) {
+		chomp $line;
+		next if $line =~ m/^\s*$/;
+		if ($line =~ m/^#(.*)\s*$/) {
+		    next;
+		}
+	
+		my $parse_error = sub {
+		    my ($err) = @_;
+		    warn "parse error in '$filename': $line - $err";
+		};
+	
+		
+		if ($line =~ m/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$/) {
+		    my ($service, $type, $private, $unpriv, $chroot, $wakeup, $maxproc, $command) = ($1, $2, $3, $4, $5, $6, $7, $8);
+	
+			$current_service = $service;
+			
+			my $data = {
+			'service' => $service,
+			'type' => $type,
+			'private' => $private,
+			'unpriv' => $unpriv,
+			'chroot' => $chroot,
+			'wakeup' => $wakeup,
+			'maxproc' => $maxproc,
+			'command' => $command,
+			'options' => []
+		    };
+		    
+		    $res->{$service} = $data;
+		    
+		    
+		} elsif (length($current_service) > 0 && $line =~ m/^\s*\-o\s+(\S+)\s*\=\s*(\S+)?\s*$/) {
+			
+			push @{$res->{$current_service}->{options}}, { option => $1, value => defined($2) ? $2 : ""  }
+		
+		} else {
+		    $parse_error->('wrong format');
+		}
+    }
+
+    return $res;
+}
+
+sub write_advanced_master_transport {
+    my ($filename, $fh, $tmap) = @_;
+
+    return if !$tmap;
+
+    foreach my $service (sort keys %$tmap) {
+		my $data = $tmap->{$service};
+		
+		PVE::Tools::safe_print(
+			$filename, 
+			$fh, 
+			"$data->{service}\t$data->{type}\t$data->{private}\t$data->{unpriv}" .
+			"\t$data->{chroot}\t$data->{wakeup}\t$data->{maxproc}\t$data->{command}\n"
+			);
+		foreach my $option (@{$data->{options}}){
+			PVE::Tools::safe_print(
+				$filename, 
+				$fh, 
+				"	-o $option->{option}=$option->{value}\n"
+				);
+		}
+	}
+}
+
+PVE::INotify::register_file('advanced_master_transport', $advanced_master_transport_filename,
+			    \&read_advanced_master_transport,
+			    \&write_advanced_master_transport,
+			    undef, always_call_parser => 1);
 
 # config file generation using templates
 

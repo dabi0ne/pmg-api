@@ -34,8 +34,7 @@ __PACKAGE__->register_method ({
 		domain => { type => 'string' },
 		transport => { type => 'string' },
 		host => { type => 'string' },
-		port => { type => 'integer' },
-		use_mx => { type => 'boolean' },
+		port => { type => 'string' },
 		comment => { type => 'string'},
 	    },
 	},
@@ -72,25 +71,18 @@ __PACKAGE__->register_method ({
 	    },
 	    transport => {
 		description => "Transport",
-		type => 'string'
+		type => 'string',
+		minLength => 2
 	    },
 	    host => {
 		description => "Target host (name or IP address).",
-		type => 'string', format => 'address',
+		type => 'string',
+		optional => 1,
 	    },
 	    port => {
 		description => "SMTP port.",
-		type => 'integer',
-		minimum => 1,
-		maximum => 65535,
+		type => 'string',
 		optional => 1,
-		default => 25,
-	    },
-	    use_mx => {
-		description => "Enable MX lookups.",
-		type => 'boolean',
-		optional => 1,
-		default => 1,
 	    },
 	    comment => {
 		description => "Comment.",
@@ -113,10 +105,9 @@ __PACKAGE__->register_method ({
 	    $tmap->{$param->{domain}} = {
 		domain => $param->{domain},
 		transport => $param->{transport},
-		host => $param->{host},
-		port => $param->{port} // 25,
-		use_mx => $param->{use_mx} // 1,
-		comment => $param->{comment} // '',
+		host => $param->{host}|| '',
+		port => $param->{port} || '',
+		comment => $param->{comment} || '',
 	    };
 
 	    PVE::INotify::write_file('advanced_transport', $tmap);
@@ -151,8 +142,7 @@ __PACKAGE__->register_method ({
 	    domain => { type => 'string'},
 	    transport => { type => 'string'},
 	    host => { type => 'string'},
-	    port => { type => 'integer'},
-	    use_mx => { type => 'boolean'},
+	    port => { type => 'string'},
 	    comment => { type => 'string'},
 	},
     },
@@ -185,23 +175,17 @@ __PACKAGE__->register_method ({
 	    },
 	    transport => {
 		description => "Transport",
-		type => 'string'
+		type => 'string',
+		minLength => 2
 	    },
 	    host => {
 		description => "Target host (name or IP address).",
-		type => 'string', format => 'address',
+		type => 'string',
 		optional => 1,
 	    },
 	    port => {
 		description => "SMTP port.",
-		type => 'integer',
-		minimum => 1,
-		maximum => 65535,
-		optional => 1,
-	    },
-	    use_mx => {
-		description => "Enable MX lookups.",
-		type => 'boolean',
+		type => 'string',
 		optional => 1,
 	    },
 	    comment => {
@@ -227,7 +211,7 @@ __PACKAGE__->register_method ({
 
 	    die "no options specified\n" if !scalar(keys %$param);
 
-	    for my $prop (qw(host port transport use_mx comment)) {
+	    for my $prop (qw(host port transport comment)) {
 		$data->{$prop} = $param->{$prop} if defined($param->{$prop});
 	    }
 
@@ -276,7 +260,7 @@ __PACKAGE__->register_method ({
 	    PMG::Config::postmap_pmg_transport();
 	};
 
-	PMG::Config::lock_config($code, "delete transport map extry failed");
+	PMG::Config::lock_config($code, "Delete transport map entry failed");
 
 	return undef;
     }});
