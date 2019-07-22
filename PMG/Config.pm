@@ -1229,7 +1229,7 @@ PVE::INotify::register_file('advanced_transport', $advanced_transport_map_filena
 			    \&write_advanced_transport_map,
 			    undef, always_call_parser => 1);
 
-my $advanced_master_transport_filename = "/etc/pmg/advanced_master_transport";
+my $advanced_master_transport_filename = "/etc/pmg/templates/advanced_master_transport";
 
 sub read_advanced_master_transport {
     my ($filename, $fh) = @_;

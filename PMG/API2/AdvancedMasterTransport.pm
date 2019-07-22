@@ -65,6 +65,30 @@ __PACKAGE__->register_method ({
     }});
 
 __PACKAGE__->register_method ({
+    name => 'reload',
+    path => '',
+    method => 'POST',
+    description => "Reload Postfix configuration files",
+    protected => 1,
+    permissions => { check => [ 'admin' ] },
+    proxyto => 'master',
+    parameters => {
+	additionalProperties => 0,
+	properties => {},
+    },
+    returns => {},
+    code => sub {
+	my ($param) = @_;
+
+	 my $cfg = PMG::Config->new();
+
+    if ($cfg->rewrite_config_postfix()) {
+		return PMG::Utils::service_cmd('postfix', 'reload');
+    }
+
+    }});
+
+__PACKAGE__->register_method ({
     name => 'read',
     path => '{urlservice}',
     method => 'GET',
@@ -134,7 +158,6 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('advanced_master_transport', $tmap);
 
-	    PMG::Config::postmap_pmg_transport();
 	};
 
 	PMG::Config::lock_config($code, "Delete transport entry failed");
@@ -220,7 +243,6 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('advanced_master_transport', $tmap);
 
-	    PMG::Config::postmap_pmg_transport();
 	};
 
 	PMG::Config::lock_config($code, "Update master transport failed");
@@ -326,7 +348,6 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('advanced_master_transport', $tmap);
 
-	    PMG::Config::postmap_pmg_transport();
 	};
 
 	PMG::Config::lock_config($code, "Update master transport failed");
@@ -436,7 +457,6 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('advanced_master_transport', $tmap);
 
-	    PMG::Config::postmap_pmg_transport();
 	};
 
 	PMG::Config::lock_config($code, "Update master transport failed");
@@ -500,7 +520,6 @@ __PACKAGE__->register_method ({
 
 	    PVE::INotify::write_file('advanced_master_transport', $tmap);
 
-	    PMG::Config::postmap_pmg_transport();
 	};
 
 	PMG::Config::lock_config($code, "Update master transport failed");
@@ -611,7 +630,6 @@ __PACKAGE__->register_method ({
 		
 	    PVE::INotify::write_file('advanced_master_transport', $tmap);
 
-	    PMG::Config::postmap_pmg_transport();
 	};
 
 	PMG::Config::lock_config($code, "Update master transport failed");
@@ -619,5 +637,8 @@ __PACKAGE__->register_method ({
 	return undef;
 
     }});
+    
+    
+
 
 1;
